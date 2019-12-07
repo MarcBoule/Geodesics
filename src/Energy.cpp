@@ -220,7 +220,7 @@ struct Energy : Module {
 		// user inputs
 		if (refresh.processInputs()) {
 			numChan = std::max(1, inputs[FREQCV_INPUT].getChannels());
-			numChan = std::min(numChan, N_POLY);
+			numChan = std::min<int>(numChan, N_POLY);
 			outputs[ENERGY_OUTPUT].setChannels(numChan);
 
 			// routing
