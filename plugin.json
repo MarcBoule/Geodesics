@@ -1,0 +1,85 @@
+{
+	"slug": "Geodesics",
+	"name": "Geodesics",
+	"version": "1.1.0",
+	"license": "GPL-3.0-only",
+	"author": "Pyer & Marc Boul\u00e9",
+	"brand": "Geodesics",
+	"authorEmail": "geodesics.modular@outlook.com",
+	"authorUrl": "",
+	"pluginUrl": "https://www.pyer.be/geodesics.html",
+	"manualUrl": "https://marcboule.github.io/Geodesics/",
+	"sourceUrl": "https://github.com/MarcBoule/Geodesics/",
+	"donateUrl": "https://paypal.me/pyercollard",
+	"changelogUrl": "https://github.com/MarcBoule/Geodesics/tree/master/CHANGELOG.md",
+	"modules": [
+		{
+			"slug": "BlackHoles",
+			"name": "BlackHoles",
+			"description": "Gravitational attenumixset",
+			"manualUrl": "https://www.pyer.be/black-holes.html",
+			"tags": ["Ring modulator", "VCA", "Polyphonic"]
+		},
+		{
+			"slug": "Pulsars",
+			"name": "Pulsars",
+			"description": "Neutron powered morphing",
+			"manualUrl": "https://www.pyer.be/pulsars.html",
+			"tags": ["Mixer", "Polyphonic"]
+		},
+		{
+			"slug": "Branes",
+			"name": "Branes",
+			"description": "Coliding sample and hold",
+			"manualUrl": "https://www.pyer.be/branes.html",
+			"tags": ["Sample and Hold", "Random"]
+		},
+		{
+			"slug": "Ions",
+			"name": "Ions",
+			"description": "Atomic dual cv sequencer",
+			"manualUrl": "https://www.pyer.be/ions.html",
+			"tags": ["Sequencer"]
+		},
+		{
+			"slug": "Entropia",
+			"name": "Entropia",
+			"description": "Thermodynamic microstate sequencer",
+			"manualUrl": "https://www.pyer.be/entropia.html",
+			"tags": ["Sequencer"]
+		},
+		{
+			"slug": "Energy",
+			"name": "Energy",
+			"description": "Relativistic oscillator",
+			"manualUrl": "https://www.pyer.be/energy.html",
+			"tags": ["Oscillator", "Synth voice", "Polyphonic"]
+		},
+		{
+			"slug": "Torus",
+			"name": "Torus",
+			"description": "Bi-dimensional multimixer",
+			"manualUrl": "https://www.pyer.be/torus.html",
+			"tags": ["Mixer", "Filter"]
+		},
+		{
+			"slug": "Fate",
+			"name": "Fate",
+			"description": "Event modifier",
+			"manualUrl": "https://www.pyer.be/fate.html",
+			"tags": ["Utility", "Random"]
+		},
+		{
+			"slug": "Blank-PanelInfo",
+			"name": "Blank-Panel Info",
+			"description": "Blank panel with info",
+			"tags": ["Blank"]
+		},
+		{
+			"slug": "Blank-PanelLogo",
+			"name": "Blank-Panel Logo",
+			"description": "Blank panel with logo",
+			"tags": ["Blank"]
+		}
+	]
+}
