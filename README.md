@@ -1,5 +1,3 @@
-# A Modular Collection for VCV Rack by Pyer and Marc Boulé
-
 This page shows a very brief overview of the modules. For more information, including videos of the modules in use, please see the [Geodesics Website](https://www.pyer.be/geodesics.html). The modules are available in the [plugin library](https://vcvrack.com/plugins.html) of [VCV Rack](https://vcvrack.com). 
 
 * [Complete user manual](doc/geodesics1.1-complete_user_manual.pdf) (version 1.1.0)
