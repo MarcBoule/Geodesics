@@ -106,4 +106,4 @@ For a video introduction to this module, please see Omri Cohen's [Energy tutoria
 ![Geodesics](res/img/Fate.jpg)
 
 Is there such thing as free will? While scientists and philosophers are debating the question, Geodesics proposes [FATE](doc/geodesics1.1-fate.pdf), a dual event modifier that will bring any sequencer to life by making its own musical choices. FATE alters any signal by adding a specific amount of randomness at some chosen points, or by switching in with another signal in a probabilistic way. Without any incoming signal, FATE acts as a dual probabilistic random generator and a Bernoulli gate.
-For a video introduction to a previous version of this module, please see Omri Cohen's [Fate tutorial](https://www.youtube.com/watch?v=PtTK3rZTgUo).
+For a video introduction to a previous version of this module, please see Omri Cohen's [Fate tutorial](https://www.youtube.com/watch?v=6HRe-CnAO2E).
