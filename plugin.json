@@ -32,7 +32,7 @@
 			"name": "Branes",
 			"description": "Coliding sample and hold",
 			"manualUrl": "https://www.pyer.be/branes.html",
-			"tags": ["Sample and Hold", "Random"]
+			"tags": ["Sample and hold", "Random"]
 		},
 		{
 			"slug": "Ions",
