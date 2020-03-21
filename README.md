@@ -1,11 +1,12 @@
 This page shows a very brief overview of the modules. For more information, including videos of the modules in use, please see the [Geodesics Website](https://www.pyer.be/geodesics.html). The modules are available in the [plugin library](https://vcvrack.com/plugins.html) of [VCV Rack](https://vcvrack.com). 
 
-* [Complete user manual](doc/geodesics1.1-complete_user_manual.pdf) (version 1.1.0)
+* [Complete user manual](doc/geodesics1.1-complete_user_manual.pdf) (version 1.1.1)
 
 * [What's new](doc/geodesics1.1-whats_new.pdf) in version 1.1.0
 
 ![Geodesics](res/img/Blanks.jpg)
 
+[//]: # (!!!!!UPDATE VERSION NUMBER IN PLUGIN.JSON ALSO!!!!!   120% Zoom for jpgs)
 
 
 ## License

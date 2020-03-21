@@ -1,3 +1,8 @@
+### 1.1.1 (2020-03-21)
+
+- Add missing tags
+
+
 ### 1.1.0 (2019-12-07)
 
 - Make Energy, Pulsars and BlackHoles polyphonic
