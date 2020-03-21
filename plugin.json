@@ -18,56 +18,56 @@
 			"name": "BlackHoles",
 			"description": "Gravitational attenumixset",
 			"manualUrl": "https://www.pyer.be/black-holes.html",
-			"tags": ["Ring modulator", "VCA", "Polyphonic"]
+			"tags": ["Ring modulator", "VCA", "Polyphonic", "Attenuator", "Controller", "Mixer", "Quad"]
 		},
 		{
 			"slug": "Pulsars",
 			"name": "Pulsars",
 			"description": "Neutron powered morphing",
 			"manualUrl": "https://www.pyer.be/pulsars.html",
-			"tags": ["Mixer", "Polyphonic"]
+			"tags": ["Mixer", "Polyphonic", "Switch", "Sequencer"]
 		},
 		{
 			"slug": "Branes",
 			"name": "Branes",
 			"description": "Coliding sample and hold",
 			"manualUrl": "https://www.pyer.be/branes.html",
-			"tags": ["Sample and hold", "Random"]
+			"tags": ["Sample and hold", "Random", "Dual", "Noise"]
 		},
 		{
 			"slug": "Ions",
 			"name": "Ions",
 			"description": "Atomic dual cv sequencer",
 			"manualUrl": "https://www.pyer.be/ions.html",
-			"tags": ["Sequencer"]
+			"tags": ["Sequencer", "Dual"]
 		},
 		{
 			"slug": "Entropia",
 			"name": "Entropia",
 			"description": "Thermodynamic microstate sequencer",
 			"manualUrl": "https://www.pyer.be/entropia.html",
-			"tags": ["Sequencer"]
+			"tags": ["Sequencer", "Switch", "Random", "Attenuator"]
 		},
 		{
 			"slug": "Energy",
 			"name": "Energy",
 			"description": "Relativistic oscillator",
 			"manualUrl": "https://www.pyer.be/energy.html",
-			"tags": ["Oscillator", "Synth voice", "Polyphonic"]
+			"tags": ["Oscillator", "Synth voice", "Polyphonic", "Digital"]
 		},
 		{
 			"slug": "Torus",
 			"name": "Torus",
 			"description": "Bi-dimensional multimixer",
 			"manualUrl": "https://www.pyer.be/torus.html",
-			"tags": ["Mixer", "Filter"]
+			"tags": ["Mixer", "Filter", "Equalizer", "Multiple", "Utility", "Attenuator"]
 		},
 		{
 			"slug": "Fate",
 			"name": "Fate",
 			"description": "Event modifier",
 			"manualUrl": "https://www.pyer.be/fate.html",
-			"tags": ["Utility", "Random"]
+			"tags": ["Utility", "Random", "Clock modulator", "Dual", "Switch"]
 		},
 		{
 			"slug": "Blank-PanelInfo",
