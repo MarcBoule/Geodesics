@@ -1,6 +1,7 @@
-### 1.1.1 (2020-03-21)
+### 1.1.1 (2020-03-24)
 
 - Add missing tags
+- Fix label for alternate noise range in lower-right brane (svg and manual)
 
 
 ### 1.1.0 (2019-12-07)
