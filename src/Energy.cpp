@@ -36,7 +36,7 @@ struct Energy : Module {
 		NUM_OUTPUTS
 	};
 	enum LightIds {
-		ENUMS(PLANCK_LIGHTS, 2 * 2), // room for two white/blue leds
+		ENUMS(PLANCK_LIGHTS, 2 * 3), // room for two white/blue/red leds
 		ENUMS(ADD_LIGHTS, 2),
 		ENUMS(AMP_LIGHTS, 2),
 		ENUMS(ROUTING_LIGHTS, 3),
@@ -60,7 +60,7 @@ struct Energy : Module {
 		// 0 is independant (i.e. blue only) (bottom light, light index 0),
 		// 1 is control (i.e. blue and yellow) (top light, light index 1),
 		// 2 is spread (i.e. blue and inv yellow) (middle, light index 2)
-	int plancks[2];// index is left/right, value is: 0 = not quantized, 1 = semitones, 2 = 5th+octs
+	int plancks[2];// index is left/right, value is: 0 = not quantized, 1 = semitones, 2 = 5th+octs, 3 = adds -10V offset
 	int modtypes[2];// index is left/right, value is: {0 to 3} = {bypass, add, amp}
 	int cross;// cross momentum active or not
 	
@@ -232,7 +232,7 @@ struct Energy : Module {
 			// plancks
 			for (int i = 0; i < 2; i++) {
 				if (planckTriggers[i].process(params[PLANCK_PARAMS + i].getValue())) {
-					if (++plancks[i] > 2)
+					if (++plancks[i] > 3)
 						plancks[i] = 0;
 				}
 			}
@@ -301,8 +301,9 @@ struct Energy : Module {
 			
 			for (int i = 0; i < 2; i++) {
 				// plancks
-				lights[PLANCK_LIGHTS + i * 2 + 0].setBrightness(plancks[i] == 1 ? 1.0f : 0.0f);
-				lights[PLANCK_LIGHTS + i * 2 + 1].setBrightness(plancks[i] == 2 ? 1.0f : 0.0f);	
+				lights[PLANCK_LIGHTS + i * 3 + 0].setBrightness(plancks[i] == 1 ? 1.0f : 0.0f);// white
+				lights[PLANCK_LIGHTS + i * 3 + 1].setBrightness(plancks[i] == 2 ? 1.0f : 0.0f);// blue
+				lights[PLANCK_LIGHTS + i * 3 + 2].setBrightness(plancks[i] == 3 ? 1.0f : 0.0f);// red
 				
 				// modtypes
 				lights[ADD_LIGHTS + i].setBrightness(modtypes[i] == 1 ? 1.0f : 0.0f);
@@ -329,7 +330,9 @@ struct Energy : Module {
 			return params[FREQ_PARAMS + osci].getValue();
 		if (plancks[osci] == 1)// semitones
 			return std::round(params[FREQ_PARAMS + osci].getValue() * 12.0f) / 12.0f;
-		// 5ths and octs
+		if (plancks[osci] == 3)// -10V offset
+			return params[FREQ_PARAMS + osci].getValue() - 10.0f;
+		// 5ths and octs (plancks[osci] == 2)
 		int retcv = (int)std::round((params[FREQ_PARAMS + osci].getValue() + 3.0f) * 2.0f);
 		if ((retcv & 0x1) != 0)
 			return (float)(retcv)/2.0f - 3.0f + 0.08333333333f;
@@ -494,8 +497,8 @@ struct EnergyWidget : ModuleWidget {
 		addParam(createDynamicParam<GeoPushButton>(VecPx(colRulerCenter + offsetX + 0.5f, 380.0f - 83.5f), module, Energy::PLANCK_PARAMS + 1, module ? &module->panelTheme : NULL));
 		
 		// planck lights
-		addChild(createLightCentered<SmallLight<GeoWhiteBlueLight>>(VecPx(colRulerCenter - offsetX - 0.5f, 380.0f - 97.5f), module, Energy::PLANCK_LIGHTS + 0 * 2));
-		addChild(createLightCentered<SmallLight<GeoWhiteBlueLight>>(VecPx(colRulerCenter + offsetX + 0.5f, 380.0f - 97.5f), module, Energy::PLANCK_LIGHTS + 1 * 2));
+		addChild(createLightCentered<SmallLight<GeoWhiteBlueRedLight>>(VecPx(colRulerCenter - offsetX - 0.5f, 380.0f - 97.5f), module, Energy::PLANCK_LIGHTS + 0 * 3));
+		addChild(createLightCentered<SmallLight<GeoWhiteBlueRedLight>>(VecPx(colRulerCenter + offsetX + 0.5f, 380.0f - 97.5f), module, Energy::PLANCK_LIGHTS + 1 * 3));
 		
 		// mod type buttons
 		addParam(createDynamicParam<GeoPushButton>(VecPx(colRulerCenter - offsetX - 0.5f, 380.0f - 57.5f), module, Energy::MODTYPE_PARAMS + 0, module ? &module->panelTheme : NULL));

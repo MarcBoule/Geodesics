@@ -2,6 +2,7 @@
 
 - Convert svgs from px to mm
 - Add 12 dB/oct filter slope option to Torus (default is 6dB/oct)
+- Add LFO option to Planck functions in Energy
 
 
 ### 1.1.1 (2020-03-24)

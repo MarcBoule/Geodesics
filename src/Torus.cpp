@@ -228,7 +228,7 @@ struct Torus : Module {
 	
 	void onReset() override {
 		mixmode = 0;
-		filterSlope = 0;
+		filterSlope = 1;
 		resetNonJson();
 	}
 	void resetNonJson() {
