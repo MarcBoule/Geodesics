@@ -53,7 +53,7 @@
 			"name": "Energy",
 			"description": "Relativistic oscillator",
 			"manualUrl": "https://www.pyer.be/energy.html",
-			"tags": ["Oscillator", "Synth voice", "Polyphonic", "Digital"]
+			"tags": ["Oscillator", "Synth voice", "Polyphonic", "Digital", "LFO"]
 		},
 		{
 			"slug": "Torus",
