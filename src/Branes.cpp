@@ -64,8 +64,8 @@ struct NoiseEngine {
 
 	PinkNoise pinkNoise[2];
 	PinkNoise pinkForBlueNoise[2];
-	OnePoleFilter redFilter[2];// for lowpass
-	OnePoleFilter blueFilter[2];// for highpass
+	dsp::RCFilter redFilter[2];// for lowpass
+	dsp::RCFilter blueFilter[2];// for highpass
 	bool cacheHitRed[2];// no need to init; index is braneIndex
 	float cacheValRed[2];
 	bool cacheHitBlue[2];// no need to init; index is braneIndex
@@ -80,10 +80,10 @@ struct NoiseEngine {
 	
 	
 	void setCutoffs(float sampleRate) {
-		redFilter[0].setCutoff(70.0f / sampleRate);// low pass
-		redFilter[1].setCutoff(70.0f / sampleRate);
-		blueFilter[0].setCutoff(4410.0f / sampleRate);// high pass
-		blueFilter[1].setCutoff(4410.0f / sampleRate);
+		redFilter[0].setCutoffFreq(70.0f / sampleRate);// low pass
+		redFilter[1].setCutoffFreq(70.0f / sampleRate);
+		blueFilter[0].setCutoffFreq(4410.0f / sampleRate);// high pass
+		blueFilter[1].setCutoffFreq(4410.0f / sampleRate);
 	}		
 	
 	
@@ -108,7 +108,8 @@ struct NoiseEngine {
 			if (cacheHitRed[braneIndex])
 				ret = -1.0f * cacheValRed[braneIndex];
 			else {
-				cacheValRed[braneIndex] = 5.0f * redFilter[braneIndex].process(whiteNoise());
+				redFilter[braneIndex].process(whiteNoise());
+				cacheValRed[braneIndex] = 5.0f * redFilter[braneIndex].lowpass();
 				cacheHitRed[braneIndex] = true;
 				ret = cacheValRed[braneIndex];
 			}
@@ -127,8 +128,8 @@ struct NoiseEngine {
 				ret = -1.0f * cacheValBlue[braneIndex];
 			else {
 				float pinkForBlue = pinkForBlueNoise[braneIndex].process();			
-				pinkForBlue -= blueFilter[braneIndex].process(pinkForBlue);// (input - lowpass) technique is used to make the highpass
-				cacheValBlue[braneIndex] = 5.8f * pinkForBlue;
+				blueFilter[braneIndex].process(pinkForBlue);
+				cacheValBlue[braneIndex] = 5.8f * blueFilter[braneIndex].highpass();
 				cacheHitBlue[braneIndex] = true;
 				ret = cacheValBlue[braneIndex];
 			}
