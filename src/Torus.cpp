@@ -12,22 +12,81 @@
 #include "Geodesics.hpp"
 
 
+struct DualSlopeFilter {	
+	float b[3];// coefficients b0, b1 and b2
+	float a[3 - 1];// coefficients a1 and a2
+	float x[3 - 1];
+	float y[3 - 1];
+	
+	void reset() {
+		for (int i = 0; i < 2; i++) {
+			x[i] = 0.0f;
+			y[i] = 0.0f;
+		}
+	}
+	
+	void setFilterCutoff(float nfc, bool isHighPass, bool _secondOrder) {
+		// nfc: normalized cutoff frequency (cutoff frequency / sample rate), must be > 0
+		// freq pre-warping with inclusion of M_PI factor; 
+		//   avoid tan() if fc is low (< 1102.5 Hz @ 44.1 kHz, since error at this freq is 2 Hz)
+		float nfcw = nfc < 0.025f ? float(M_PI) * nfc : std::tan(float(M_PI) * std::min(0.499f, nfc));
+		
+		if (_secondOrder) {	
+			// denominator coefficients (same for both LPF and HPF)
+			float acst = nfcw * nfcw + nfcw * float(M_SQRT2) + 1.0f;
+			a[0] = 2.0f * (nfcw * nfcw - 1.0f) / acst;
+			a[1] = (nfcw * nfcw - nfcw * float(M_SQRT2) + 1.0f) / acst;
+			
+			// numerator coefficients
+			float hbcst = 1.0f / acst;
+			float lbcst = hbcst * nfcw * nfcw;			
+			b[0] = (isHighPass ? hbcst : lbcst);
+			b[1] = (isHighPass ? -hbcst : lbcst) * 2.0f;
+			b[2] = b[0];
+		}
+		else {
+			// denominator coefficients (same for both LPF and HPF)
+			float acst = (nfcw - 1.0f) / (nfcw + 1.0f);
+			a[0] = acst;
+			a[1] = 0.0f;
+			
+			// numerator coefficients
+			float hbcst = 1.0f / (1.0f + nfcw);
+			float lbcst = 1.0f - hbcst;// equivalent to: hbcst * nfcw;
+			b[0] = (isHighPass ? hbcst : lbcst);
+			b[1] = (isHighPass ? -hbcst : lbcst);
+			b[2] = 0.0f;
+		}
+	}
+
+	float process(float in) {
+		float out = b[0] * in + b[1] * x[0] + b[2] * x[1] - a[0] * y[0] - a[1] * y[1];
+		x[1] = x[0];
+		x[0] = in;
+		y[1] = y[0];
+		y[0] = out;
+		return out;
+	}
+};
+
+
 struct chanVol {// a mixMap for an output has four of these, for each quadrant that can map to its output
 	float vol;// 0.0 to 1.0
 	float chan;// channel input number (0 to 15)
-	bool inputIsAboveOutput;// true when an input is located above the output, false otherwise
-	OnePoleFilter filt;// a lowpass filter (highpass is done using "inval - outval" trick
+	DualSlopeFilter filt;
 	
-	void writeChan(float _vol, int _chan, bool _inAboveOut, float norm_f_c) {
+	void reset() {
+		filt.reset();
+	}
+	
+	void writeChan(float _vol, int _chan, bool inAboveOut, float norm_f_c, bool isSecondOrder) {
 		vol = _vol;
 		chan = _chan;
-		inputIsAboveOutput = _inAboveOut;
-		filt.setCutoff(norm_f_c);		
+		filt.setFilterCutoff(norm_f_c, !inAboveOut, isSecondOrder);
 	}
 	
 	float processFilter(float inval) {
-		float outval = filt.process(inval);
-		return (inputIsAboveOutput ? outval : (inval - outval));// inputIsAboveOutput ? lowpass : highpass		
+		return filt.process(inval);
 	}
 };
 
@@ -37,9 +96,14 @@ struct mixMapOutput {
 	int numInputs;// number of inputs that need to be read for this given output
 	float sampleRate;
 
-	void init(float _sampleRate) {
-		sampleRate = _sampleRate;
+	void init(float _sampleRate, bool withReset) {
+		if (withReset) {
+			for (int i = 0; i < 4; i++) {
+				cvs[i].reset();
+			}
+		}
 		numInputs = 0;
+		sampleRate = _sampleRate;
 	}
 	
 	float getScaledInput(int index, float inval) {
@@ -50,10 +114,10 @@ struct mixMapOutput {
 		return cvs[index].processFilter(inval);
 	}
 
-	void insert(int numerator, int denominator, int mixmode, float _chan, bool _inAboveOut) {
+	void insert(int numerator, int denominator, int mixmode, float _chan, bool _inAboveOut, bool isSecondOrder) {
 		float _vol = (mixmode == 1 ? 1.0f : ((float)numerator / (float)denominator));
 		float f_c = (float)calcCutoffFreq(numerator, denominator, _inAboveOut);
-		cvs[numInputs].writeChan(_vol, _chan, _inAboveOut, f_c / sampleRate);
+		cvs[numInputs].writeChan(_vol, _chan, _inAboveOut, f_c / sampleRate, isSecondOrder);
 		numInputs++;
 	}
 		
@@ -140,6 +204,7 @@ struct Torus : Module {
 	
 	// Need to save, with reset
 	int mixmode;// 0 is decay, 1 is constant, 2 is filter
+	int filterSlope;// 0 is 6 dB/oct, 1 is 12 dB/oct
 	
 	// No need to save, with reset
 	mixMapOutput mixMap[7];// 7 outputs
@@ -163,10 +228,11 @@ struct Torus : Module {
 	
 	void onReset() override {
 		mixmode = 0;
+		filterSlope = 0;
 		resetNonJson();
 	}
 	void resetNonJson() {
-		updateMixMap(APP->engine->getSampleRate());
+		updateMixMap(APP->engine->getSampleRate(), true);
 	}
 
 
@@ -184,6 +250,9 @@ struct Torus : Module {
 		// mixmode
 		json_object_set_new(rootJ, "mixmode", json_integer(mixmode));
 
+		// filterSlope
+		json_object_set_new(rootJ, "filterSlope", json_integer(filterSlope));
+
 		return rootJ;
 	}
 
@@ -199,6 +268,11 @@ struct Torus : Module {
 		if (mixmodeJ)
 			mixmode = json_integer_value(mixmodeJ);
 		
+		// filterSlope
+		json_t *filterSlopeJ = json_object_get(rootJ, "filterSlope");
+		if (filterSlopeJ)
+			filterSlope = json_integer_value(filterSlopeJ);
+		
 		resetNonJson();
 	}
 	
@@ -212,7 +286,7 @@ struct Torus : Module {
 					mixmode = 0;
 			}
 			
-			updateMixMap(args.sampleRate);
+			updateMixMap(args.sampleRate, false);
 		}// userInputs refresh
 		
 		
@@ -235,10 +309,12 @@ struct Torus : Module {
 	}// step()
 	
 	
-	void updateMixMap(float sampleRate) {
+	void updateMixMap(float sampleRate, bool withReset) {
 		for (int outi = 0; outi < 7; outi++) {
-			mixMap[outi].init(sampleRate);
+			mixMap[outi].init(sampleRate, withReset);
 		}
+		
+		bool isSecondOrder = filterSlope != 0;
 		
 		// scan inputs for upwards flow (input is below output)
 		int distanceUL = 1;
@@ -253,7 +329,7 @@ struct Torus : Module {
 					int numerator = (distanceUL - ini + outi);
 					if (numerator == 0) 
 						break;
-					mixMap[outi].insert(numerator, distanceUL, mixmode, ini, false);// last param is _inAboveOut
+					mixMap[outi].insert(numerator, distanceUL, mixmode, ini, false, isSecondOrder);// 2nd to last param is _inAboveOut
 				}
 				distanceUL = 1;
 			}
@@ -264,7 +340,7 @@ struct Torus : Module {
 					int numerator = (distanceUR - ini + outi);
 					if (numerator == 0) 
 						break;
-					mixMap[outi].insert(numerator, distanceUL, mixmode, 8 + ini, false);// last param is _inAboveOut
+					mixMap[outi].insert(numerator, distanceUL, mixmode, 8 + ini, false, isSecondOrder);// 2nd to last param is _inAboveOut
 				}
 				distanceUR = 1;
 			}			
@@ -283,7 +359,7 @@ struct Torus : Module {
 					int numerator = (distanceDL - 1 + ini - outi);
 					if (numerator == 0) 
 						break;
-					mixMap[outi].insert(numerator, distanceUL, mixmode, ini, true);// last param is _inAboveOut
+					mixMap[outi].insert(numerator, distanceUL, mixmode, ini, true, isSecondOrder);// 2nd to last param is _inAboveOut
 				}
 				distanceDL = 1;
 			}
@@ -294,7 +370,7 @@ struct Torus : Module {
 					int numerator = (distanceDR - 1 + ini - outi);
 					if (numerator == 0) 
 						break;
-					mixMap[outi].insert(numerator, distanceUL, mixmode, 8 + ini, true);// last param is _inAboveOut
+					mixMap[outi].insert(numerator, distanceUL, mixmode, 8 + ini, true, isSecondOrder);// 2nd to last param is _inAboveOut
 				}
 				distanceDR = 1;
 			}		
@@ -323,6 +399,32 @@ struct Torus : Module {
 
 struct TorusWidget : ModuleWidget {
 	SvgPanel* darkPanel;
+
+	// Filter slope mode menu
+	struct FilterSlopeModeItem : MenuItem {
+		int *filterSlope;
+		
+		struct FilterSlopeSubItem : MenuItem {
+			int *filterSlope;
+			void onAction(const event::Action &e) override {
+				*filterSlope ^= 1;
+			}
+		};
+		
+		Menu *createChildMenu() override {
+			Menu *menu = new Menu;
+
+			std::string filterSlopeNames[2] = {"6 dB/oct", "12 dB/oct"};
+			
+			for (int i = 0; i < 2; i++) {
+				FilterSlopeSubItem *slopeModeItem = createMenuItem<FilterSlopeSubItem>(filterSlopeNames[i], CHECKMARK(*filterSlope == i));
+				slopeModeItem->filterSlope = filterSlope;
+				menu->addChild(slopeModeItem);
+			}
+			
+			return menu;
+		}
+	};
 
 	struct PanelThemeItem : MenuItem {
 		Torus *module;
@@ -358,6 +460,16 @@ struct TorusWidget : ModuleWidget {
 		menu->addChild(darkItem);
 		
 		menu->addChild(createMenuItem<DarkDefaultItem>("Dark as default", CHECKMARK(loadDarkAsDefault())));
+		
+		menu->addChild(new MenuLabel());// empty line
+		
+		MenuLabel *settingsLabel = new MenuLabel();
+		settingsLabel->text = "Settings";
+		menu->addChild(settingsLabel);
+
+		FilterSlopeModeItem *filtSlopeItem = createMenuItem<FilterSlopeModeItem>("Filters", RIGHT_ARROW);
+		filtSlopeItem->filterSlope = &(module->filterSlope);
+		menu->addChild(filtSlopeItem);
 	}	
 	
 	TorusWidget(Torus *module) {
