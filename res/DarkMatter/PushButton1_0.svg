@@ -1,6 +1,76 @@
-<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 15 15">
-  <title>PushButton1_0</title>
-  <circle cx="7.5" cy="7.5" r="7.5" style="fill: #141414"/>
-  <path d="M7.5,1.59A5.91,5.91,0,1,0,13.41,7.5,5.91,5.91,0,0,0,7.5,1.59Z" style="fill: #707070"/>
-  <path d="M7.5,1.59A5.91,5.91,0,1,1,1.59,7.5,5.91,5.91,0,0,1,7.5,1.59M7.5,1A6.5,6.5,0,1,0,14,7.5,6.5,6.5,0,0,0,7.5,1Z" style="fill: gray"/>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   id="Layer_1"
+   data-name="Layer 1"
+   width="5.0803204mm"
+   height="5.0803204mm"
+   viewBox="0 0 19.201211 19.201211"
+   version="1.1"
+   sodipodi:docname="PushButton1_0.svg"
+   inkscape:version="0.92.3 (2405546, 2018-03-11)">
+  <metadata
+     id="metadata15">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title>PushButton1_0</dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs13" />
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="1920"
+     inkscape:window-height="1017"
+     id="namedview11"
+     showgrid="false"
+     inkscape:document-units="mm"
+     units="mm"
+     fit-margin-top="0"
+     fit-margin-left="0"
+     fit-margin-right="0"
+     fit-margin-bottom="0"
+     inkscape:zoom="15.733333"
+     inkscape:cx="7.5"
+     inkscape:cy="7.5000005"
+     inkscape:window-x="-8"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="Layer_1" />
+  <title
+     id="title2">PushButton1_0</title>
+  <circle
+     cx="9.600606"
+     cy="9.600606"
+     r="9.600605"
+     style="fill:#141414;stroke-width:1.28008068"
+     id="circle4" />
+  <path
+     d="M 9.6006056,2.0353292 A 7.5652765,7.5652765 0 1 0 17.165882,9.6006057 7.5652765,7.5652765 0 0 0 9.6006056,2.0353292 Z"
+     style="fill:#707070;stroke-width:1.28008068"
+     id="path6"
+     inkscape:connector-curvature="0" />
+  <path
+     d="M 9.6006056,2.0353292 A 7.5652765,7.5652765 0 1 1 2.0353291,9.6006057 7.5652765,7.5652765 0 0 1 9.6006056,2.0353292 m 0,-0.7552476 A 8.3205241,8.3205241 0 1 0 17.92113,9.6006057 8.3205241,8.3205241 0 0 0 9.6006056,1.2800816 Z"
+     style="fill:#808080;stroke-width:1.28008068"
+     id="path8"
+     inkscape:connector-curvature="0" />
 </svg>

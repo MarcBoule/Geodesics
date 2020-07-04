@@ -448,68 +448,68 @@ struct EnergyWidget : ModuleWidget {
 		float colRulerCenter = box.size.x / 2.0f;
 
 		// main output
-		addOutput(createDynamicPort<GeoPort>(Vec(colRulerCenter, 380.0f - 332.5f), false, module, Energy::ENERGY_OUTPUT, module ? &module->panelTheme : NULL));
+		addOutput(createDynamicPort<GeoPort>(VecPx(colRulerCenter, 380.0f - 332.5f), false, module, Energy::ENERGY_OUTPUT, module ? &module->panelTheme : NULL));
 
 		// multiply input
-		addInput(createDynamicPort<GeoPort>(Vec(colRulerCenter, 380.0f - 280.5f), true, module, Energy::MULTIPLY_INPUT, module ? &module->panelTheme : NULL));
+		addInput(createDynamicPort<GeoPort>(VecPx(colRulerCenter, 380.0f - 280.5f), true, module, Energy::MULTIPLY_INPUT, module ? &module->panelTheme : NULL));
 		
 		// momentum inputs
-		addInput(createDynamicPort<GeoPort>(Vec(colRulerCenter, 380.0f - 236.5f), true, module, Energy::MOMENTUM_INPUTS + 1, module ? &module->panelTheme : NULL));
-		addInput(createDynamicPort<GeoPort>(Vec(colRulerCenter, 380.0f - 181.5f), true, module, Energy::MOMENTUM_INPUTS + 0, module ? &module->panelTheme : NULL));
+		addInput(createDynamicPort<GeoPort>(VecPx(colRulerCenter, 380.0f - 236.5f), true, module, Energy::MOMENTUM_INPUTS + 1, module ? &module->panelTheme : NULL));
+		addInput(createDynamicPort<GeoPort>(VecPx(colRulerCenter, 380.0f - 181.5f), true, module, Energy::MOMENTUM_INPUTS + 0, module ? &module->panelTheme : NULL));
 		
 		// cross button and light
-		addParam(createDynamicParam<GeoPushButton>(Vec(colRulerCenter, 380.0f - 205.5f), module, Energy::CROSS_PARAM, module ? &module->panelTheme : NULL));		
-		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(Vec(colRulerCenter - 7.5f, 380.0f - 219.5f), module, Energy::CROSS_LIGHT));
+		addParam(createDynamicParam<GeoPushButton>(VecPx(colRulerCenter, 380.0f - 205.5f), module, Energy::CROSS_PARAM, module ? &module->panelTheme : NULL));		
+		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(VecPx(colRulerCenter - 7.5f, 380.0f - 219.5f), module, Energy::CROSS_LIGHT));
 		
 		// routing lights
-		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(Vec(39, 380.0f - 141.5f), module, Energy::ROUTING_LIGHTS + 0));// bottom
-		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(Vec(51, 380.0f - 154.5f), module, Energy::ROUTING_LIGHTS + 1));// top
-		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(Vec(45, 380.0f - 148.5f), module, Energy::ROUTING_LIGHTS + 2));// middle
+		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(VecPx(39, 380.0f - 141.5f), module, Energy::ROUTING_LIGHTS + 0));// bottom
+		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(VecPx(51, 380.0f - 154.5f), module, Energy::ROUTING_LIGHTS + 1));// top
+		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(VecPx(45, 380.0f - 148.5f), module, Energy::ROUTING_LIGHTS + 2));// middle
 		
 		// momentum knobs
 		static const float offsetX = 30.0f;
-		addParam(createDynamicParam<GeoKnob>(Vec(colRulerCenter - offsetX, 380 - 209), module, Energy::MOMENTUM_PARAMS + 0, module ? &module->panelTheme : NULL));
-		addParam(createDynamicParam<GeoKnob>(Vec(colRulerCenter + offsetX, 380 - 209), module, Energy::MOMENTUM_PARAMS + 1, module ? &module->panelTheme : NULL));
+		addParam(createDynamicParam<GeoKnob>(VecPx(colRulerCenter - offsetX, 380 - 209), module, Energy::MOMENTUM_PARAMS + 0, module ? &module->panelTheme : NULL));
+		addParam(createDynamicParam<GeoKnob>(VecPx(colRulerCenter + offsetX, 380 - 209), module, Energy::MOMENTUM_PARAMS + 1, module ? &module->panelTheme : NULL));
 		
 		// momentum lights
-		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(Vec(colRulerCenter - offsetX, 380.0f - 186.0f), module, Energy::MOMENTUM_LIGHTS + 0));
-		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(Vec(colRulerCenter + offsetX, 380.0f - 186.0f), module, Energy::MOMENTUM_LIGHTS + 1));
+		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(VecPx(colRulerCenter - offsetX, 380.0f - 186.0f), module, Energy::MOMENTUM_LIGHTS + 0));
+		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(VecPx(colRulerCenter + offsetX, 380.0f - 186.0f), module, Energy::MOMENTUM_LIGHTS + 1));
 
 		// freq routing lights (below momentum lights)
-		addChild(createLightCentered<SmallLight<GeoBlueYellowLight>>(Vec(colRulerCenter - offsetX, 380.0f - 177.0f), module, Energy::FREQ_ROUTING_LIGHTS + 2 * 0));
-		addChild(createLightCentered<SmallLight<GeoBlueYellowLight>>(Vec(colRulerCenter + offsetX, 380.0f - 177.0f), module, Energy::FREQ_ROUTING_LIGHTS + 2 * 1));
+		addChild(createLightCentered<SmallLight<GeoBlueYellowLight>>(VecPx(colRulerCenter - offsetX, 380.0f - 177.0f), module, Energy::FREQ_ROUTING_LIGHTS + 2 * 0));
+		addChild(createLightCentered<SmallLight<GeoBlueYellowLight>>(VecPx(colRulerCenter + offsetX, 380.0f - 177.0f), module, Energy::FREQ_ROUTING_LIGHTS + 2 * 1));
 
 		// freq knobs
-		addParam(createDynamicParam<GeoKnob>(Vec(colRulerCenter - offsetX, 380 - 126), module, Energy::FREQ_PARAMS + 0, module ? &module->panelTheme : NULL));
-		addParam(createDynamicParam<GeoKnob>(Vec(colRulerCenter + offsetX, 380 - 126), module, Energy::FREQ_PARAMS + 1, module ? &module->panelTheme : NULL));
+		addParam(createDynamicParam<GeoKnob>(VecPx(colRulerCenter - offsetX, 380 - 126), module, Energy::FREQ_PARAMS + 0, module ? &module->panelTheme : NULL));
+		addParam(createDynamicParam<GeoKnob>(VecPx(colRulerCenter + offsetX, 380 - 126), module, Energy::FREQ_PARAMS + 1, module ? &module->panelTheme : NULL));
 		
 		// routing button
-		addParam(createDynamicParam<GeoPushButton>(Vec(colRulerCenter, 380.0f - 113.5f), module, Energy::ROUTING_PARAM, module ? &module->panelTheme : NULL));
+		addParam(createDynamicParam<GeoPushButton>(VecPx(colRulerCenter, 380.0f - 113.5f), module, Energy::ROUTING_PARAM, module ? &module->panelTheme : NULL));
 		
 		// freq input (v/oct)
-		addInput(createDynamicPort<GeoPort>(Vec(colRulerCenter, 380 - 84), true, module, Energy::FREQCV_INPUT, module ? &module->panelTheme : NULL));
+		addInput(createDynamicPort<GeoPort>(VecPx(colRulerCenter, 380 - 84), true, module, Energy::FREQCV_INPUT, module ? &module->panelTheme : NULL));
 
 		// planck buttons
-		addParam(createDynamicParam<GeoPushButton>(Vec(colRulerCenter - offsetX - 0.5f, 380.0f - 83.5f), module, Energy::PLANCK_PARAMS + 0, module ? &module->panelTheme : NULL));
-		addParam(createDynamicParam<GeoPushButton>(Vec(colRulerCenter + offsetX + 0.5f, 380.0f - 83.5f), module, Energy::PLANCK_PARAMS + 1, module ? &module->panelTheme : NULL));
+		addParam(createDynamicParam<GeoPushButton>(VecPx(colRulerCenter - offsetX - 0.5f, 380.0f - 83.5f), module, Energy::PLANCK_PARAMS + 0, module ? &module->panelTheme : NULL));
+		addParam(createDynamicParam<GeoPushButton>(VecPx(colRulerCenter + offsetX + 0.5f, 380.0f - 83.5f), module, Energy::PLANCK_PARAMS + 1, module ? &module->panelTheme : NULL));
 		
 		// planck lights
-		addChild(createLightCentered<SmallLight<GeoWhiteBlueLight>>(Vec(colRulerCenter - offsetX - 0.5f, 380.0f - 97.5f), module, Energy::PLANCK_LIGHTS + 0 * 2));
-		addChild(createLightCentered<SmallLight<GeoWhiteBlueLight>>(Vec(colRulerCenter + offsetX + 0.5f, 380.0f - 97.5f), module, Energy::PLANCK_LIGHTS + 1 * 2));
+		addChild(createLightCentered<SmallLight<GeoWhiteBlueLight>>(VecPx(colRulerCenter - offsetX - 0.5f, 380.0f - 97.5f), module, Energy::PLANCK_LIGHTS + 0 * 2));
+		addChild(createLightCentered<SmallLight<GeoWhiteBlueLight>>(VecPx(colRulerCenter + offsetX + 0.5f, 380.0f - 97.5f), module, Energy::PLANCK_LIGHTS + 1 * 2));
 		
 		// mod type buttons
-		addParam(createDynamicParam<GeoPushButton>(Vec(colRulerCenter - offsetX - 0.5f, 380.0f - 57.5f), module, Energy::MODTYPE_PARAMS + 0, module ? &module->panelTheme : NULL));
-		addParam(createDynamicParam<GeoPushButton>(Vec(colRulerCenter + offsetX + 0.5f, 380.0f - 57.5f), module, Energy::MODTYPE_PARAMS + 1, module ? &module->panelTheme : NULL));
+		addParam(createDynamicParam<GeoPushButton>(VecPx(colRulerCenter - offsetX - 0.5f, 380.0f - 57.5f), module, Energy::MODTYPE_PARAMS + 0, module ? &module->panelTheme : NULL));
+		addParam(createDynamicParam<GeoPushButton>(VecPx(colRulerCenter + offsetX + 0.5f, 380.0f - 57.5f), module, Energy::MODTYPE_PARAMS + 1, module ? &module->panelTheme : NULL));
 		
 		// mod type lights
-		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(Vec(colRulerCenter - 17.5f, 380.0f - 62.5f), module, Energy::ADD_LIGHTS + 0));
-		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(Vec(colRulerCenter + 17.5f, 380.0f - 62.5f), module, Energy::ADD_LIGHTS + 1));
-		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(Vec(colRulerCenter - 41.5f, 380.0f - 47.5f), module, Energy::AMP_LIGHTS + 0));
-		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(Vec(colRulerCenter + 41.5f, 380.0f - 47.5f), module, Energy::AMP_LIGHTS + 1));
+		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(VecPx(colRulerCenter - 17.5f, 380.0f - 62.5f), module, Energy::ADD_LIGHTS + 0));
+		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(VecPx(colRulerCenter + 17.5f, 380.0f - 62.5f), module, Energy::ADD_LIGHTS + 1));
+		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(VecPx(colRulerCenter - 41.5f, 380.0f - 47.5f), module, Energy::AMP_LIGHTS + 0));
+		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(VecPx(colRulerCenter + 41.5f, 380.0f - 47.5f), module, Energy::AMP_LIGHTS + 1));
 		
 		// freq inputs (mass and speed of light)
-		addInput(createDynamicPort<GeoPort>(Vec(colRulerCenter - offsetX - 0.5f, 380.0f - 32.5f), true, module, Energy::FREQCV_INPUTS + 0, module ? &module->panelTheme : NULL));
-		addInput(createDynamicPort<GeoPort>(Vec(colRulerCenter + offsetX + 0.5f, 380.0f - 32.5f), true, module, Energy::FREQCV_INPUTS + 1, module ? &module->panelTheme : NULL));
+		addInput(createDynamicPort<GeoPort>(VecPx(colRulerCenter - offsetX - 0.5f, 380.0f - 32.5f), true, module, Energy::FREQCV_INPUTS + 0, module ? &module->panelTheme : NULL));
+		addInput(createDynamicPort<GeoPort>(VecPx(colRulerCenter + offsetX + 0.5f, 380.0f - 32.5f), true, module, Energy::FREQCV_INPUTS + 1, module ? &module->panelTheme : NULL));
 	}
 	
 	void step() override {
@@ -522,7 +522,3 @@ struct EnergyWidget : ModuleWidget {
 };
 
 Model *modelEnergy = createModel<Energy, EnergyWidget>("Energy");
-
-/*CHANGE LOG
-
-*/

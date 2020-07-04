@@ -113,10 +113,3 @@ struct BlankInfoWidget : ModuleWidget {
 };
 
 Model *modelBlankInfo = createModel<BlankInfo, BlankInfoWidget>("Blank-PanelInfo");
-
-/*CHANGE LOG
-
-1.0.0:
-slug changed from "Blank-Panel Info" to "Blank-PanelInfo"
-
-*/

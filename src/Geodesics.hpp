@@ -9,8 +9,7 @@
 //***********************************************************************************************
 
 
-#ifndef GEODESICS_HPP
-#define GEODESICS_HPP
+#pragma once
 
 #include "rack.hpp"
 #include "GeoWidgets.hpp"
@@ -87,8 +86,8 @@ struct GeoPushButton : DynamicSVGSwitch {
 
 struct GeoKnob : DynamicSVGKnob {
 	GeoKnob() {
-		minAngle = -0.73*M_PI;
-		maxAngle = 0.73*M_PI;
+		minAngle = -0.73 * float(M_PI);
+		maxAngle = 0.73 * float(M_PI);
 		//shadow->box.pos = Vec(0.0, box.size.y * 0.15); may need this if knob is small (taken from IMSmallKnob)
 		addFrameAll(APP->window->loadSvg(asset::plugin(pluginInstance, "res/WhiteLight/Knob-WL.svg")));
 		addFrameAlt(asset::plugin(pluginInstance, "res/DarkMatter/Knob-DM.svg"));
@@ -97,32 +96,32 @@ struct GeoKnob : DynamicSVGKnob {
 };
 
 struct GeoKnobTopRight : GeoKnob {
-	GeoKnobTopRight() {setOrientation(M_PI / 4.0f);}
+	GeoKnobTopRight() {setOrientation(float(M_PI) / 4.0f);}
 };
 struct GeoKnobRight : GeoKnob {
-	GeoKnobRight() {setOrientation(M_PI / 2.0f);}
+	GeoKnobRight() {setOrientation(float(M_PI) / 2.0f);}
 };
 struct GeoKnobBotRight : GeoKnob {
-	GeoKnobBotRight() {setOrientation(3.0f * M_PI / 4.0f);}
+	GeoKnobBotRight() {setOrientation(3.0f * float(M_PI) / 4.0f);}
 };
 struct GeoKnobBottom : GeoKnob {
-	GeoKnobBottom() {setOrientation(M_PI);}
+	GeoKnobBottom() {setOrientation(float(M_PI));}
 };
 struct GeoKnobBotLeft : GeoKnob {
-	GeoKnobBotLeft() {setOrientation(5.0f * M_PI / 4.0f);}
+	GeoKnobBotLeft() {setOrientation(5.0f * float(M_PI) / 4.0f);}
 };
 struct GeoKnobLeft : GeoKnob {
-	GeoKnobLeft() {setOrientation(M_PI / -2.0f);}
+	GeoKnobLeft() {setOrientation(float(M_PI) / -2.0f);}
 };
 struct GeoKnobTopLeft : GeoKnob {
-	GeoKnobTopLeft() {setOrientation(M_PI / -4.0f);}
+	GeoKnobTopLeft() {setOrientation(float(M_PI) / -4.0f);}
 };
 
 
 struct BlankCKnob : DynamicSVGKnob {
 	BlankCKnob() {
-		minAngle = -0.73*M_PI;
-		maxAngle = 0.73*M_PI;
+		minAngle = -0.73 * float(M_PI);
+		maxAngle = 0.73 * float(M_PI);
 		addFrameAll(APP->window->loadSvg(asset::plugin(pluginInstance, "res/WhiteLight/C-WL.svg")));
 		addFrameAlt(asset::plugin(pluginInstance, "res/DarkMatter/C-DM.svg"));
 		shadow->opacity = 0.0;
@@ -226,6 +225,16 @@ struct GeoBlueYellowRedWhiteLight : GeoGrayModuleLight {
 
 // Other
 
+struct VecPx : Vec {
+	// temporary method to avoid having to convert all px coordinates to mm; no use when making a new module (since mm is the standard)
+	static constexpr float scl = 5.08f / 15.0f;
+	VecPx(float _x, float _y) {
+		x = mm2px(_x * scl);
+		y = mm2px(_y * scl);
+	}
+};
+
+
 struct RefreshCounter {
 	static const unsigned int displayRefreshStepSkips = 256;
 	static const unsigned int userInputsStepSkipMask = 0xF;// sub interval of displayRefreshStepSkips, since inputs should be more responsive than lights
@@ -279,7 +288,7 @@ struct OnePoleFilter {
 	// float lastin = 0.0f;
 	
     void setCutoff(float Fc) {
-		b1 = std::exp(-2.0f * M_PI * Fc);
+		b1 = std::exp(-2.0f * float(M_PI) * Fc);
 	}
     float process(float in) {
 		// lastin = in;
@@ -332,6 +341,3 @@ struct DarkDefaultItem : MenuItem {
 		saveDarkAsDefault(rightText.empty());// implicitly toggled
 	}
 };	
-
-
-#endif

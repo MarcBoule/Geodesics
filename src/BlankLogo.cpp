@@ -187,8 +187,8 @@ struct BlankLogoWidget : ModuleWidget {
 		// Screws
 		// part of svg panel, no code required
 		
-		addParam(createDynamicParam<BlankCKnob>(Vec(29.5f,74.2f), module, BlankLogo::CLK_FREQ_PARAM, module ? &module->panelTheme : NULL));// 120 BMP when default value
-		addOutput(createOutputCentered<BlankPort>(Vec(29.5f,187.5f), module, BlankLogo::OUT_OUTPUT));	
+		addParam(createDynamicParam<BlankCKnob>(VecPx(29.5f,74.2f), module, BlankLogo::CLK_FREQ_PARAM, module ? &module->panelTheme : NULL));// 120 BMP when default value
+		addOutput(createOutputCentered<BlankPort>(VecPx(29.5f,187.5f), module, BlankLogo::OUT_OUTPUT));	
 	}
 	
 	void step() override {
@@ -201,11 +201,3 @@ struct BlankLogoWidget : ModuleWidget {
 };
 
 Model *modelBlankLogo = createModel<BlankLogo, BlankLogoWidget>("Blank-PanelLogo");
-
-/*CHANGE LOG
-
-1.0.0:
-slug changed from "Blank-Panel Logo" to "Blank-PanelLogo"
-
-*/
-

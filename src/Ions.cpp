@@ -563,46 +563,46 @@ struct IonsWidget : ModuleWidget {
 		static constexpr float offset3 = 43.0f;
 		
 		// Outputs
-		addOutput(createDynamicPort<GeoPort>(Vec(colRulerCenter, rowRulerAtomA), false, module, Ions::SEQ_OUTPUTS + 0, module ? &module->panelTheme : NULL));		
-		addOutput(createDynamicPort<GeoPort>(Vec(colRulerCenter, rowRulerAtomB), false, module, Ions::SEQ_OUTPUTS + 1, module ? &module->panelTheme : NULL));		
+		addOutput(createDynamicPort<GeoPort>(VecPx(colRulerCenter, rowRulerAtomA), false, module, Ions::SEQ_OUTPUTS + 0, module ? &module->panelTheme : NULL));		
+		addOutput(createDynamicPort<GeoPort>(VecPx(colRulerCenter, rowRulerAtomB), false, module, Ions::SEQ_OUTPUTS + 1, module ? &module->panelTheme : NULL));		
 		
 		// CV knobs
-		addParam(createDynamicParam<GeoKnob>(Vec(colRulerCenter, rowRulerAtomA + radius3 + 2.0f), module, Ions::CV_PARAMS + 0, module ? &module->panelTheme : NULL));
-		addParam(createDynamicParam<GeoKnob>(Vec(colRulerCenter + offset3, rowRulerAtomA + offset3), module, Ions::CV_PARAMS + 1, module ? &module->panelTheme : NULL));
-		addParam(createDynamicParam<GeoKnob>(Vec(colRulerCenter + radius3, rowRulerAtomA), module, Ions::CV_PARAMS + 2, module ? &module->panelTheme : NULL));
-		addParam(createDynamicParam<GeoKnob>(Vec(colRulerCenter + offset3, rowRulerAtomA - offset3), module, Ions::CV_PARAMS + 3, module ? &module->panelTheme : NULL));
-		addParam(createDynamicParam<GeoKnob>(Vec(colRulerCenter, rowRulerAtomA - radius3), module, Ions::CV_PARAMS + 4, module ? &module->panelTheme : NULL));
-		addParam(createDynamicParam<GeoKnob>(Vec(colRulerCenter - offset3, rowRulerAtomA - offset3), module, Ions::CV_PARAMS + 5, module ? &module->panelTheme : NULL));
-		addParam(createDynamicParam<GeoKnob>(Vec(colRulerCenter - radius3, rowRulerAtomA), module, Ions::CV_PARAMS + 6, module ? &module->panelTheme : NULL));
-		addParam(createDynamicParam<GeoKnob>(Vec(colRulerCenter - offset3, rowRulerAtomA + offset3), module, Ions::CV_PARAMS + 7, module ? &module->panelTheme : NULL));
+		addParam(createDynamicParam<GeoKnob>(VecPx(colRulerCenter, rowRulerAtomA + radius3 + 2.0f), module, Ions::CV_PARAMS + 0, module ? &module->panelTheme : NULL));
+		addParam(createDynamicParam<GeoKnob>(VecPx(colRulerCenter + offset3, rowRulerAtomA + offset3), module, Ions::CV_PARAMS + 1, module ? &module->panelTheme : NULL));
+		addParam(createDynamicParam<GeoKnob>(VecPx(colRulerCenter + radius3, rowRulerAtomA), module, Ions::CV_PARAMS + 2, module ? &module->panelTheme : NULL));
+		addParam(createDynamicParam<GeoKnob>(VecPx(colRulerCenter + offset3, rowRulerAtomA - offset3), module, Ions::CV_PARAMS + 3, module ? &module->panelTheme : NULL));
+		addParam(createDynamicParam<GeoKnob>(VecPx(colRulerCenter, rowRulerAtomA - radius3), module, Ions::CV_PARAMS + 4, module ? &module->panelTheme : NULL));
+		addParam(createDynamicParam<GeoKnob>(VecPx(colRulerCenter - offset3, rowRulerAtomA - offset3), module, Ions::CV_PARAMS + 5, module ? &module->panelTheme : NULL));
+		addParam(createDynamicParam<GeoKnob>(VecPx(colRulerCenter - radius3, rowRulerAtomA), module, Ions::CV_PARAMS + 6, module ? &module->panelTheme : NULL));
+		addParam(createDynamicParam<GeoKnob>(VecPx(colRulerCenter - offset3, rowRulerAtomA + offset3), module, Ions::CV_PARAMS + 7, module ? &module->panelTheme : NULL));
 		//
-		addParam(createDynamicParam<GeoKnob>(Vec(colRulerCenter + offset3, rowRulerAtomB - offset3), module, Ions::CV_PARAMS + 8, module ? &module->panelTheme : NULL));
-		addParam(createDynamicParam<GeoKnob>(Vec(colRulerCenter + radius3, rowRulerAtomB), module, Ions::CV_PARAMS + 9, module ? &module->panelTheme : NULL));
-		addParam(createDynamicParam<GeoKnob>(Vec(colRulerCenter + offset3, rowRulerAtomB + offset3), module, Ions::CV_PARAMS + 10, module ? &module->panelTheme : NULL));
-		addParam(createDynamicParam<GeoKnob>(Vec(colRulerCenter, rowRulerAtomB + radius3), module, Ions::CV_PARAMS + 11, module ? &module->panelTheme : NULL));
-		addParam(createDynamicParam<GeoKnob>(Vec(colRulerCenter - offset3, rowRulerAtomB + offset3), module, Ions::CV_PARAMS + 12, module ? &module->panelTheme : NULL));
-		addParam(createDynamicParam<GeoKnob>(Vec(colRulerCenter - radius3, rowRulerAtomB), module, Ions::CV_PARAMS + 13, module ? &module->panelTheme : NULL));
-		addParam(createDynamicParam<GeoKnob>(Vec(colRulerCenter - offset3, rowRulerAtomB - offset3), module, Ions::CV_PARAMS + 14, module ? &module->panelTheme : NULL));
+		addParam(createDynamicParam<GeoKnob>(VecPx(colRulerCenter + offset3, rowRulerAtomB - offset3), module, Ions::CV_PARAMS + 8, module ? &module->panelTheme : NULL));
+		addParam(createDynamicParam<GeoKnob>(VecPx(colRulerCenter + radius3, rowRulerAtomB), module, Ions::CV_PARAMS + 9, module ? &module->panelTheme : NULL));
+		addParam(createDynamicParam<GeoKnob>(VecPx(colRulerCenter + offset3, rowRulerAtomB + offset3), module, Ions::CV_PARAMS + 10, module ? &module->panelTheme : NULL));
+		addParam(createDynamicParam<GeoKnob>(VecPx(colRulerCenter, rowRulerAtomB + radius3), module, Ions::CV_PARAMS + 11, module ? &module->panelTheme : NULL));
+		addParam(createDynamicParam<GeoKnob>(VecPx(colRulerCenter - offset3, rowRulerAtomB + offset3), module, Ions::CV_PARAMS + 12, module ? &module->panelTheme : NULL));
+		addParam(createDynamicParam<GeoKnob>(VecPx(colRulerCenter - radius3, rowRulerAtomB), module, Ions::CV_PARAMS + 13, module ? &module->panelTheme : NULL));
+		addParam(createDynamicParam<GeoKnob>(VecPx(colRulerCenter - offset3, rowRulerAtomB - offset3), module, Ions::CV_PARAMS + 14, module ? &module->panelTheme : NULL));
 		
 		// Prob knob and CV inuput
 		float probX = colRulerCenter + 2.0f * offset3;
 		float probY = rowRulerAtomA + radius3 + 2.0f;
-		addParam(createDynamicParam<GeoKnobLeft>(Vec(probX, probY), module, Ions::PROB_PARAM, module ? &module->panelTheme : NULL));
-		addInput(createDynamicPort<GeoPort>(Vec(probX + 32.0f, probY), true, module, Ions::PROB_INPUT, module ? &module->panelTheme : NULL));
+		addParam(createDynamicParam<GeoKnobLeft>(VecPx(probX, probY), module, Ions::PROB_PARAM, module ? &module->panelTheme : NULL));
+		addInput(createDynamicPort<GeoPort>(VecPx(probX + 32.0f, probY), true, module, Ions::PROB_INPUT, module ? &module->panelTheme : NULL));
 		
 		// Jump pulses
-		addOutput(createDynamicPort<GeoPort>(Vec(probX + 18.0f, probY - 37.2f), false, module, Ions::JUMP_OUTPUTS + 0, module ? &module->panelTheme : NULL));		
-		addOutput(createDynamicPort<GeoPort>(Vec(probX + 18.0f, probY + 36.7f), false, module, Ions::JUMP_OUTPUTS + 1, module ? &module->panelTheme : NULL));		
+		addOutput(createDynamicPort<GeoPort>(VecPx(probX + 18.0f, probY - 37.2f), false, module, Ions::JUMP_OUTPUTS + 0, module ? &module->panelTheme : NULL));		
+		addOutput(createDynamicPort<GeoPort>(VecPx(probX + 18.0f, probY + 36.7f), false, module, Ions::JUMP_OUTPUTS + 1, module ? &module->panelTheme : NULL));		
 		// Jump lights
-		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(Vec(probX - 3.0f, probY - 37.2f - 4.8f), module, Ions::JUMP_LIGHTS + 0));
-		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(Vec(probX - 3.0f, probY + 36.7f + 5.0f), module, Ions::JUMP_LIGHTS + 1));
+		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(VecPx(probX - 3.0f, probY - 37.2f - 4.8f), module, Ions::JUMP_LIGHTS + 0));
+		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(VecPx(probX - 3.0f, probY + 36.7f + 5.0f), module, Ions::JUMP_LIGHTS + 1));
 		
 		// Plank light and button (top)
-		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(Vec(233.5f, 60.5f), module, Ions::PLANK_LIGHTS + 0));
-		addParam(createDynamicParam<GeoPushButton>(Vec(225.5f, 48.5f), module, Ions::PLANK_PARAM, module ? &module->panelTheme : NULL));	
+		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(VecPx(233.5f, 60.5f), module, Ions::PLANK_LIGHTS + 0));
+		addParam(createDynamicParam<GeoPushButton>(VecPx(225.5f, 48.5f), module, Ions::PLANK_PARAM, module ? &module->panelTheme : NULL));	
 		// Plank light and button (bottom)
-		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(Vec(233.5f, 298.5f), module, Ions::PLANK_LIGHTS + 1));
-		addParam(createDynamicParam<GeoPushButton>(Vec(225.5f, 310.5f), module, Ions::PLANK2_PARAM, module ? &module->panelTheme : NULL));	
+		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(VecPx(233.5f, 298.5f), module, Ions::PLANK_LIGHTS + 1));
+		addParam(createDynamicParam<GeoPushButton>(VecPx(225.5f, 310.5f), module, Ions::PLANK2_PARAM, module ? &module->panelTheme : NULL));	
 
 		// Octave buttons and lights
 		float octX = colRulerCenter + 107.0f;
@@ -610,113 +610,113 @@ struct IonsWidget : ModuleWidget {
 		float octYA = rowRulerAtomA - octOffsetY;
 		float octYB = rowRulerAtomB + octOffsetY;
 		// top:
-		addParam(createDynamicParam<GeoPushButton>(Vec(octX, octYA), module, Ions::OCT_PARAMS + 0, module ? &module->panelTheme : NULL));	
-		addChild(createLightCentered<SmallLight<GeoBlueLight>>(Vec(octX - 15.0f, octYA + 2.5f), module, Ions::OCTA_LIGHTS + 0));
-		addChild(createLightCentered<SmallLight<GeoBlueLight>>(Vec(octX - 12.0f, octYA - 8.0f), module, Ions::OCTA_LIGHTS + 1));
-		addChild(createLightCentered<SmallLight<GeoBlueLight>>(Vec(octX - 10.0f, octYA + 11.5f), module, Ions::OCTA_LIGHTS + 1));
-		addChild(createLightCentered<SmallLight<GeoBlueLight>>(Vec(octX - 3.0f, octYA - 13.5f), module, Ions::OCTA_LIGHTS + 2));
-		addChild(createLightCentered<SmallLight<GeoBlueLight>>(Vec(octX + 0.0f, octYA + 15.0f), module, Ions::OCTA_LIGHTS + 2));		
+		addParam(createDynamicParam<GeoPushButton>(VecPx(octX, octYA), module, Ions::OCT_PARAMS + 0, module ? &module->panelTheme : NULL));	
+		addChild(createLightCentered<SmallLight<GeoBlueLight>>(VecPx(octX - 15.0f, octYA + 2.5f), module, Ions::OCTA_LIGHTS + 0));
+		addChild(createLightCentered<SmallLight<GeoBlueLight>>(VecPx(octX - 12.0f, octYA - 8.0f), module, Ions::OCTA_LIGHTS + 1));
+		addChild(createLightCentered<SmallLight<GeoBlueLight>>(VecPx(octX - 10.0f, octYA + 11.5f), module, Ions::OCTA_LIGHTS + 1));
+		addChild(createLightCentered<SmallLight<GeoBlueLight>>(VecPx(octX - 3.0f, octYA - 13.5f), module, Ions::OCTA_LIGHTS + 2));
+		addChild(createLightCentered<SmallLight<GeoBlueLight>>(VecPx(octX + 0.0f, octYA + 15.0f), module, Ions::OCTA_LIGHTS + 2));		
 		// bottom:
-		addParam(createDynamicParam<GeoPushButton>(Vec(octX, octYB), module, Ions::OCT_PARAMS + 1, module ? &module->panelTheme : NULL));	
-		addChild(createLightCentered<SmallLight<GeoYellowLight>>(Vec(octX - 15.0f, octYB - 2.5f), module, Ions::OCTB_LIGHTS + 0));
-		addChild(createLightCentered<SmallLight<GeoYellowLight>>(Vec(octX - 12.0f, octYB + 8.0f), module, Ions::OCTB_LIGHTS + 1));
-		addChild(createLightCentered<SmallLight<GeoYellowLight>>(Vec(octX - 10.0f, octYB - 11.5f), module, Ions::OCTB_LIGHTS + 1));
-		addChild(createLightCentered<SmallLight<GeoYellowLight>>(Vec(octX - 3.0f, octYB + 13.5f), module, Ions::OCTB_LIGHTS + 2));
-		addChild(createLightCentered<SmallLight<GeoYellowLight>>(Vec(octX + 0.0f, octYB - 15.0f), module, Ions::OCTB_LIGHTS + 2));
+		addParam(createDynamicParam<GeoPushButton>(VecPx(octX, octYB), module, Ions::OCT_PARAMS + 1, module ? &module->panelTheme : NULL));	
+		addChild(createLightCentered<SmallLight<GeoYellowLight>>(VecPx(octX - 15.0f, octYB - 2.5f), module, Ions::OCTB_LIGHTS + 0));
+		addChild(createLightCentered<SmallLight<GeoYellowLight>>(VecPx(octX - 12.0f, octYB + 8.0f), module, Ions::OCTB_LIGHTS + 1));
+		addChild(createLightCentered<SmallLight<GeoYellowLight>>(VecPx(octX - 10.0f, octYB - 11.5f), module, Ions::OCTB_LIGHTS + 1));
+		addChild(createLightCentered<SmallLight<GeoYellowLight>>(VecPx(octX - 3.0f, octYB + 13.5f), module, Ions::OCTB_LIGHTS + 2));
+		addChild(createLightCentered<SmallLight<GeoYellowLight>>(VecPx(octX + 0.0f, octYB - 15.0f), module, Ions::OCTB_LIGHTS + 2));
 		// Oct CV inputs
-		addInput(createDynamicPort<GeoPort>(Vec(octX - 7.0f, octYA - 31.0f), true, module, Ions::OCTCV_INPUTS + 0, module ? &module->panelTheme : NULL));
-		addInput(createDynamicPort<GeoPort>(Vec(octX - 7.0f, octYB + 31.0f), true, module, Ions::OCTCV_INPUTS + 1, module ? &module->panelTheme : NULL));
+		addInput(createDynamicPort<GeoPort>(VecPx(octX - 7.0f, octYA - 31.0f), true, module, Ions::OCTCV_INPUTS + 0, module ? &module->panelTheme : NULL));
+		addInput(createDynamicPort<GeoPort>(VecPx(octX - 7.0f, octYB + 31.0f), true, module, Ions::OCTCV_INPUTS + 1, module ? &module->panelTheme : NULL));
 		
 		// Blue electron lights
 		// top blue
-		addChild(createLightCentered<SmallLight<GeoBlueLight>>(Vec(colRulerCenter, rowRulerAtomA + radius2), module, Ions::BLUE_LIGHTS + 0));
-		addChild(createLightCentered<SmallLight<GeoBlueLight>>(Vec(colRulerCenter + offset2, rowRulerAtomA + offset2), module, Ions::BLUE_LIGHTS + 1));
-		addChild(createLightCentered<SmallLight<GeoBlueLight>>(Vec(colRulerCenter + radius2, rowRulerAtomA), module, Ions::BLUE_LIGHTS + 2));
-		addChild(createLightCentered<SmallLight<GeoBlueLight>>(Vec(colRulerCenter + offset2, rowRulerAtomA - offset2), module, Ions::BLUE_LIGHTS + 3));
-		addChild(createLightCentered<SmallLight<GeoBlueLight>>(Vec(colRulerCenter, rowRulerAtomA - radius2), module, Ions::BLUE_LIGHTS + 4));
-		addChild(createLightCentered<SmallLight<GeoBlueLight>>(Vec(colRulerCenter - offset2, rowRulerAtomA - offset2), module, Ions::BLUE_LIGHTS + 5));
-		addChild(createLightCentered<SmallLight<GeoBlueLight>>(Vec(colRulerCenter - radius2, rowRulerAtomA), module, Ions::BLUE_LIGHTS + 6));
-		addChild(createLightCentered<SmallLight<GeoBlueLight>>(Vec(colRulerCenter - offset2, rowRulerAtomA + offset2), module, Ions::BLUE_LIGHTS + 7));
+		addChild(createLightCentered<SmallLight<GeoBlueLight>>(VecPx(colRulerCenter, rowRulerAtomA + radius2), module, Ions::BLUE_LIGHTS + 0));
+		addChild(createLightCentered<SmallLight<GeoBlueLight>>(VecPx(colRulerCenter + offset2, rowRulerAtomA + offset2), module, Ions::BLUE_LIGHTS + 1));
+		addChild(createLightCentered<SmallLight<GeoBlueLight>>(VecPx(colRulerCenter + radius2, rowRulerAtomA), module, Ions::BLUE_LIGHTS + 2));
+		addChild(createLightCentered<SmallLight<GeoBlueLight>>(VecPx(colRulerCenter + offset2, rowRulerAtomA - offset2), module, Ions::BLUE_LIGHTS + 3));
+		addChild(createLightCentered<SmallLight<GeoBlueLight>>(VecPx(colRulerCenter, rowRulerAtomA - radius2), module, Ions::BLUE_LIGHTS + 4));
+		addChild(createLightCentered<SmallLight<GeoBlueLight>>(VecPx(colRulerCenter - offset2, rowRulerAtomA - offset2), module, Ions::BLUE_LIGHTS + 5));
+		addChild(createLightCentered<SmallLight<GeoBlueLight>>(VecPx(colRulerCenter - radius2, rowRulerAtomA), module, Ions::BLUE_LIGHTS + 6));
+		addChild(createLightCentered<SmallLight<GeoBlueLight>>(VecPx(colRulerCenter - offset2, rowRulerAtomA + offset2), module, Ions::BLUE_LIGHTS + 7));
 		// bottom blue
-		addChild(createLightCentered<SmallLight<GeoBlueLight>>(Vec(colRulerCenter, rowRulerAtomB - radius1), module, Ions::BLUE_LIGHTS + 8));
-		addChild(createLightCentered<SmallLight<GeoBlueLight>>(Vec(colRulerCenter + offset1, rowRulerAtomB - offset1), module, Ions::BLUE_LIGHTS + 9));
-		addChild(createLightCentered<SmallLight<GeoBlueLight>>(Vec(colRulerCenter + radius1, rowRulerAtomB), module, Ions::BLUE_LIGHTS + 10));
-		addChild(createLightCentered<SmallLight<GeoBlueLight>>(Vec(colRulerCenter + offset1, rowRulerAtomB + offset1), module, Ions::BLUE_LIGHTS + 11));
-		addChild(createLightCentered<SmallLight<GeoBlueLight>>(Vec(colRulerCenter, rowRulerAtomB + radius1), module, Ions::BLUE_LIGHTS + 12));
-		addChild(createLightCentered<SmallLight<GeoBlueLight>>(Vec(colRulerCenter - offset1, rowRulerAtomB + offset1), module, Ions::BLUE_LIGHTS + 13));
-		addChild(createLightCentered<SmallLight<GeoBlueLight>>(Vec(colRulerCenter - radius1, rowRulerAtomB), module, Ions::BLUE_LIGHTS + 14));
-		addChild(createLightCentered<SmallLight<GeoBlueLight>>(Vec(colRulerCenter - offset1, rowRulerAtomB - offset1), module, Ions::BLUE_LIGHTS + 15));
+		addChild(createLightCentered<SmallLight<GeoBlueLight>>(VecPx(colRulerCenter, rowRulerAtomB - radius1), module, Ions::BLUE_LIGHTS + 8));
+		addChild(createLightCentered<SmallLight<GeoBlueLight>>(VecPx(colRulerCenter + offset1, rowRulerAtomB - offset1), module, Ions::BLUE_LIGHTS + 9));
+		addChild(createLightCentered<SmallLight<GeoBlueLight>>(VecPx(colRulerCenter + radius1, rowRulerAtomB), module, Ions::BLUE_LIGHTS + 10));
+		addChild(createLightCentered<SmallLight<GeoBlueLight>>(VecPx(colRulerCenter + offset1, rowRulerAtomB + offset1), module, Ions::BLUE_LIGHTS + 11));
+		addChild(createLightCentered<SmallLight<GeoBlueLight>>(VecPx(colRulerCenter, rowRulerAtomB + radius1), module, Ions::BLUE_LIGHTS + 12));
+		addChild(createLightCentered<SmallLight<GeoBlueLight>>(VecPx(colRulerCenter - offset1, rowRulerAtomB + offset1), module, Ions::BLUE_LIGHTS + 13));
+		addChild(createLightCentered<SmallLight<GeoBlueLight>>(VecPx(colRulerCenter - radius1, rowRulerAtomB), module, Ions::BLUE_LIGHTS + 14));
+		addChild(createLightCentered<SmallLight<GeoBlueLight>>(VecPx(colRulerCenter - offset1, rowRulerAtomB - offset1), module, Ions::BLUE_LIGHTS + 15));
 		
 		// Yellow electron lights
 		// bottom yellow
-		addChild(createLightCentered<SmallLight<GeoYellowLight>>(Vec(colRulerCenter, rowRulerAtomB - radius2), module, Ions::YELLOW_LIGHTS + 0));
-		addChild(createLightCentered<SmallLight<GeoYellowLight>>(Vec(colRulerCenter + offset2, rowRulerAtomB - offset2), module, Ions::YELLOW_LIGHTS + 1));
-		addChild(createLightCentered<SmallLight<GeoYellowLight>>(Vec(colRulerCenter + radius2, rowRulerAtomB), module, Ions::YELLOW_LIGHTS + 2));
-		addChild(createLightCentered<SmallLight<GeoYellowLight>>(Vec(colRulerCenter + offset2, rowRulerAtomB + offset2), module, Ions::YELLOW_LIGHTS + 3));
-		addChild(createLightCentered<SmallLight<GeoYellowLight>>(Vec(colRulerCenter, rowRulerAtomB + radius2), module, Ions::YELLOW_LIGHTS + 4));
-		addChild(createLightCentered<SmallLight<GeoYellowLight>>(Vec(colRulerCenter - offset2, rowRulerAtomB + offset2), module, Ions::YELLOW_LIGHTS + 5));
-		addChild(createLightCentered<SmallLight<GeoYellowLight>>(Vec(colRulerCenter - radius2, rowRulerAtomB), module, Ions::YELLOW_LIGHTS + 6));
-		addChild(createLightCentered<SmallLight<GeoYellowLight>>(Vec(colRulerCenter - offset2, rowRulerAtomB - offset2), module, Ions::YELLOW_LIGHTS + 7));		
+		addChild(createLightCentered<SmallLight<GeoYellowLight>>(VecPx(colRulerCenter, rowRulerAtomB - radius2), module, Ions::YELLOW_LIGHTS + 0));
+		addChild(createLightCentered<SmallLight<GeoYellowLight>>(VecPx(colRulerCenter + offset2, rowRulerAtomB - offset2), module, Ions::YELLOW_LIGHTS + 1));
+		addChild(createLightCentered<SmallLight<GeoYellowLight>>(VecPx(colRulerCenter + radius2, rowRulerAtomB), module, Ions::YELLOW_LIGHTS + 2));
+		addChild(createLightCentered<SmallLight<GeoYellowLight>>(VecPx(colRulerCenter + offset2, rowRulerAtomB + offset2), module, Ions::YELLOW_LIGHTS + 3));
+		addChild(createLightCentered<SmallLight<GeoYellowLight>>(VecPx(colRulerCenter, rowRulerAtomB + radius2), module, Ions::YELLOW_LIGHTS + 4));
+		addChild(createLightCentered<SmallLight<GeoYellowLight>>(VecPx(colRulerCenter - offset2, rowRulerAtomB + offset2), module, Ions::YELLOW_LIGHTS + 5));
+		addChild(createLightCentered<SmallLight<GeoYellowLight>>(VecPx(colRulerCenter - radius2, rowRulerAtomB), module, Ions::YELLOW_LIGHTS + 6));
+		addChild(createLightCentered<SmallLight<GeoYellowLight>>(VecPx(colRulerCenter - offset2, rowRulerAtomB - offset2), module, Ions::YELLOW_LIGHTS + 7));		
 		// top yellow
-		addChild(createLightCentered<SmallLight<GeoYellowLight>>(Vec(colRulerCenter, rowRulerAtomA + radius1), module, Ions::YELLOW_LIGHTS + 8));
-		addChild(createLightCentered<SmallLight<GeoYellowLight>>(Vec(colRulerCenter + offset1, rowRulerAtomA + offset1), module, Ions::YELLOW_LIGHTS + 9));
-		addChild(createLightCentered<SmallLight<GeoYellowLight>>(Vec(colRulerCenter + radius1, rowRulerAtomA), module, Ions::YELLOW_LIGHTS + 10));
-		addChild(createLightCentered<SmallLight<GeoYellowLight>>(Vec(colRulerCenter + offset1, rowRulerAtomA - offset1), module, Ions::YELLOW_LIGHTS + 11));
-		addChild(createLightCentered<SmallLight<GeoYellowLight>>(Vec(colRulerCenter, rowRulerAtomA - radius1), module, Ions::YELLOW_LIGHTS + 12));
-		addChild(createLightCentered<SmallLight<GeoYellowLight>>(Vec(colRulerCenter - offset1, rowRulerAtomA - offset1), module, Ions::YELLOW_LIGHTS + 13));
-		addChild(createLightCentered<SmallLight<GeoYellowLight>>(Vec(colRulerCenter - radius1, rowRulerAtomA), module, Ions::YELLOW_LIGHTS + 14));
-		addChild(createLightCentered<SmallLight<GeoYellowLight>>(Vec(colRulerCenter - offset1, rowRulerAtomA + offset1), module, Ions::YELLOW_LIGHTS + 15));
+		addChild(createLightCentered<SmallLight<GeoYellowLight>>(VecPx(colRulerCenter, rowRulerAtomA + radius1), module, Ions::YELLOW_LIGHTS + 8));
+		addChild(createLightCentered<SmallLight<GeoYellowLight>>(VecPx(colRulerCenter + offset1, rowRulerAtomA + offset1), module, Ions::YELLOW_LIGHTS + 9));
+		addChild(createLightCentered<SmallLight<GeoYellowLight>>(VecPx(colRulerCenter + radius1, rowRulerAtomA), module, Ions::YELLOW_LIGHTS + 10));
+		addChild(createLightCentered<SmallLight<GeoYellowLight>>(VecPx(colRulerCenter + offset1, rowRulerAtomA - offset1), module, Ions::YELLOW_LIGHTS + 11));
+		addChild(createLightCentered<SmallLight<GeoYellowLight>>(VecPx(colRulerCenter, rowRulerAtomA - radius1), module, Ions::YELLOW_LIGHTS + 12));
+		addChild(createLightCentered<SmallLight<GeoYellowLight>>(VecPx(colRulerCenter - offset1, rowRulerAtomA - offset1), module, Ions::YELLOW_LIGHTS + 13));
+		addChild(createLightCentered<SmallLight<GeoYellowLight>>(VecPx(colRulerCenter - radius1, rowRulerAtomA), module, Ions::YELLOW_LIGHTS + 14));
+		addChild(createLightCentered<SmallLight<GeoYellowLight>>(VecPx(colRulerCenter - offset1, rowRulerAtomA + offset1), module, Ions::YELLOW_LIGHTS + 15));
 
 		// Run jack, light and button
 		static constexpr float rowRulerRunJack = 348.5f;
 		static constexpr float offsetRunJackX = 119.5f;
-		addInput(createDynamicPort<GeoPort>(Vec(colRulerCenter - offsetRunJackX, rowRulerRunJack), true, module, Ions::RUN_INPUT, module ? &module->panelTheme : NULL));
-		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(Vec(colRulerCenter - offsetRunJackX + 18.0f, rowRulerRunJack), module, Ions::RUN_LIGHT));
-		addParam(createDynamicParam<GeoPushButton>(Vec(colRulerCenter - offsetRunJackX + 33.0f, rowRulerRunJack), module, Ions::RUN_PARAM, module ? &module->panelTheme : NULL));	
+		addInput(createDynamicPort<GeoPort>(VecPx(colRulerCenter - offsetRunJackX, rowRulerRunJack), true, module, Ions::RUN_INPUT, module ? &module->panelTheme : NULL));
+		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(VecPx(colRulerCenter - offsetRunJackX + 18.0f, rowRulerRunJack), module, Ions::RUN_LIGHT));
+		addParam(createDynamicParam<GeoPushButton>(VecPx(colRulerCenter - offsetRunJackX + 33.0f, rowRulerRunJack), module, Ions::RUN_PARAM, module ? &module->panelTheme : NULL));	
 		
 		// Reset jack, light and button
-		addInput(createDynamicPort<GeoPort>(Vec(colRulerCenter + offsetRunJackX, rowRulerRunJack), true, module, Ions::RESET_INPUT, module ? &module->panelTheme : NULL));
-		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(Vec(colRulerCenter + offsetRunJackX - 18.0f, rowRulerRunJack), module, Ions::RESET_LIGHT));
-		addParam(createDynamicParam<GeoPushButton>(Vec(colRulerCenter + offsetRunJackX - 33.0f, rowRulerRunJack), module, Ions::RESET_PARAM, module ? &module->panelTheme : NULL));	
+		addInput(createDynamicPort<GeoPort>(VecPx(colRulerCenter + offsetRunJackX, rowRulerRunJack), true, module, Ions::RESET_INPUT, module ? &module->panelTheme : NULL));
+		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(VecPx(colRulerCenter + offsetRunJackX - 18.0f, rowRulerRunJack), module, Ions::RESET_LIGHT));
+		addParam(createDynamicParam<GeoPushButton>(VecPx(colRulerCenter + offsetRunJackX - 33.0f, rowRulerRunJack), module, Ions::RESET_PARAM, module ? &module->panelTheme : NULL));	
 	
 		static constexpr float offsetMagneticButton = 42.5f;
 		// Magnetic clock (step clocks)
-		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(Vec(colRulerCenter - offsetMagneticButton - 15.0f, rowRulerRunJack), module, Ions::STEPCLOCKS_LIGHT));
-		addParam(createDynamicParam<GeoPushButton>(Vec(colRulerCenter - offsetMagneticButton, rowRulerRunJack), module, Ions::STEPCLOCKS_PARAM, module ? &module->panelTheme : NULL));			
+		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(VecPx(colRulerCenter - offsetMagneticButton - 15.0f, rowRulerRunJack), module, Ions::STEPCLOCKS_LIGHT));
+		addParam(createDynamicParam<GeoPushButton>(VecPx(colRulerCenter - offsetMagneticButton, rowRulerRunJack), module, Ions::STEPCLOCKS_PARAM, module ? &module->panelTheme : NULL));			
 		// Reset on Run light and button
-		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(Vec(colRulerCenter + offsetMagneticButton + 15.0f, rowRulerRunJack), module, Ions::RESETONRUN_LIGHT));
-		addParam(createDynamicParam<GeoPushButton>(Vec(colRulerCenter + offsetMagneticButton, rowRulerRunJack), module, Ions::RESETONRUN_PARAM, module ? &module->panelTheme : NULL));	
+		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(VecPx(colRulerCenter + offsetMagneticButton + 15.0f, rowRulerRunJack), module, Ions::RESETONRUN_LIGHT));
+		addParam(createDynamicParam<GeoPushButton>(VecPx(colRulerCenter + offsetMagneticButton, rowRulerRunJack), module, Ions::RESETONRUN_PARAM, module ? &module->panelTheme : NULL));	
 
 		
 		// Globak clock
 		float gclkX = colRulerCenter - 2.0f * offset3;
 		float gclkY = rowRulerAtomA + radius3 + 2.0f;
-		addInput(createDynamicPort<GeoPort>(Vec(gclkX, gclkY), true, module, Ions::CLK_INPUT, module ? &module->panelTheme : NULL));
+		addInput(createDynamicPort<GeoPort>(VecPx(gclkX, gclkY), true, module, Ions::CLK_INPUT, module ? &module->panelTheme : NULL));
 		// global lights
-		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(Vec(gclkX - 12.0f, gclkY - 20.0f), module, Ions::GLOBAL_LIGHTS + 0));
-		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(Vec(gclkX - 12.0f, gclkY + 20.0f), module, Ions::GLOBAL_LIGHTS + 1));
+		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(VecPx(gclkX - 12.0f, gclkY - 20.0f), module, Ions::GLOBAL_LIGHTS + 0));
+		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(VecPx(gclkX - 12.0f, gclkY + 20.0f), module, Ions::GLOBAL_LIGHTS + 1));
 		// state buttons
-		addParam(createDynamicParam<GeoPushButton>(Vec(gclkX - 17.0f, gclkY - 34.0f), module, Ions::STATE_PARAMS + 0, module ? &module->panelTheme : NULL));	
-		addParam(createDynamicParam<GeoPushButton>(Vec(gclkX - 17.0f, gclkY + 34.0f), module, Ions::STATE_PARAMS + 1, module ? &module->panelTheme : NULL));	
+		addParam(createDynamicParam<GeoPushButton>(VecPx(gclkX - 17.0f, gclkY - 34.0f), module, Ions::STATE_PARAMS + 0, module ? &module->panelTheme : NULL));	
+		addParam(createDynamicParam<GeoPushButton>(VecPx(gclkX - 17.0f, gclkY + 34.0f), module, Ions::STATE_PARAMS + 1, module ? &module->panelTheme : NULL));	
 		// local lights
-		addChild(createLightCentered<SmallLight<GeoBlueLight>>(Vec(gclkX - 20.0f, gclkY - 48.5f), module, Ions::LOCAL_LIGHTS + 0));
-		addChild(createLightCentered<SmallLight<GeoYellowLight>>(Vec(gclkX - 20.0f, gclkY + 48.5f), module, Ions::LOCAL_LIGHTS + 1));
+		addChild(createLightCentered<SmallLight<GeoBlueLight>>(VecPx(gclkX - 20.0f, gclkY - 48.5f), module, Ions::LOCAL_LIGHTS + 0));
+		addChild(createLightCentered<SmallLight<GeoYellowLight>>(VecPx(gclkX - 20.0f, gclkY + 48.5f), module, Ions::LOCAL_LIGHTS + 1));
 		// local inputs
-		addInput(createDynamicPort<GeoPort>(Vec(gclkX - 21.0f, gclkY - 72.0f), true, module, Ions::CLK_INPUTS + 0, module ? &module->panelTheme : NULL));
-		addInput(createDynamicPort<GeoPort>(Vec(gclkX - 21.0f, gclkY + 72.0f), true, module, Ions::CLK_INPUTS + 1, module ? &module->panelTheme : NULL));
+		addInput(createDynamicPort<GeoPort>(VecPx(gclkX - 21.0f, gclkY - 72.0f), true, module, Ions::CLK_INPUTS + 0, module ? &module->panelTheme : NULL));
+		addInput(createDynamicPort<GeoPort>(VecPx(gclkX - 21.0f, gclkY + 72.0f), true, module, Ions::CLK_INPUTS + 1, module ? &module->panelTheme : NULL));
 		// state inputs
-		addInput(createDynamicPort<GeoPort>(Vec(gclkX - 39.0f, gclkY - 28.0f), true, module, Ions::STATECV_INPUTS + 0, module ? &module->panelTheme : NULL));
-		addInput(createDynamicPort<GeoPort>(Vec(gclkX - 39.0f, gclkY + 28.0f), true, module, Ions::STATECV_INPUTS + 1, module ? &module->panelTheme : NULL));
+		addInput(createDynamicPort<GeoPort>(VecPx(gclkX - 39.0f, gclkY - 28.0f), true, module, Ions::STATECV_INPUTS + 0, module ? &module->panelTheme : NULL));
+		addInput(createDynamicPort<GeoPort>(VecPx(gclkX - 39.0f, gclkY + 28.0f), true, module, Ions::STATECV_INPUTS + 1, module ? &module->panelTheme : NULL));
 		
 		// Leap light, button and CV input
-		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(Vec(gclkX - 5.0f, 60.5f), module, Ions::LEAP_LIGHT));
-		addParam(createDynamicParam<GeoPushButton>(Vec(gclkX + 3.0f, 48.5f), module, Ions::LEAP_PARAM, module ? &module->panelTheme : NULL));	
-		addInput(createDynamicPort<GeoPort>(Vec(gclkX - 14.0f, 76.5f), true, module, Ions::LEAP_INPUT, module ? &module->panelTheme : NULL));
+		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(VecPx(gclkX - 5.0f, 60.5f), module, Ions::LEAP_LIGHT));
+		addParam(createDynamicParam<GeoPushButton>(VecPx(gclkX + 3.0f, 48.5f), module, Ions::LEAP_PARAM, module ? &module->panelTheme : NULL));	
+		addInput(createDynamicPort<GeoPort>(VecPx(gclkX - 14.0f, 76.5f), true, module, Ions::LEAP_INPUT, module ? &module->panelTheme : NULL));
 
 		// uncertainty light, button and CV input
-		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(Vec(gclkX - 5.0f, 298.5f), module, Ions::UNCERTANTY_LIGHT));
-		addParam(createDynamicParam<GeoPushButton>(Vec(gclkX + 3.0f, 310.5f), module, Ions::UNCERTANTY_PARAM, module ? &module->panelTheme : NULL));	
-		addInput(createDynamicPort<GeoPort>(Vec(gclkX - 14.0f, 282.5f), true, module, Ions::UNCERTANTY_INPUT, module ? &module->panelTheme : NULL));
+		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(VecPx(gclkX - 5.0f, 298.5f), module, Ions::UNCERTANTY_LIGHT));
+		addParam(createDynamicParam<GeoPushButton>(VecPx(gclkX + 3.0f, 310.5f), module, Ions::UNCERTANTY_PARAM, module ? &module->panelTheme : NULL));	
+		addInput(createDynamicPort<GeoPort>(VecPx(gclkX - 14.0f, 282.5f), true, module, Ions::UNCERTANTY_INPUT, module ? &module->panelTheme : NULL));
 	}
 	
 	void step() override {
@@ -729,8 +729,3 @@ struct IonsWidget : ModuleWidget {
 };
 
 Model *modelIons = createModel<Ions, IonsWidget>("Ions");
-
-/*CHANGE LOG
-
-
-*/

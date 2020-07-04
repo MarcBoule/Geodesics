@@ -51,7 +51,7 @@ void Table::generate() {
 }
 
 void SineTable::_generate() {
-	const float twoPI = 2.0f * M_PI;
+	const float twoPI = 2.0f * float(M_PI);
 	for (int i = 0, j = _length / 4; i <= j; ++i) {
 		_table[i] = std::sin(twoPI * (i / (float)_length));
 	}
@@ -262,7 +262,3 @@ float FMOp::step(float voct, float momentum) {
 
 	return _feedbackDelayedSample = amplitude * sample;
 }
-
-/*CHANGE LOG
-
-*/

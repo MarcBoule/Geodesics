@@ -1,4 +1,65 @@
-<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" width="20.97307" height="20.97307" viewBox="0 0 20.97307 20.97307">
-  <title>C-01</title>
-  <path d="M10.579,0A10.48653,10.48653,0,1,0,20.99982,10.55184q.00027-.03947.00018-.079A10.54961,10.54961,0,0,0,10.579,0Zm-.03223,19.69617a9.19573,9.19573,0,0,1-9.205-9.18646v-.01862c0-2.92853,1.36486-5.58453,4.31866-7.7934L8.19177,6.1476C6.33038,7.53774,5.58582,8.95235,5.58582,10.49111a4.93918,4.93918,0,1,0,9.87835.01385v-.01385c0-1.53876-.64514-2.90369-2.48211-4.29376l2.507-3.40021c2.9538,2.2088,4.24415,4.81519,4.24415,7.694A9.1958,9.1958,0,0,1,10.54675,19.69619Z" transform="translate(-0.02695 0.00019)" style="fill: #252626"/>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   id="Layer_1"
+   data-name="Layer 1"
+   width="7.1027203mm"
+   height="7.1027207mm"
+   viewBox="0 0 26.844927 26.844929"
+   version="1.1"
+   sodipodi:docname="C-DM.svg"
+   inkscape:version="0.92.3 (2405546, 2018-03-11)">
+  <metadata
+     id="metadata11">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title>C-01</dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs9" />
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="1920"
+     inkscape:window-height="1017"
+     id="namedview7"
+     showgrid="false"
+     inkscape:document-units="mm"
+     units="mm"
+     fit-margin-top="0"
+     fit-margin-left="0"
+     fit-margin-right="0"
+     fit-margin-bottom="0"
+     inkscape:zoom="11.252525"
+     inkscape:cx="10.486521"
+     inkscape:cy="10.486511"
+     inkscape:window-x="-8"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="Layer_1" />
+  <title
+     id="title2">C-01</title>
+  <path
+     d="M 13.50631,2.6136856e-4 A 13.422465,13.422465 0 1 0 26.844668,13.50632 q 3.46e-4,-0.05052 2.3e-4,-0.101118 A 13.503205,13.503205 0 0 0 13.50631,2.6136856e-4 Z M 13.465057,25.210807 A 11.770277,11.770277 0 0 1 1.6829149,13.452395 v -0.02383 c 0,-3.7484356 1.7469825,-7.1480413 5.5277638,-9.9753329 l 3.2400443,4.415788 C 8.0681959,9.6483574 7.11518,11.459018 7.11518,13.428587 a 6.322012,6.322012 0 1 0 12.644011,0.01773 v -0.01773 c 0,-1.969569 -0.825761,-3.7166406 -3.177031,-5.4958913 l 3.20889,-4.3521735 c 3.780781,2.8272021 5.432393,6.1633083 5.432393,9.8481038 A 11.770366,11.770366 0 0 1 13.465031,25.210832 Z"
+     style="fill:#252626;stroke-width:1.27997196"
+     id="path4"
+     inkscape:connector-curvature="0" />
 </svg>

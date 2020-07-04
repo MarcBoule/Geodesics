@@ -5,8 +5,7 @@
 //***********************************************************************************************
 
 
-#ifndef IM_WIDGETS_HPP
-#define IM_WIDGETS_HPP
+#pragma once
 
 #include "rack.hpp"
 
@@ -72,6 +71,3 @@ struct DynamicSVGKnob : SvgKnob {
     void addFrameAlt(std::string filename) {frameAltName = filename;}
     void step() override;
 };
-
-
-#endif

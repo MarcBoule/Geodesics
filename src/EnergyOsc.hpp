@@ -7,9 +7,8 @@
 //
 //***********************************************************************************************
 
-#ifndef ENERGY_OSC_HPP
-#define ENERGY_OSC_HPP
 
+#pragma once
 
 #include "Geodesics.hpp"
 
@@ -204,7 +203,7 @@ struct Phasor : OscillatorGenerator {
 	typedef uint32_t phase_t;
 	typedef int64_t phase_delta_t;
 	static constexpr phase_t maxPhase = UINT32_MAX;
-	static constexpr float twoPI = 2.0f * M_PI;
+	static constexpr float twoPI = 2.0f * float(M_PI);
 	static constexpr float maxSampleWidth = 0.25f;
 
 	phase_delta_t _delta;
@@ -308,9 +307,3 @@ struct FMOp {
 	void onSampleRateChange(float newSampleRate);
 	float step(float voct, float momentum);
 };
-
-#endif
-
-/*CHANGE LOG
-
-*/

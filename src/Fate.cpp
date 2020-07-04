@@ -243,25 +243,25 @@ struct FateWidget : ModuleWidget {
 		float offsetX = 20.0f;
 
 		// free will knob and cv input
-		addParam(createDynamicParam<GeoKnob>(Vec(colRulerCenter, 380 - 326), module, Fate::FREEWILL_PARAM, module ? &module->panelTheme : NULL));
-		addInput(createDynamicPort<GeoPort>(Vec(colRulerCenter + offsetX, 380.0f - 287.5f), true, module, Fate::FREEWILL_INPUT, module ? &module->panelTheme : NULL));
+		addParam(createDynamicParam<GeoKnob>(VecPx(colRulerCenter, 380 - 326), module, Fate::FREEWILL_PARAM, module ? &module->panelTheme : NULL));
+		addInput(createDynamicPort<GeoPort>(VecPx(colRulerCenter + offsetX, 380.0f - 287.5f), true, module, Fate::FREEWILL_INPUT, module ? &module->panelTheme : NULL));
 		
 		// choice trigger input and light (clock), and output
-		addInput(createDynamicPort<GeoPort>(Vec(colRulerCenter - offsetX, 380.0f - 262.5f), true, module, Fate::CLOCK_INPUT, module ? &module->panelTheme : NULL));
-		addChild(createLightCentered<SmallLight<GeoWhiteBlueLight>>(Vec(colRulerCenter, 380.0f - 168.5f), module, Fate::TRIG_LIGHT));
-		addOutput(createDynamicPort<GeoPort>(Vec(colRulerCenter + offsetX, 380.0f - 251.5f), false, module, Fate::TRIGGER_OUTPUT, module ? &module->panelTheme : NULL));
+		addInput(createDynamicPort<GeoPort>(VecPx(colRulerCenter - offsetX, 380.0f - 262.5f), true, module, Fate::CLOCK_INPUT, module ? &module->panelTheme : NULL));
+		addChild(createLightCentered<SmallLight<GeoWhiteBlueLight>>(VecPx(colRulerCenter, 380.0f - 168.5f), module, Fate::TRIG_LIGHT));
+		addOutput(createDynamicPort<GeoPort>(VecPx(colRulerCenter + offsetX, 380.0f - 251.5f), false, module, Fate::TRIGGER_OUTPUT, module ? &module->panelTheme : NULL));
 
 		// main outputs (left is old main output, right was non-existant before)
-		addOutput(createDynamicPort<GeoPort>(Vec(colRulerCenter - offsetX, 380.0f - 223.5f), false, module, Fate::MAIN_OUTPUTS + 0, module ? &module->panelTheme : NULL));
-		addOutput(createDynamicPort<GeoPort>(Vec(colRulerCenter + offsetX, 380.0f - 212.5f), false, module, Fate::MAIN_OUTPUTS + 1, module ? &module->panelTheme : NULL));
+		addOutput(createDynamicPort<GeoPort>(VecPx(colRulerCenter - offsetX, 380.0f - 223.5f), false, module, Fate::MAIN_OUTPUTS + 0, module ? &module->panelTheme : NULL));
+		addOutput(createDynamicPort<GeoPort>(VecPx(colRulerCenter + offsetX, 380.0f - 212.5f), false, module, Fate::MAIN_OUTPUTS + 1, module ? &module->panelTheme : NULL));
 		
 		// main inputs (left is old established order, right is old ex-machina)
-		addInput(createDynamicPort<GeoPort>(Vec(colRulerCenter - offsetX, 380.0f - 130.5f), true, module, Fate::MAIN_INPUTS + 0, module ? &module->panelTheme : NULL));
-		addInput(createDynamicPort<GeoPort>(Vec(colRulerCenter + offsetX, 380.0f - 119.5f), true, module, Fate::MAIN_INPUTS + 1, module ? &module->panelTheme : NULL));
+		addInput(createDynamicPort<GeoPort>(VecPx(colRulerCenter - offsetX, 380.0f - 130.5f), true, module, Fate::MAIN_INPUTS + 0, module ? &module->panelTheme : NULL));
+		addInput(createDynamicPort<GeoPort>(VecPx(colRulerCenter + offsetX, 380.0f - 119.5f), true, module, Fate::MAIN_INPUTS + 1, module ? &module->panelTheme : NULL));
 		
 		// choices depth knob and cv input
-		addParam(createDynamicParam<GeoKnob>(Vec(colRulerCenter, 380.0f - 83.5f), module, Fate::CHOICESDEPTH_PARAM, module ? &module->panelTheme : NULL));
-		addInput(createDynamicPort<GeoPort>(Vec(colRulerCenter, 380.0f - 45.5f), true, module, Fate::CHOICSDEPTH_INPUT, module ? &module->panelTheme : NULL));
+		addParam(createDynamicParam<GeoKnob>(VecPx(colRulerCenter, 380.0f - 83.5f), module, Fate::CHOICESDEPTH_PARAM, module ? &module->panelTheme : NULL));
+		addInput(createDynamicPort<GeoPort>(VecPx(colRulerCenter, 380.0f - 45.5f), true, module, Fate::CHOICSDEPTH_INPUT, module ? &module->panelTheme : NULL));
 	}
 	
 	void step() override {
@@ -274,7 +274,3 @@ struct FateWidget : ModuleWidget {
 };
 
 Model *modelFate = createModel<Fate, FateWidget>("Fate");
-
-/*CHANGE LOG
-
-*/

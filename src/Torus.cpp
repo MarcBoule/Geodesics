@@ -378,26 +378,26 @@ struct TorusWidget : ModuleWidget {
 		float colRulerCenter = box.size.x / 2.0f;
 
 		// mixmode button
-		addParam(createDynamicParam<GeoPushButton>(Vec(colRulerCenter, 380.0f - 329.5f), module, Torus::MODE_PARAM, module ? &module->panelTheme : NULL));
+		addParam(createDynamicParam<GeoPushButton>(VecPx(colRulerCenter, 380.0f - 329.5f), module, Torus::MODE_PARAM, module ? &module->panelTheme : NULL));
 		
 		// decay and constant lights
-		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(Vec(colRulerCenter, 380.0f - 343.5f), module, Torus::FILTER_LIGHT));
-		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(Vec(colRulerCenter - 12.5f, 380.0f - 322.5f), module, Torus::DECAY_LIGHT));
-		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(Vec(colRulerCenter + 12.5f, 380.0f - 322.5f), module, Torus::CONSTANT_LIGHT));
+		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(VecPx(colRulerCenter, 380.0f - 343.5f), module, Torus::FILTER_LIGHT));
+		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(VecPx(colRulerCenter - 12.5f, 380.0f - 322.5f), module, Torus::DECAY_LIGHT));
+		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(VecPx(colRulerCenter + 12.5f, 380.0f - 322.5f), module, Torus::CONSTANT_LIGHT));
 
 		// gain knob
-		addParam(createDynamicParam<GeoKnob>(Vec(colRulerCenter, 380 - 294), module, Torus::GAIN_PARAM, module ? &module->panelTheme : NULL));
+		addParam(createDynamicParam<GeoKnob>(VecPx(colRulerCenter, 380 - 294), module, Torus::GAIN_PARAM, module ? &module->panelTheme : NULL));
 		
 		// inputs
 		static const int offsetY = 34;
 		for (int i = 0; i < 8; i++) {
-			addInput(createDynamicPort<GeoPort>(Vec(colRulerCenter - 22.5f, 380 - (270 - offsetY * i)), true, module, Torus::MIX_INPUTS + i, module ? &module->panelTheme : NULL));
-			addInput(createDynamicPort<GeoPort>(Vec(colRulerCenter + 22.5f, 380 - (270 - offsetY * i)), true, module, Torus::MIX_INPUTS + 8 + i, module ? &module->panelTheme : NULL));
+			addInput(createDynamicPort<GeoPort>(VecPx(colRulerCenter - 22.5f, 380 - (270 - offsetY * i)), true, module, Torus::MIX_INPUTS + i, module ? &module->panelTheme : NULL));
+			addInput(createDynamicPort<GeoPort>(VecPx(colRulerCenter + 22.5f, 380 - (270 - offsetY * i)), true, module, Torus::MIX_INPUTS + 8 + i, module ? &module->panelTheme : NULL));
 		}
 		
 		// mix outputs
 		for (int i = 0; i < 7; i++) {
-			addOutput(createDynamicPort<GeoPort>(Vec(colRulerCenter, 380 - (253 - offsetY * i)), false, module, Torus::MIX_OUTPUTS + i, module ? &module->panelTheme : NULL));
+			addOutput(createDynamicPort<GeoPort>(VecPx(colRulerCenter, 380 - (253 - offsetY * i)), false, module, Torus::MIX_OUTPUTS + i, module ? &module->panelTheme : NULL));
 		}
 	}
 	
@@ -411,7 +411,3 @@ struct TorusWidget : ModuleWidget {
 };
 
 Model *modelTorus = createModel<Torus, TorusWidget>("Torus");
-
-/*CHANGE LOG
-
-*/
