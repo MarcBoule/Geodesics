@@ -36,7 +36,7 @@ struct Energy : Module {
 		NUM_OUTPUTS
 	};
 	enum LightIds {
-		ENUMS(PLANCK_LIGHTS, 2 * 3), // room for two white/blue/red leds
+		ENUMS(PLANCK_LIGHTS, 2 * 3), // room for two Blue Yellow White leds
 		ENUMS(ADD_LIGHTS, 2),
 		ENUMS(AMP_LIGHTS, 2),
 		ENUMS(ROUTING_LIGHTS, 3),
@@ -300,10 +300,10 @@ struct Energy : Module {
 				lights[ROUTING_LIGHTS + i].setBrightness(routing == i ? 1.0f : 0.0f);
 			
 			for (int i = 0; i < 2; i++) {
-				// plancks
-				lights[PLANCK_LIGHTS + i * 3 + 0].setBrightness(plancks[i] == 1 ? 1.0f : 0.0f);// white
-				lights[PLANCK_LIGHTS + i * 3 + 1].setBrightness(plancks[i] == 2 ? 1.0f : 0.0f);// blue
-				lights[PLANCK_LIGHTS + i * 3 + 2].setBrightness(plancks[i] == 3 ? 1.0f : 0.0f);// red
+				// plancks (was white/blue/red), now BlueYellowWhite
+				lights[PLANCK_LIGHTS + i * 3 + 2].setBrightness(plancks[i] == 1 ? 1.0f : 0.0f);// white
+				lights[PLANCK_LIGHTS + i * 3 + 0].setBrightness(plancks[i] == 2 ? 1.0f : 0.0f);// blue
+				lights[PLANCK_LIGHTS + i * 3 + 1].setBrightness(plancks[i] == 3 ? 1.0f : 0.0f);// yellow (was red)
 				
 				// modtypes
 				lights[ADD_LIGHTS + i].setBrightness(modtypes[i] == 1 ? 1.0f : 0.0f);
@@ -497,8 +497,8 @@ struct EnergyWidget : ModuleWidget {
 		addParam(createDynamicParam<GeoPushButton>(VecPx(colRulerCenter + offsetX + 0.5f, 380.0f - 83.5f), module, Energy::PLANCK_PARAMS + 1, module ? &module->panelTheme : NULL));
 		
 		// planck lights
-		addChild(createLightCentered<SmallLight<GeoWhiteBlueRedLight>>(VecPx(colRulerCenter - offsetX - 0.5f, 380.0f - 97.5f), module, Energy::PLANCK_LIGHTS + 0 * 3));
-		addChild(createLightCentered<SmallLight<GeoWhiteBlueRedLight>>(VecPx(colRulerCenter + offsetX + 0.5f, 380.0f - 97.5f), module, Energy::PLANCK_LIGHTS + 1 * 3));
+		addChild(createLightCentered<SmallLight<GeoBlueYellowWhiteLight>>(VecPx(colRulerCenter - offsetX - 0.5f, 380.0f - 97.5f), module, Energy::PLANCK_LIGHTS + 0 * 3));
+		addChild(createLightCentered<SmallLight<GeoBlueYellowWhiteLight>>(VecPx(colRulerCenter + offsetX + 0.5f, 380.0f - 97.5f), module, Energy::PLANCK_LIGHTS + 1 * 3));
 		
 		// mod type buttons
 		addParam(createDynamicParam<GeoPushButton>(VecPx(colRulerCenter - offsetX - 0.5f, 380.0f - 57.5f), module, Energy::MODTYPE_PARAMS + 0, module ? &module->panelTheme : NULL));
