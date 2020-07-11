@@ -46,14 +46,14 @@ struct Fate : Module {
 	int holdTrigOut;
 	
 	// No need to save, with reset
-	bool alteredFate[16];
-	float addCVs0[16];
-	float addCVs1[16];
+	bool alteredFate[PORT_MAX_CHANNELS];
+	float addCVs0[PORT_MAX_CHANNELS];
+	float addCVs1[PORT_MAX_CHANNELS];
 	int numChan;
 	
 	// No need to save, no reset
 	RefreshCounter refresh;
-	Trigger clockTrigger;
+	Trigger clockTrigger[PORT_MAX_CHANNELS];
 	float trigLightsWhite = 0.0f;
 	float trigLightsBlue = 0.0f;
 
@@ -75,7 +75,7 @@ struct Fate : Module {
 		resetNonJson(false);
 	}
 	void resetNonJson(bool recurseNonJson) {
-		for (int i = 0; i < 16; i++) {
+		for (int i = 0; i < PORT_MAX_CHANNELS; i++) {
 			alteredFate[i] = false;
 			addCVs0[i] = 0.0f;
 			addCVs1[i] = 0.0f;
@@ -119,7 +119,7 @@ struct Fate : Module {
 		int numChan0 = inputs[MAIN_INPUTS + 0].getChannels();
 		int numChan1 = inputs[MAIN_INPUTS + 1].getChannels();	
 		int numChan = std::max(numChan0, numChan1);
-		
+
 		// user inputs
 		if (refresh.processInputs()) {
 			outputs[MAIN_OUTPUTS + 0].setChannels(numChan);
@@ -129,8 +129,10 @@ struct Fate : Module {
 		
 		
 		// clock
-		if (clockTrigger.process(inputs[CLOCK_INPUT].getVoltage())) {
-			for (int c = 0; c < numChan; c++) {
+		int numClocks = inputs[CLOCK_INPUT].getChannels();
+		for (int c = 0; c < numChan; c++) {
+			int clkIn = std::min(c, numClocks - 1);
+			if (clockTrigger[c].process(inputs[CLOCK_INPUT].getVoltage(clkIn))) {
 				float freeWill = params[FREEWILL_PARAM].getValue();
 				if (inputs[FREEWILL_INPUT].isConnected()) {
 					int freeWillCvNumChan = inputs[FREEWILL_INPUT].getChannels();// >= 1 when connected
@@ -175,7 +177,7 @@ struct Fate : Module {
 			outputs[MAIN_OUTPUTS + 1].setVoltage(chan1input + addCVs1[c], c);
 			
 			// trigger output
-			bool trigOut = (alteredFate[c] && (holdTrigOut != 0 || clockTrigger.isHigh())); 
+			bool trigOut = (alteredFate[c] && (holdTrigOut != 0 || clockTrigger[c].isHigh())); 
 			outputs[TRIGGER_OUTPUT].setVoltage(trigOut ? 10.0f : 0.0f, c);
 		}
 		
