@@ -46,18 +46,18 @@ struct Fate : Module {
 	int holdTrigOut;
 	
 	// No need to save, with reset
-	bool alteredFate;
-	float addCVs[2];
+	bool alteredFate[16];
+	float addCVs0[16];
+	float addCVs1[16];
+	int numChan;
 	
 	// No need to save, no reset
 	RefreshCounter refresh;
 	Trigger clockTrigger;
-	float trigLights[2] = {0.0f, 0.0f};// white, blue
+	float trigLightsWhite = 0.0f;
+	float trigLightsBlue = 0.0f;
 
 
-	inline bool isAlteredFate() {return (random::uniform() < (params[FREEWILL_PARAM].getValue() + inputs[FREEWILL_INPUT].getVoltage() / 10.0f));}// randomUniform is [0.0, 1.0)
-
-	
 	Fate() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		
@@ -75,8 +75,12 @@ struct Fate : Module {
 		resetNonJson(false);
 	}
 	void resetNonJson(bool recurseNonJson) {
-		alteredFate = false;
-		addCVs[0] = addCVs[1] = 0.0f;
+		for (int i = 0; i < 16; i++) {
+			alteredFate[i] = false;
+			addCVs0[i] = 0.0f;
+			addCVs1[i] = 0.0f;
+		}
+		numChan = 0;
 	}
 
 
@@ -112,59 +116,76 @@ struct Fate : Module {
 	}
 
 	void process(const ProcessArgs &args) override {		
+		int numChan0 = inputs[MAIN_INPUTS + 0].getChannels();
+		int numChan1 = inputs[MAIN_INPUTS + 1].getChannels();	
+		int numChan = std::max(numChan0, numChan1);
+		
 		// user inputs
-		//if (refresh.processInputs()) {
-			// none
-		//}// userInputs refresh
+		if (refresh.processInputs()) {
+			outputs[MAIN_OUTPUTS + 0].setChannels(numChan);
+			outputs[MAIN_OUTPUTS + 1].setChannels(numChan);
+			outputs[TRIGGER_OUTPUT].setChannels(numChan);			
+		}// userInputs refresh
 		
 		
 		// clock
 		if (clockTrigger.process(inputs[CLOCK_INPUT].getVoltage())) {
-			if (isAlteredFate()) {
-				alteredFate = true;
-				float choiceDepth = params[CHOICESDEPTH_PARAM].getValue();
-				if (inputs[CHOICSDEPTH_INPUT].isConnected()) {
-					choiceDepth += inputs[CHOICSDEPTH_INPUT].getVoltage() / 10.0f;
+			for (int c = 0; c < numChan; c++) {
+				float freeWill = params[FREEWILL_PARAM].getValue();
+				if (inputs[FREEWILL_INPUT].isConnected()) {
+					int freeWillCvNumChan = inputs[FREEWILL_INPUT].getChannels();// >= 1 when connected
+					freeWill += inputs[FREEWILL_INPUT].getVoltage(std::min(c, freeWillCvNumChan - 1)) / 10.0f;
 				}
-				addCVs[0] = (random::uniform() * 10.0f - 5.0f);
-				addCVs[1] = (random::uniform() * 10.0f - 5.0f);
-				if (choiceDepth < 0.0f) {
-					addCVs[0] = std::fabs(addCVs[0]);// positive random offset only when knob is CCW
-					addCVs[1] = -std::fabs(addCVs[1]);// negative random offset only when knob is CCW	
+				alteredFate[c] = (random::uniform() < freeWill);// randomUniform is [0.0, 1.0)
+				if (alteredFate[c]) {
+					float choiceDepth = params[CHOICESDEPTH_PARAM].getValue();
+					if (inputs[CHOICSDEPTH_INPUT].isConnected()) {
+						int choiceDepthNumChan = inputs[CHOICSDEPTH_INPUT].getChannels();// >= 1 when connected
+						choiceDepth += inputs[CHOICSDEPTH_INPUT].getVoltage(std::min(c, choiceDepthNumChan - 1)) / 10.0f;
+					}
+					addCVs0[c] = (random::uniform() * 10.0f - 5.0f);
+					addCVs1[c] = (random::uniform() * 10.0f - 5.0f);
+					if (choiceDepth < 0.0f) {
+						addCVs0[c] = std::fabs(addCVs0[c]);// positive random offset only when knob is CCW
+						addCVs1[c] = -std::fabs(addCVs1[c]);// negative random offset only when knob is CCW	
+					}
+					addCVs0[c] *= clamp(std::fabs(choiceDepth), 0.0f, 1.0f);
+					addCVs1[c] *= clamp(std::fabs(choiceDepth), 0.0f, 1.0f);
+					trigLightsBlue = 1.0f;
 				}
-				addCVs[0] *= clamp(std::fabs(choiceDepth), 0.0f, 1.0f);
-				addCVs[1] *= clamp(std::fabs(choiceDepth), 0.0f, 1.0f);
-				trigLights[1] = 1.0f;
-			}
-			else {
-				alteredFate = false;
-				addCVs[0] = addCVs[1] = 0.0f;
-				trigLights[0] = 1.0f;
+				else {
+					addCVs0[c] = 0.0f;
+					addCVs1[c] = 0.0f;
+					trigLightsWhite = 1.0f;
+				}
 			}
 		}
 		
 		// main outputs
-		float port0input = inputs[MAIN_INPUTS + 0].isConnected() ? 
-								inputs[MAIN_INPUTS + 0].getVoltage() : inputs[MAIN_INPUTS + 1].getVoltage();
-		float port1input = inputs[MAIN_INPUTS + 1].isConnected() ? 
-								inputs[MAIN_INPUTS + 1].getVoltage() : inputs[MAIN_INPUTS + 0].getVoltage();
+		for (int c = 0; c < numChan; c++) {
+			float port0input = inputs[MAIN_INPUTS + 0].isConnected() ? 
+									inputs[MAIN_INPUTS + 0].getVoltage(c) : inputs[MAIN_INPUTS + 1].getVoltage(c);
+			float port1input = inputs[MAIN_INPUTS + 1].isConnected() ? 
+									inputs[MAIN_INPUTS + 1].getVoltage(c) : inputs[MAIN_INPUTS + 0].getVoltage(c);
+			
+			float chan0input = alteredFate[c] ? port1input : port0input;
+			float chan1input = alteredFate[c] ? port0input : port1input;
+			
+			outputs[MAIN_OUTPUTS + 0].setVoltage(chan0input + addCVs0[c], c);
+			outputs[MAIN_OUTPUTS + 1].setVoltage(chan1input + addCVs1[c], c);
+			
+			// trigger output
+			bool trigOut = (alteredFate[c] && (holdTrigOut != 0 || clockTrigger.isHigh())); 
+			outputs[TRIGGER_OUTPUT].setVoltage(trigOut ? 10.0f : 0.0f, c);
+		}
 		
-		float chan0input = alteredFate ? port1input : port0input;
-		outputs[MAIN_OUTPUTS + 0].setVoltage(chan0input + addCVs[0]);
-		float chan1input = alteredFate ? port0input : port1input;
-		outputs[MAIN_OUTPUTS + 1].setVoltage(chan1input + addCVs[1]);
-		
-		// trigger output
-		bool trigOut = (alteredFate && (holdTrigOut != 0 || clockTrigger.isHigh())); 
-		outputs[TRIGGER_OUTPUT].setVoltage(trigOut ? 10.0f : 0.0f);
-
 		// lights
 		if (refresh.processLights()) {
 			float deltaTime = args.sampleTime * (RefreshCounter::displayRefreshStepSkips >> 2);
-			lights[TRIG_LIGHT + 0].setSmoothBrightness(trigLights[0], deltaTime);
-			lights[TRIG_LIGHT + 1].setSmoothBrightness(trigLights[1], deltaTime);
-			trigLights[0] = 0.0f;
-			trigLights[1] = 0.0f;
+			lights[TRIG_LIGHT + 0].setSmoothBrightness(trigLightsWhite, deltaTime);// white
+			lights[TRIG_LIGHT + 1].setSmoothBrightness(trigLightsBlue, deltaTime);// blue
+			trigLightsWhite = 0.0f;
+			trigLightsBlue = 0.0f;
 		}// lightRefreshCounter
 	}// step()
 };
