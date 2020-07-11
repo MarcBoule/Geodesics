@@ -49,6 +49,7 @@ struct Fate : Module {
 	bool alteredFate[PORT_MAX_CHANNELS];
 	float addCVs0[PORT_MAX_CHANNELS];
 	float addCVs1[PORT_MAX_CHANNELS];
+	float sampledClock[PORT_MAX_CHANNELS];// introduce a 1-sample delay on clock input so that when receiving same clock as sequencer, Fate will sample the proper current CV from the seq.
 	int numChan;
 	
 	// No need to save, no reset
@@ -79,6 +80,7 @@ struct Fate : Module {
 			alteredFate[i] = false;
 			addCVs0[i] = 0.0f;
 			addCVs1[i] = 0.0f;
+			sampledClock[i] = 0.0f;
 		}
 		numChan = 0;
 	}
@@ -129,10 +131,11 @@ struct Fate : Module {
 		
 		
 		// clock
+
 		int numClocks = inputs[CLOCK_INPUT].getChannels();
 		for (int c = 0; c < numChan; c++) {
 			int clkIn = std::min(c, numClocks - 1);
-			if (clockTrigger[c].process(inputs[CLOCK_INPUT].getVoltage(clkIn))) {
+			if (clockTrigger[c].process(sampledClock[clkIn])) {
 				float freeWill = params[FREEWILL_PARAM].getValue();
 				if (inputs[FREEWILL_INPUT].isConnected()) {
 					int freeWillCvNumChan = inputs[FREEWILL_INPUT].getChannels();// >= 1 when connected
@@ -162,6 +165,8 @@ struct Fate : Module {
 				}
 			}
 		}
+		inputs[CLOCK_INPUT].readVoltages(sampledClock);
+
 		
 		// main outputs
 		for (int c = 0; c < numChan; c++) {
