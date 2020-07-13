@@ -1,4 +1,4 @@
-### 1.1.2 (2020-07-x)
+### 1.2.0 (2020-07-13)
 
 - Convert svgs from px to mm
 - Add 12 dB/oct filter slope option to Torus (and make 12 dB/oct the default)

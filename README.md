@@ -1,8 +1,8 @@
 This page shows a very brief overview of the modules. For more information, including videos of the modules in use, please see the [Geodesics Website](https://www.pyer.be/geodesics.html). The modules are available in the [plugin library](https://vcvrack.com/plugins.html) of [VCV Rack](https://vcvrack.com). 
 
-* [Complete user manual](doc/geodesics1.1-complete_user_manual.pdf) (version 1.1.1)
+* [Complete user manual](doc/geodesics1.2-complete_user_manual.pdf) (version 1.2.0)
 
-* [What's new](doc/geodesics1.1-whats_new.pdf) in version 1.1.0
+* [What's new](doc/geodesics1.2-whats_new.pdf) in version 1.2.0
 
 ![Geodesics](res/img/Blanks.jpg)
 
@@ -88,7 +88,7 @@ For a video introduction to this module, please see Omri Cohen's [Entropia tutor
 
 ![Geodesics](res/img/Torus.jpg)
 
-A torus is a 2-dimensional surface closed on itself. Some believe it could be the shape of the universe. [TORUS](doc/geodesics1.0-torus.pdf) mixes and attenuates the incoming signal in different ways depending on the distance between the input and output jack. Torus is a small module that can be many things: up to 6 4-channel adjustable mixers, 3 multipliers, 7 unity mixes with 4 channels, 7 attenuators... and all at the same time.
+A torus is a 2-dimensional surface closed on itself. Some believe it could be the shape of the universe. [TORUS](doc/geodesics1.2-torus.pdf) mixes and attenuates the incoming signal in different ways depending on the distance between the input and output jack. Torus is a small module that can be many things: up to 6 4-channel adjustable mixers, 3 multipliers, 7 unity mixes with 4 channels, 7 attenuators... and all at the same time.
 For a video introduction to this module, please see Omri Cohen's [Torus tutorial](https://www.youtube.com/watch?v=oXTPhMoe348).
 
 
@@ -97,7 +97,7 @@ For a video introduction to this module, please see Omri Cohen's [Torus tutorial
 
 ![Geodesics](res/img/Energy.jpg)
 
-How would the most meaningful equation of modern physics sound? If a small amount of mass can be turned into an incredibly big amount of energy, two simple sine waves can create unexpected tones with rich harmonic content. [ENERGY](doc/geodesics1.1-energy.pdf) is a digital oscillator/synth voice that focuses on ring modulation synthesis. Two sines are multiplied according Einstein/Poincaré’s famous equation. It is capable of meditative drones, organ tones, extreme noises, and low modulations.
+How would the most meaningful equation of modern physics sound? If a small amount of mass can be turned into an incredibly big amount of energy, two simple sine waves can create unexpected tones with rich harmonic content. [ENERGY](doc/geodesics1.2-energy.pdf) is a digital oscillator/synth voice that focuses on ring modulation synthesis. Two sines are multiplied according Einstein/Poincaré’s famous equation. It is capable of meditative drones, organ tones, extreme noises, and low modulations.
 For a video introduction to this module, please see Omri Cohen's [Energy tutorial](https://www.youtube.com/watch?v=pNjUCVg9O_Y).
 
 
@@ -106,5 +106,5 @@ For a video introduction to this module, please see Omri Cohen's [Energy tutoria
 
 ![Geodesics](res/img/Fate.jpg)
 
-Is there such thing as free will? While scientists and philosophers are debating the question, Geodesics proposes [FATE](doc/geodesics1.1-fate.pdf), a dual event modifier that will bring any sequencer to life by making its own musical choices. FATE alters any signal by adding a specific amount of randomness at some chosen points, or by switching in with another signal in a probabilistic way. Without any incoming signal, FATE acts as a dual probabilistic random generator and a Bernoulli gate.
+Is there such thing as free will? While scientists and philosophers are debating the question, Geodesics proposes [FATE](doc/geodesics1.2-fate.pdf), a dual event modifier that will bring any sequencer to life by making its own musical choices. FATE alters any signal by adding a specific amount of randomness at some chosen points, or by switching in with another signal in a probabilistic way. Without any incoming signal, FATE acts as a dual probabilistic random generator and a Bernoulli gate.
 For a video introduction to a previous version of this module, please see Omri Cohen's [Fate tutorial](https://www.youtube.com/watch?v=6HRe-CnAO2E).
