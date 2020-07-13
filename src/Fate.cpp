@@ -118,9 +118,10 @@ struct Fate : Module {
 	}
 
 	void process(const ProcessArgs &args) override {		
+		int numClocks = inputs[CLOCK_INPUT].getChannels();
 		int numChan0 = inputs[MAIN_INPUTS + 0].getChannels();
 		int numChan1 = inputs[MAIN_INPUTS + 1].getChannels();	
-		int numChan = std::max(numChan0, numChan1);
+		int numChan = std::max(numClocks, std::max(numChan0, numChan1));
 
 		// user inputs
 		if (refresh.processInputs()) {
@@ -132,7 +133,6 @@ struct Fate : Module {
 		
 		// clock
 
-		int numClocks = inputs[CLOCK_INPUT].getChannels();
 		for (int c = 0; c < numChan; c++) {
 			int clkIn = std::min(c, numClocks - 1);
 			if (clockTrigger[c].process(sampledClock[clkIn])) {

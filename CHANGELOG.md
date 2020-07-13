@@ -1,7 +1,7 @@
 ### 1.1.2 (2020-07-x)
 
 - Convert svgs from px to mm
-- Add 12 dB/oct filter slope option to Torus (default is 6dB/oct)
+- Add 12 dB/oct filter slope option to Torus (and make 12 dB/oct the default)
 - Add LFO option to Planck functions in Energy
 - Make Fate polyphonic
 
