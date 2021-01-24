@@ -15,7 +15,8 @@ Based on code from the Fundamental plugins by Andrew Belt and graphics from the 
 
 
 
-# Modules <a id="modules"></a>
+<a id="modules"></a>
+# Modules
 
 Each module comes with two panel options, namely White Light and Dark Matter.
 
@@ -39,7 +40,8 @@ For sequencer modules, more detailed information on how to set up clocks, resets
 
 
 
-## Black Holes <a id="blackholes"></a>
+<a id="blackholes"></a>
+## Black Holes
 
 ![Geodesics](res/img/BlackHoles.jpg)
 
@@ -48,7 +50,8 @@ For a video introduction to this module, please see Omri Cohen's [Black Holes tu
 
 
 
-## Pulsars <a id="pulsars"></a>
+<a id="pulsars"></a>
+## Pulsars
 
 ![Geodesics](res/img/Pulsars.jpg)
 
@@ -57,7 +60,8 @@ For a video introduction to this module, please see Omri Cohen's [Pulsars tutori
 
 
 
-## Branes <a id="branes"></a>
+<a id="branes"></a>
+## Branes
 
 ![Geodesics](res/img/Branes.jpg)
 
@@ -66,7 +70,8 @@ For a video introduction to this module, please see Omri Cohen's [Branes tutoria
 
 
 
-## Ions <a id="ions"></a>
+<a id="ions"></a>
+## Ions
 
 ![Geodesics](res/img/Ions.jpg)
 
@@ -75,7 +80,8 @@ For a video introduction to this module, please see Omri Cohen's [Ions tutorial]
 
 
 
-## Entropia <a id="entropia"></a>
+<a id="entropia"></a>
+## Entropia
 
 ![Geodesics](res/img/Entropia.jpg)
 
@@ -84,7 +90,8 @@ For a video introduction to this module, please see Omri Cohen's [Entropia tutor
 
 
 
-## Torus <a id="torus"></a>
+<a id="torus"></a>
+## Torus
 
 ![Geodesics](res/img/Torus.jpg)
 
@@ -93,7 +100,8 @@ For a video introduction to this module, please see Omri Cohen's [Torus tutorial
 
 
 
-## Energy <a id="energy"></a>
+<a id="energy"></a>
+## Energy
 
 ![Geodesics](res/img/Energy.jpg)
 
@@ -102,7 +110,8 @@ For a video introduction to this module, please see Omri Cohen's [Energy tutoria
 
 
 
-## Fate <a id="fate"></a>
+<a id="fate"></a>
+## Fate
 
 ![Geodesics](res/img/Fate.jpg)
 
