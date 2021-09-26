@@ -721,6 +721,7 @@ struct IonsWidget : ModuleWidget {
 	
 	void step() override {
 		if (module) {
+			Widget* panel = getPanel();
 			panel->visible = ((((Ions*)module)->panelTheme) == 0);
 			darkPanel->visible  = ((((Ions*)module)->panelTheme) == 1);
 		}

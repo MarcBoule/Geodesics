@@ -193,6 +193,7 @@ struct BlankLogoWidget : ModuleWidget {
 	
 	void step() override {
 		if (module) {
+			Widget* panel = getPanel();
 			panel->visible = ((((BlankLogo*)module)->panelTheme) == 0);
 			darkPanel->visible  = ((((BlankLogo*)module)->panelTheme) == 1);
 		}

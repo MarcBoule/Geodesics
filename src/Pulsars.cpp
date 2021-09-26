@@ -652,6 +652,7 @@ struct PulsarsWidget : ModuleWidget {
 	
 	void step() override {
 		if (module) {
+			Widget* panel = getPanel();
 			panel->visible = ((((Pulsars*)module)->panelTheme) == 0);
 			darkPanel->visible  = ((((Pulsars*)module)->panelTheme) == 1);
 		}

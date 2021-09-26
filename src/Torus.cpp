@@ -515,6 +515,7 @@ struct TorusWidget : ModuleWidget {
 	
 	void step() override {
 		if (module) {
+			Widget* panel = getPanel();
 			panel->visible = ((((Torus*)module)->panelTheme) == 0);
 			darkPanel->visible  = ((((Torus*)module)->panelTheme) == 1);
 		}

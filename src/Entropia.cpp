@@ -861,6 +861,7 @@ struct EntropiaWidget : ModuleWidget {
 	
 	void step() override {
 		if (module) {
+			Widget* panel = getPanel();
 			panel->visible = ((((Entropia*)module)->panelTheme) == 0);
 			darkPanel->visible  = ((((Entropia*)module)->panelTheme) == 1);
 		}

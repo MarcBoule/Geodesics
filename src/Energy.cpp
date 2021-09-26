@@ -517,6 +517,7 @@ struct EnergyWidget : ModuleWidget {
 	
 	void step() override {
 		if (module) {
+			Widget* panel = getPanel();
 			panel->visible = ((((Energy*)module)->panelTheme) == 0);
 			darkPanel->visible  = ((((Energy*)module)->panelTheme) == 1);
 		}

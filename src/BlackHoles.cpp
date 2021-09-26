@@ -430,6 +430,7 @@ struct BlackHolesWidget : ModuleWidget {
 	
 	void step() override {
 		if (module) {
+			Widget* panel = getPanel();
 			panel->visible = ((((BlackHoles*)module)->panelTheme) == 0);
 			darkPanel->visible  = ((((BlackHoles*)module)->panelTheme) == 1);
 		}

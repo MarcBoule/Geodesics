@@ -105,6 +105,7 @@ struct BlankInfoWidget : ModuleWidget {
 	
 	void step() override {
 		if (module) {
+			Widget* panel = getPanel();
 			panel->visible = ((((BlankInfo*)module)->panelTheme) == 0);
 			darkPanel->visible  = ((((BlankInfo*)module)->panelTheme) == 1);
 		}

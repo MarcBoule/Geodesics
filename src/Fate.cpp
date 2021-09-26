@@ -294,6 +294,7 @@ struct FateWidget : ModuleWidget {
 	
 	void step() override {
 		if (module) {
+			Widget* panel = getPanel();
 			panel->visible = ((((Fate*)module)->panelTheme) == 0);
 			darkPanel->visible  = ((((Fate*)module)->panelTheme) == 1);
 		}
