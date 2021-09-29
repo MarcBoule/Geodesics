@@ -252,8 +252,13 @@ struct BlackHoles : Module {
 		for (int c = 0; c < numChanVcas[vcaIndex]; c++) {
 			float levCv = 0.0f;
 			if (levelCV.isConnected()) {
-				int chan = std::min(levelCV.getChannels() - 1, c);
-				levCv = levelCV.getVoltage(chan) * levCvMultiplier;
+				// original version:
+				// int chan = std::min(levelCV.getChannels() - 1, c);
+				// levCv = levelCV.getVoltage(chan) * levCvMultiplier;
+				// new version sept 28 2021:
+				if (c < levelCV.getChannels()) {
+					levCv = levelCV.getVoltage(c) * levCvMultiplier;
+				}
 			}
 			float lev = clamp(knobValue + levCv, -1.0f, 1.0f);
 			if (isExp) {
@@ -276,6 +281,14 @@ struct BlackHoles : Module {
 			float newBlackHole = outputs[BLACKHOLE_OUTPUTS + blackOutIndex].getVoltage(c);
 			newBlackHole += ret;
 			outputs[BLACKHOLE_OUTPUTS + blackOutIndex].setVoltage(newBlackHole, c);
+		}
+		if (outputs[BLACKHOLE_OUTPUTS + blackOutIndex].getChannels() > numChanVcas[vcaIndex] && !in.isConnected()) {
+			// extra Pyer feature sept 28 2021
+			for (int c = numChanVcas[vcaIndex]; c < outputs[BLACKHOLE_OUTPUTS + blackOutIndex].getChannels(); c++) {
+				float newBlackHole = outputs[BLACKHOLE_OUTPUTS + blackOutIndex].getVoltage(c);
+				newBlackHole += out.getVoltage(numChanVcas[vcaIndex] - 1);
+				outputs[BLACKHOLE_OUTPUTS + blackOutIndex].setVoltage(newBlackHole, c);
+			}
 		}
 	}	
 };
