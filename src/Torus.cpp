@@ -398,6 +398,7 @@ struct Torus : Module {
 
 
 struct TorusWidget : ModuleWidget {
+	int lastPanelTheme = -1;
 	SvgPanel* darkPanel;
 
 	// Filter slope mode menu
@@ -480,7 +481,7 @@ struct TorusWidget : ModuleWidget {
         if (module) {
 			darkPanel = new SvgPanel();
 			darkPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DarkMatter/Torus-DM.svg")));
-			darkPanel->visible = false;
+			darkPanel->setVisible(false);
 			addChild(darkPanel);
 		}
 
@@ -515,9 +516,13 @@ struct TorusWidget : ModuleWidget {
 	
 	void step() override {
 		if (module) {
-			Widget* panel = getPanel();
-			panel->visible = ((((Torus*)module)->panelTheme) == 0);
-			darkPanel->visible  = ((((Torus*)module)->panelTheme) == 1);
+			int panelTheme = ((Torus*)module)->panelTheme;
+			if (lastPanelTheme != panelTheme) {
+				lastPanelTheme = panelTheme;
+				Widget* panel = getPanel();
+				panel->setVisible(panelTheme == 0);
+				darkPanel->setVisible(panelTheme == 1);
+			}
 		}
 		Widget::step();
 	}

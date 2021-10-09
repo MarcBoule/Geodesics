@@ -199,6 +199,7 @@ struct Fate : Module {
 
 
 struct FateWidget : ModuleWidget {
+	int lastPanelTheme = -1;
 	SvgPanel* darkPanel;
 
 	struct PanelThemeItem : MenuItem {
@@ -260,7 +261,7 @@ struct FateWidget : ModuleWidget {
         if (module) {
 			darkPanel = new SvgPanel();
 			darkPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DarkMatter/Fate-DM.svg")));
-			darkPanel->visible = false;
+			darkPanel->setVisible(false);
 			addChild(darkPanel);
 		}
 
@@ -294,9 +295,13 @@ struct FateWidget : ModuleWidget {
 	
 	void step() override {
 		if (module) {
-			Widget* panel = getPanel();
-			panel->visible = ((((Fate*)module)->panelTheme) == 0);
-			darkPanel->visible  = ((((Fate*)module)->panelTheme) == 1);
+			int panelTheme = ((Fate*)module)->panelTheme;
+			if (lastPanelTheme != panelTheme) {
+				lastPanelTheme = panelTheme;
+				Widget* panel = getPanel();
+				panel->setVisible(panelTheme == 0);
+				darkPanel->setVisible(panelTheme == 1);
+			}
 		}
 		Widget::step();
 	}

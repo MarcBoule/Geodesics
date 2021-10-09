@@ -499,6 +499,7 @@ struct Ions : Module {
 
 
 struct IonsWidget : ModuleWidget {
+	int lastPanelTheme = -1;
 	SvgPanel* darkPanel;
 
 	struct PanelThemeItem : MenuItem {
@@ -545,7 +546,7 @@ struct IonsWidget : ModuleWidget {
         if (module) {
 			darkPanel = new SvgPanel();
 			darkPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DarkMatter/Ions-DM.svg")));
-			darkPanel->visible = false;
+			darkPanel->setVisible(false);
 			addChild(darkPanel);
 		}
 		
@@ -721,9 +722,13 @@ struct IonsWidget : ModuleWidget {
 	
 	void step() override {
 		if (module) {
-			Widget* panel = getPanel();
-			panel->visible = ((((Ions*)module)->panelTheme) == 0);
-			darkPanel->visible  = ((((Ions*)module)->panelTheme) == 1);
+			int panelTheme = ((Ions*)module)->panelTheme;
+			if (lastPanelTheme != panelTheme) {
+				lastPanelTheme = panelTheme;
+				Widget* panel = getPanel();
+				panel->setVisible(panelTheme == 0);
+				darkPanel->setVisible(panelTheme == 1);
+			}
 		}
 		Widget::step();
 	}

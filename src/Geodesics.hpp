@@ -62,7 +62,7 @@ struct BlankPort : SvgPort {
 	BlankPort() {
 		setSvg(APP->window->loadSvg(asset::system("res/ComponentLibrary/PJ301M.svg")));
 		shadow->opacity = 0.0;
-		sw->visible = false;
+		sw->hide();
 	}
 };
 

@@ -453,6 +453,7 @@ struct Branes : Module {
 
 
 struct BranesWidget : ModuleWidget {
+	int lastPanelTheme = -1;
 	SvgPanel* darkPanel;
 
 	struct PanelThemeItem : MenuItem {
@@ -524,7 +525,7 @@ struct BranesWidget : ModuleWidget {
         if (module) {
 			darkPanel = new SvgPanel();
 			darkPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DarkMatter/Branes-DM.svg")));
-			darkPanel->visible = false;
+			darkPanel->setVisible(false);
 			addChild(darkPanel);
 		}
 		
@@ -611,9 +612,13 @@ struct BranesWidget : ModuleWidget {
 	
 	void step() override {
 		if (module) {
-			Widget* panel = getPanel();
-			panel->visible = ((((Branes*)module)->panelTheme) == 0);
-			darkPanel->visible  = ((((Branes*)module)->panelTheme) == 1);
+			int panelTheme = ((Branes*)module)->panelTheme;
+			if (lastPanelTheme != panelTheme) {
+				lastPanelTheme = panelTheme;
+				Widget* panel = getPanel();
+				panel->setVisible(panelTheme == 0);
+				darkPanel->setVisible(panelTheme == 1);
+			}
 		}
 		Widget::step();
 	}

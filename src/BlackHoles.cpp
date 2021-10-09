@@ -295,6 +295,7 @@ struct BlackHoles : Module {
 
 
 struct BlackHolesWidget : ModuleWidget {
+	int lastPanelTheme = -1;
 	SvgPanel* darkPanel;
 
 	struct PanelThemeItem : MenuItem {
@@ -341,7 +342,7 @@ struct BlackHolesWidget : ModuleWidget {
         if (module) {
 			darkPanel = new SvgPanel();
 			darkPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DarkMatter/BlackHoles-DM.svg")));
-			darkPanel->visible = false;
+			darkPanel->setVisible(false);
 			addChild(darkPanel);
 		}
 		
@@ -443,9 +444,13 @@ struct BlackHolesWidget : ModuleWidget {
 	
 	void step() override {
 		if (module) {
-			Widget* panel = getPanel();
-			panel->visible = ((((BlackHoles*)module)->panelTheme) == 0);
-			darkPanel->visible  = ((((BlackHoles*)module)->panelTheme) == 1);
+			int panelTheme = ((BlackHoles*)module)->panelTheme;
+			if (lastPanelTheme != panelTheme) {
+				lastPanelTheme = panelTheme;
+				Widget* panel = getPanel();
+				panel->setVisible(panelTheme == 0);
+				darkPanel->setVisible(panelTheme == 1);
+			}
 		}
 		Widget::step();
 	}

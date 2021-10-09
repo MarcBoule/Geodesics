@@ -48,6 +48,7 @@ struct BlankInfo : Module {
 
 
 struct BlankInfoWidget : ModuleWidget {
+	int lastPanelTheme = -1;
 	SvgPanel* darkPanel;
 
 	struct PanelThemeItem : MenuItem {
@@ -95,7 +96,7 @@ struct BlankInfoWidget : ModuleWidget {
         if (module) {
 			darkPanel = new SvgPanel();
 			darkPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DarkMatter/BlankInfo-DM.svg")));
-			darkPanel->visible = false;
+			darkPanel->setVisible(false);
 			addChild(darkPanel);
 		}
 		
@@ -105,9 +106,13 @@ struct BlankInfoWidget : ModuleWidget {
 	
 	void step() override {
 		if (module) {
-			Widget* panel = getPanel();
-			panel->visible = ((((BlankInfo*)module)->panelTheme) == 0);
-			darkPanel->visible  = ((((BlankInfo*)module)->panelTheme) == 1);
+			int panelTheme = ((BlankInfo*)module)->panelTheme;
+			if (lastPanelTheme != panelTheme) {
+				lastPanelTheme = panelTheme;
+				Widget* panel = getPanel();
+				panel->setVisible(panelTheme == 0);
+				darkPanel->setVisible(panelTheme == 1);
+			}
 		}
 		Widget::step();
 	}
