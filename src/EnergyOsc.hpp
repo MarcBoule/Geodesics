@@ -243,7 +243,7 @@ struct Phasor : OscillatorGenerator {
 	float _next() override final;
 	virtual float _nextForPhase(phase_t phase);
 
-	inline static phase_delta_t radiansToPhase(float radians) { return (radians / twoPI) * maxPhase; }
+	inline static phase_delta_t radiansToPhase(float radians) { return (radians / twoPI) * (float)maxPhase; }
 	inline static float phaseToRadians(phase_t phase) { return (phase / (float)maxPhase) * twoPI; }
 };
 

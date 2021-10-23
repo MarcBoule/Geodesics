@@ -145,7 +145,7 @@ float Phasor::nextFromPhasor(const Phasor& phasor, phase_delta_t offset) {
 }
 
 void Phasor::_update() {
-	_delta = ((phase_delta_t)((_frequency / _sampleRate) * maxPhase)) % maxPhase;
+	_delta = ((phase_delta_t)((_frequency / _sampleRate) * (float)maxPhase)) % maxPhase;
 }
 
 float Phasor::_next() {
