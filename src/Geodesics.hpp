@@ -91,6 +91,13 @@ struct GeoKnob : DynamicSVGKnob {
 		//shadow->box.pos = Vec(0.0, box.size.y * 0.15); may need this if knob is small (taken from IMSmallKnob)
 		addFrameAll(APP->window->loadSvg(asset::plugin(pluginInstance, "res/WhiteLight/Knob-WL.svg")));
 		addFrameAlt(asset::plugin(pluginInstance, "res/DarkMatter/Knob-DM.svg"));
+		
+		addFrameBgAll(APP->window->loadSvg(asset::plugin(pluginInstance, "res/WhiteLight/Knob-WL_bg.svg")));
+		addFrameBgAlt(asset::plugin(pluginInstance, "res/DarkMatter/Knob-DM_bg.svg"));
+		
+		addFrameFgAll(APP->window->loadSvg(asset::plugin(pluginInstance, "res/WhiteLight/Knob-WL_fg.svg")));
+		addFrameFgAlt(asset::plugin(pluginInstance, "res/DarkMatter/Knob-DM_fg.svg"));
+		
 		shadow->blurRadius = box.size.y * blurRadiusRatio;
 	}
 };

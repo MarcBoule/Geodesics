@@ -77,6 +77,24 @@ void DynamicSVGKnob::addFrameAll(std::shared_ptr<Svg> svg) {
 	}
 }
 
+void DynamicSVGKnob::addFrameBgAll(std::shared_ptr<Svg> svg) {
+    framesBgAll.push_back(svg);
+	if (framesBgAll.size() == 1) {
+		bg = new widget::SvgWidget;
+		fb->addChildBelow(bg, tw);
+		bg->setSvg(svg);
+	}
+}
+
+void DynamicSVGKnob::addFrameFgAll(std::shared_ptr<Svg> svg) {
+    framesFgAll.push_back(svg);
+	if (framesFgAll.size() == 1) {
+		fg = new widget::SvgWidget;
+		fb->addChildAbove(fg, tw);
+		fg->setSvg(svg);
+	}
+}
+
 void DynamicSVGKnob::setOrientation(float angle) {
 	tw->removeChild(sw);
 	TransformWidget *tw2 = new TransformWidget();
@@ -94,12 +112,30 @@ void DynamicSVGKnob::step() {
         if (*mode > 0 && !frameAltName.empty()) {// JIT loading of alternate skin
 			framesAll.push_back(APP->window->loadSvg(frameAltName));
 			frameAltName.clear();// don't reload!
+			if (!frameAltBgName.empty()) {
+				framesBgAll.push_back(APP->window->loadSvg(frameAltBgName));
+			}
+			if (!frameAltFgName.empty()) {
+				framesFgAll.push_back(APP->window->loadSvg(frameAltFgName));
+			}
 		}
         if ((*mode) == 0) {
 			setSvg(framesAll[0]);
+			if (!frameAltBgName.empty()) {
+				bg->setSvg(framesBgAll[0]);
+			}
+			if (!frameAltFgName.empty()) {
+				fg->setSvg(framesFgAll[0]);
+			}
 		}
 		else {
 			setSvg(framesAll[1]);
+			if (!frameAltBgName.empty()) {
+				bg->setSvg(framesBgAll[1]);
+			}
+			if (!frameAltFgName.empty()) {
+				fg->setSvg(framesFgAll[1]);
+			}
 		}
         oldMode = *mode;
 		fb->dirty = true;

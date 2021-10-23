@@ -64,10 +64,20 @@ struct DynamicSVGKnob : SvgKnob {
     int* mode = NULL;
     int oldMode = -1;
 	std::vector<std::shared_ptr<Svg>> framesAll;
+	std::vector<std::shared_ptr<Svg>> framesBgAll;
+	std::vector<std::shared_ptr<Svg>> framesFgAll;
 	std::string frameAltName;
+	std::string frameAltBgName;
+	std::string frameAltFgName;
+	widget::SvgWidget* bg = NULL;
+	widget::SvgWidget* fg = NULL;
 	
 	void setOrientation(float angle);
 	void addFrameAll(std::shared_ptr<Svg> svg);
     void addFrameAlt(std::string filename) {frameAltName = filename;}
+	void addFrameBgAll(std::shared_ptr<Svg> svg);
+    void addFrameBgAlt(std::string filename) {frameAltBgName = filename;}
+	void addFrameFgAll(std::shared_ptr<Svg> svg);
+    void addFrameFgAlt(std::string filename) {frameAltFgName = filename;}
     void step() override;
 };
