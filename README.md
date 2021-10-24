@@ -1,4 +1,4 @@
-This page shows a very brief overview of the modules. For more information, including videos of the modules in use, please see the [Geodesics Website](https://www.pyer.be/geodesics.html). The modules are available in the [plugin library](https://vcvrack.com/plugins.html) of [VCV Rack](https://vcvrack.com). 
+This page shows a very brief overview of the modules. For more information, including videos of the modules in use, please see the [Geodesics Website](https://www.pyer.be/geodesics.html). The modules are available in the [plugin library](https://library.vcvrack.com/) of [VCV Rack](https://vcvrack.com). 
 
 * [Complete user manual](doc/geodesics2.0-complete_user_manual.pdf) (version 2.2.0)
 
@@ -9,8 +9,7 @@ This page shows a very brief overview of the modules. For more information, incl
 
 ## License
 
-Based on code from the Fundamental plugins by Andrew Belt and graphics from the Component Library by Wes Milholen. See [LICENSE.md](LICENSE.md) for all licenses.
-
+See [LICENSE.md](LICENSE.md) for all licenses.
 
 
 <a id="modules"></a>
