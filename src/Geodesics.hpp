@@ -141,17 +141,8 @@ struct BlankCKnob : DynamicSVGKnob {
 
 struct GeoGrayModuleLight : ModuleLightWidget {
 	GeoGrayModuleLight() {
-		// rack v1
-		// bgColor = nvgRGB(0x5a, 0x5a, 0x5a);
-		// borderColor = nvgRGBA(0, 0, 0, 0x60);
-
-		// rack v2
 		bgColor = nvgRGBA(0x33, 0x33, 0x33, 0xff);
 		borderColor = nvgRGBA(0, 0, 0, 53);
-		
-		// geodesics v1
-		// bgColor = nvgRGB(0x8e, 0x8e, 0x8e);
-		// borderColor = nvgRGB(0x1d, 0x1d, 0x1b);//nvgRGBA(0, 0, 0, 0x60);
 	}
 	
 	void drawLight(const DrawArgs &args) override { // from app/LightWidget.cpp (only nvgStrokeWidth of border was changed)
@@ -316,13 +307,3 @@ struct HoldDetect {
 };
 
 int getWeighted1to8random();
-
-
-void saveDarkAsDefault(bool darkAsDefault);
-bool loadDarkAsDefault();
-
-struct DarkDefaultItem : MenuItem {
-	void onAction(const event::Action &e) override {
-		saveDarkAsDefault(rightText.empty());// implicitly toggled
-	}
-};	

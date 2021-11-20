@@ -520,12 +520,13 @@ struct BranesWidget : ModuleWidget {
 
 		// Main panels from Inkscape
         setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/WhiteLight/Branes-WL.svg")));
-        if (module) {
-			darkPanel = new SvgPanel();
-			darkPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DarkMatter/Branes-DM.svg")));
-			darkPanel->setVisible(false);
-			addChild(darkPanel);
-		}
+		darkPanel = new SvgPanel();
+		darkPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DarkMatter/Branes-DM.svg")));
+		darkPanel->setVisible(false);
+		addChild(darkPanel);
+		int panelTheme = isDark(module ? &(((Branes*)module)->panelTheme) : NULL) ? 1 : 0;// need this here since step() not called for module browser
+		getPanel()->setVisible(panelTheme == 0);
+		darkPanel->setVisible(panelTheme == 1);
 		
 		// Screws 
 		// part of svg panel, no code required
@@ -609,14 +610,12 @@ struct BranesWidget : ModuleWidget {
 	}
 	
 	void step() override {
-		if (module) {
-			int panelTheme = ((Branes*)module)->panelTheme;
-			if (lastPanelTheme != panelTheme) {
-				lastPanelTheme = panelTheme;
-				Widget* panel = getPanel();
-				panel->setVisible(panelTheme == 0);
-				darkPanel->setVisible(panelTheme == 1);
-			}
+		int panelTheme = isDark(module ? &((Branes*)module)->panelTheme : NULL) ? 1 : 0;
+		if (lastPanelTheme != panelTheme) {
+			lastPanelTheme = panelTheme;
+			Widget* panel = getPanel();
+			panel->setVisible(panelTheme == 0);
+			darkPanel->setVisible(panelTheme == 1);
 		}
 		Widget::step();
 	}

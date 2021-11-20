@@ -543,12 +543,13 @@ struct IonsWidget : ModuleWidget {
 
 		// Main panels from Inkscape
         setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/WhiteLight/Ions-WL.svg")));
-        if (module) {
-			darkPanel = new SvgPanel();
-			darkPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DarkMatter/Ions-DM.svg")));
-			darkPanel->setVisible(false);
-			addChild(darkPanel);
-		}
+		darkPanel = new SvgPanel();
+		darkPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DarkMatter/Ions-DM.svg")));
+		darkPanel->setVisible(false);
+		addChild(darkPanel);
+		int panelTheme = isDark(module ? &(((Ions*)module)->panelTheme) : NULL) ? 1 : 0;// need this here since step() not called for module browser
+		getPanel()->setVisible(panelTheme == 0);
+		darkPanel->setVisible(panelTheme == 1);
 		
 		// Screws 
 		// part of svg panel, no code required
@@ -721,14 +722,12 @@ struct IonsWidget : ModuleWidget {
 	}
 	
 	void step() override {
-		if (module) {
-			int panelTheme = ((Ions*)module)->panelTheme;
-			if (lastPanelTheme != panelTheme) {
-				lastPanelTheme = panelTheme;
-				Widget* panel = getPanel();
-				panel->setVisible(panelTheme == 0);
-				darkPanel->setVisible(panelTheme == 1);
-			}
+		int panelTheme = isDark(module ? &((Ions*)module)->panelTheme : NULL) ? 1 : 0;
+		if (lastPanelTheme != panelTheme) {
+			lastPanelTheme = panelTheme;
+			Widget* panel = getPanel();
+			panel->setVisible(panelTheme == 0);
+			darkPanel->setVisible(panelTheme == 1);
 		}
 		Widget::step();
 	}

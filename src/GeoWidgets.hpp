@@ -13,6 +13,25 @@ using namespace rack;
 
 
 
+// ******** Panel Theme management ********
+
+void saveDarkAsDefault(bool darkAsDefault);
+bool loadDarkAsDefault();
+
+struct DarkDefaultItem : MenuItem {
+	void onAction(const event::Action &e) override {
+		saveDarkAsDefault(rightText.empty());// implicitly toggled
+	}
+};	
+
+inline bool isDark(int* panelTheme) {
+	if (panelTheme != NULL) {
+		return (*panelTheme != 0);
+	}
+	return loadDarkAsDefault();
+}
+
+
 // ******** Dynamic Ports ********
 
 // General Dynamic Port creation
