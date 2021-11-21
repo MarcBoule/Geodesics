@@ -58,7 +58,7 @@ void DynamicSVGPort::addFrame(std::shared_ptr<Svg> svg) {
 }
 
 
-void DynamicSVGPort::step() {
+void DynamicSVGPort::refreshForTheme() {
     int effMode = isDark(mode) ? 1 : 0;
 	if (effMode != oldMode) {
         if (effMode > 0 && !frameAltName.empty()) {// JIT loading of alternate skin
@@ -69,6 +69,11 @@ void DynamicSVGPort::step() {
         oldMode = effMode;
         fb->dirty = true;
     }
+}
+
+
+void DynamicSVGPort::step() {
+	refreshForTheme();
 	PortWidget::step();
 }
 
@@ -84,7 +89,8 @@ void DynamicSVGSwitch::addFrameAll(std::shared_ptr<Svg> svg) {
 	}
 }
 
-void DynamicSVGSwitch::step() {
+
+void DynamicSVGSwitch::refreshForTheme() {
     int effMode = isDark(mode) ? 1 : 0;
 	if (effMode != oldMode) {
         if (effMode > 0 && !frameAltName0.empty() && !frameAltName1.empty()) {// JIT loading of alternate skin
@@ -105,6 +111,11 @@ void DynamicSVGSwitch::step() {
 		onChange(*(new event::Change()));// required because of the way SVGSwitch changes images, we only change the frames above.
 		fb->dirty = true;// dirty is not sufficient when changing via frames assignments above (i.e. onChange() is required)
     }
+}
+
+
+void DynamicSVGSwitch::step() {
+	refreshForTheme();
 	SvgSwitch::step();
 }
 
@@ -119,6 +130,7 @@ void DynamicSVGKnob::addFrameAll(std::shared_ptr<Svg> svg) {
 	}
 }
 
+
 void DynamicSVGKnob::addFrameBgAll(std::shared_ptr<Svg> svg) {
     framesBgAll.push_back(svg);
 	if (framesBgAll.size() == 1) {
@@ -128,6 +140,7 @@ void DynamicSVGKnob::addFrameBgAll(std::shared_ptr<Svg> svg) {
 	}
 }
 
+
 void DynamicSVGKnob::addFrameFgAll(std::shared_ptr<Svg> svg) {
     framesFgAll.push_back(svg);
 	if (framesFgAll.size() == 1) {
@@ -136,6 +149,7 @@ void DynamicSVGKnob::addFrameFgAll(std::shared_ptr<Svg> svg) {
 		fg->setSvg(svg);
 	}
 }
+
 
 void DynamicSVGKnob::setOrientation(float angle) {
 	tw->removeChild(sw);
@@ -149,7 +163,8 @@ void DynamicSVGKnob::setOrientation(float angle) {
 	tw2->translate(center.neg());
 }
 
-void DynamicSVGKnob::step() {
+
+void DynamicSVGKnob::refreshForTheme() {
     int effMode = isDark(mode) ? 1 : 0;
 	if (effMode != oldMode) {
         if (effMode > 0 && !frameAltName.empty()) {// JIT loading of alternate skin
@@ -183,5 +198,10 @@ void DynamicSVGKnob::step() {
         oldMode = effMode;
 		fb->dirty = true;
     }
+}
+
+
+void DynamicSVGKnob::step() {
+	refreshForTheme();
 	SvgKnob::step();
 }

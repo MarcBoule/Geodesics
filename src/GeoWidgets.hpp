@@ -52,6 +52,7 @@ struct DynamicSVGPort : SvgPort {
 
     void addFrame(std::shared_ptr<Svg> svg);
     void addFrameAlt(std::string filename) {frameAltName = filename;}
+	void refreshForTheme();// must be called after resources are set, or first module in module browser will not have proper theme
     void step() override;
 };
 
@@ -76,7 +77,8 @@ struct DynamicSVGSwitch : SvgSwitch {
 	void addFrameAll(std::shared_ptr<Svg> svg);
     void addFrameAlt0(std::string filename) {frameAltName0 = filename;}
     void addFrameAlt1(std::string filename) {frameAltName1 = filename;}
-    void step() override;
+	void refreshForTheme();// must be called after resources are set, or first module in module browser will not have proper theme
+	void step() override;
 };
 
 struct DynamicSVGKnob : SvgKnob {
@@ -98,5 +100,6 @@ struct DynamicSVGKnob : SvgKnob {
     void addFrameBgAlt(std::string filename) {frameAltBgName = filename;}
 	void addFrameFgAll(std::shared_ptr<Svg> svg);
     void addFrameFgAlt(std::string filename) {frameAltFgName = filename;}
+	void refreshForTheme();// must be called after resources are set, or first module in module browser will not have proper theme
     void step() override;
 };
