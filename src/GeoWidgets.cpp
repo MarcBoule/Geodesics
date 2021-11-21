@@ -59,7 +59,7 @@ void DynamicSVGPort::addFrame(std::shared_ptr<Svg> svg) {
 
 
 void DynamicSVGPort::step() {
-    int effMode = isDark(mode);
+    int effMode = isDark(mode) ? 1 : 0;
 	if (effMode != oldMode) {
         if (effMode > 0 && !frameAltName.empty()) {// JIT loading of alternate skin
 			frames.push_back(APP->window->loadSvg(frameAltName));
@@ -85,7 +85,7 @@ void DynamicSVGSwitch::addFrameAll(std::shared_ptr<Svg> svg) {
 }
 
 void DynamicSVGSwitch::step() {
-    int effMode = isDark(mode);
+    int effMode = isDark(mode) ? 1 : 0;
 	if (effMode != oldMode) {
         if (effMode > 0 && !frameAltName0.empty() && !frameAltName1.empty()) {// JIT loading of alternate skin
 			framesAll.push_back(APP->window->loadSvg(frameAltName0));
@@ -150,7 +150,7 @@ void DynamicSVGKnob::setOrientation(float angle) {
 }
 
 void DynamicSVGKnob::step() {
-    int effMode = isDark(mode);
+    int effMode = isDark(mode) ? 1 : 0;
 	if (effMode != oldMode) {
         if (effMode > 0 && !frameAltName.empty()) {// JIT loading of alternate skin
 			framesAll.push_back(APP->window->loadSvg(frameAltName));
