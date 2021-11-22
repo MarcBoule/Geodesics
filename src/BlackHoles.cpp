@@ -444,7 +444,7 @@ struct BlackHolesWidget : ModuleWidget {
 	}
 	
 	void step() override {
-		int panelTheme = isDark(module ? &((BlackHoles*)module)->panelTheme : NULL) ? 1 : 0;
+		int panelTheme = isDark(module ? (&(((BlackHoles*)module)->panelTheme)) : NULL) ? 1 : 0;
 		if (lastPanelTheme != panelTheme) {
 			lastPanelTheme = panelTheme;
 			Widget* panel = getPanel();

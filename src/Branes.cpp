@@ -610,7 +610,7 @@ struct BranesWidget : ModuleWidget {
 	}
 	
 	void step() override {
-		int panelTheme = isDark(module ? &((Branes*)module)->panelTheme : NULL) ? 1 : 0;
+		int panelTheme = isDark(module ? (&(((Branes*)module)->panelTheme)) : NULL) ? 1 : 0;
 		if (lastPanelTheme != panelTheme) {
 			lastPanelTheme = panelTheme;
 			Widget* panel = getPanel();

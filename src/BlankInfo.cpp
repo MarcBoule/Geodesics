@@ -106,7 +106,7 @@ struct BlankInfoWidget : ModuleWidget {
 	}
 	
 	void step() override {
-		int panelTheme = isDark(module ? &((BlankInfo*)module)->panelTheme : NULL) ? 1 : 0;
+		int panelTheme = isDark(module ? (&(((BlankInfo*)module)->panelTheme)) : NULL) ? 1 : 0;
 		if (lastPanelTheme != panelTheme) {
 			lastPanelTheme = panelTheme;
 			Widget* panel = getPanel();
