@@ -41,6 +41,7 @@ TDynamicPort* createDynamicPort(Vec pos, bool isInput, Module *module, int portI
 		createInputCentered<TDynamicPort>(pos, module, portId) :
 		createOutputCentered<TDynamicPort>(pos, module, portId);
 	dynPort->mode = mode;
+	dynPort->refreshForTheme();// all TDynamicPort must have this
 	return dynPort;
 }
 
@@ -52,7 +53,7 @@ struct DynamicSVGPort : SvgPort {
 
     void addFrame(std::shared_ptr<Svg> svg);
     void addFrameAlt(std::string filename) {frameAltName = filename;}
-	void refreshForTheme();// must be called after resources are set, or first module in module browser will not have proper theme
+	void refreshForTheme();
     void step() override;
 };
 
@@ -64,6 +65,7 @@ template <class TDynamicParam>
 TDynamicParam* createDynamicParam(Vec pos, Module *module, int paramId, int* mode) {
 	TDynamicParam *dynParam = createParamCentered<TDynamicParam>(pos, module, paramId);
 	dynParam->mode = mode;
+	dynParam->refreshForTheme();// all TDynamicParam must have this
 	return dynParam;
 }
 
@@ -77,7 +79,7 @@ struct DynamicSVGSwitch : SvgSwitch {
 	void addFrameAll(std::shared_ptr<Svg> svg);
     void addFrameAlt0(std::string filename) {frameAltName0 = filename;}
     void addFrameAlt1(std::string filename) {frameAltName1 = filename;}
-	void refreshForTheme();// must be called after resources are set, or first module in module browser will not have proper theme
+	void refreshForTheme();
 	void step() override;
 };
 
@@ -100,6 +102,6 @@ struct DynamicSVGKnob : SvgKnob {
     void addFrameBgAlt(std::string filename) {frameAltBgName = filename;}
 	void addFrameFgAll(std::shared_ptr<Svg> svg);
     void addFrameFgAlt(std::string filename) {frameAltFgName = filename;}
-	void refreshForTheme();// must be called after resources are set, or first module in module browser will not have proper theme
+	void refreshForTheme();
     void step() override;
 };

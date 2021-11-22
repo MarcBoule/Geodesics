@@ -54,7 +54,6 @@ struct GeoPort : DynamicSVGPort {
 		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/WhiteLight/Jack-WL.svg")));
 		addFrameAlt(asset::plugin(pluginInstance, "res/DarkMatter/Jack-DM.svg"));
 		shadow->blurRadius = 1.0f;
-		refreshForTheme();
 	}
 };
 
@@ -78,7 +77,6 @@ struct GeoPushButton : DynamicSVGSwitch {
 		addFrameAll(APP->window->loadSvg(asset::plugin(pluginInstance, "res/WhiteLight/PushButton1_1.svg")));
 		addFrameAlt0(asset::plugin(pluginInstance, "res/DarkMatter/PushButton1_0.svg"));
 		addFrameAlt1(asset::plugin(pluginInstance, "res/DarkMatter/PushButton1_1.svg"));
-		refreshForTheme();
 	}
 };
 
@@ -101,7 +99,6 @@ struct GeoKnob : DynamicSVGKnob {
 		addFrameFgAlt(asset::plugin(pluginInstance, "res/DarkMatter/Knob-DM_fg.svg"));
 		
 		shadow->blurRadius = box.size.y * blurRadiusRatio;
-		refreshForTheme();
 	}
 };
 
@@ -135,7 +132,6 @@ struct BlankCKnob : DynamicSVGKnob {
 		addFrameAll(APP->window->loadSvg(asset::plugin(pluginInstance, "res/WhiteLight/C-WL.svg")));
 		addFrameAlt(asset::plugin(pluginInstance, "res/DarkMatter/C-DM.svg"));
 		shadow->opacity = 0.0;
-		refreshForTheme();
 	}
 };
 
