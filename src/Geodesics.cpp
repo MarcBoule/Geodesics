@@ -29,11 +29,11 @@ void init(Plugin *p) {
 	p->addModel(modelBlankLogo);
 	p->addModel(modelBlankInfo);
 	
-	defaultPanelTheme = readDarkAsDefault();
+	readDarkAsDefault();
 }
 
 void destroy() {
-	writeDarkAsDefault(defaultPanelTheme);
+	writeDarkAsDefault();
 }
 
 

@@ -15,17 +15,14 @@ using namespace rack;
 
 // ******** Panel Theme management ********
 
-extern bool defaultPanelTheme;// matches the file
 
-void writeDarkAsDefault(bool darkAsDefault);
-bool readDarkAsDefault();
+void saveDarkAsDefault(bool darkAsDefault);
+bool loadDarkAsDefault();
 
-inline void saveDarkAsDefault(bool darkAsDefault) {
-	defaultPanelTheme = darkAsDefault;
-}
-inline bool loadDarkAsDefault() {
-	return defaultPanelTheme;
-}
+bool isDark(int* panelTheme);
+
+void writeDarkAsDefault();
+void readDarkAsDefault();
 
 struct DarkDefaultItem : MenuItem {
 	void onAction(const event::Action &e) override {
@@ -33,12 +30,6 @@ struct DarkDefaultItem : MenuItem {
 	}
 };	
 
-inline bool isDark(int* panelTheme) {
-	if (panelTheme != NULL) {
-		return (*panelTheme != 0);
-	}
-	return loadDarkAsDefault();
-}
 
 
 // ******** Dynamic Ports ********

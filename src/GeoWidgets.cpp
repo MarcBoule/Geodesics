@@ -12,9 +12,25 @@
 
 bool defaultPanelTheme;
 
-void writeDarkAsDefault(bool darkAsDefault) {
+
+void saveDarkAsDefault(bool darkAsDefault) {
+	defaultPanelTheme = darkAsDefault;
+}
+bool loadDarkAsDefault() {
+	return defaultPanelTheme;
+}
+
+bool isDark(int* panelTheme) {
+	if (panelTheme != NULL) {
+		return (*panelTheme != 0);
+	}
+	return defaultPanelTheme;
+}
+
+
+void writeDarkAsDefault() {
 	json_t *settingsJ = json_object();
-	json_object_set_new(settingsJ, "darkAsDefault", json_boolean(darkAsDefault));
+	json_object_set_new(settingsJ, "darkAsDefault", json_boolean(defaultPanelTheme));
 	std::string settingsFilename = asset::user("Geodesics.json");
 	FILE *file = fopen(settingsFilename.c_str(), "w");
 	if (file) {
@@ -24,29 +40,34 @@ void writeDarkAsDefault(bool darkAsDefault) {
 	json_decref(settingsJ);
 }
 
-bool readDarkAsDefault() {
-	bool ret = false;
+
+void readDarkAsDefault() {
 	std::string settingsFilename = asset::user("Geodesics.json");
 	FILE *file = fopen(settingsFilename.c_str(), "r");
 	if (!file) {
-		writeDarkAsDefault(false);
-		return ret;
+		defaultPanelTheme = false;
+		writeDarkAsDefault();
+		return;
 	}
 	json_error_t error;
 	json_t *settingsJ = json_loadf(file, 0, &error);
 	if (!settingsJ) {
 		// invalid setting json file
 		fclose(file);
-		writeDarkAsDefault(false);
-		return ret;
+		defaultPanelTheme = false;
+		writeDarkAsDefault();
+		return;
 	}
 	json_t *darkAsDefaultJ = json_object_get(settingsJ, "darkAsDefault");
-	if (darkAsDefaultJ)
-		ret = json_boolean_value(darkAsDefaultJ);
+	if (darkAsDefaultJ) {
+		defaultPanelTheme = json_boolean_value(darkAsDefaultJ);
+	}
+	else {
+		defaultPanelTheme = false;
+	}
 	
 	fclose(file);
 	json_decref(settingsJ);
-	return ret;
 }
 
 
