@@ -49,7 +49,8 @@ struct BlankInfo : Module {
 
 struct BlankInfoWidget : ModuleWidget {
 	int lastPanelTheme = -1;
-	SvgPanel* darkPanel;
+	std::shared_ptr<window::Svg> light_svg;
+	std::shared_ptr<window::Svg> dark_svg;
 
 	struct PanelThemeItem : MenuItem {
 		BlankInfo *module;
@@ -92,14 +93,10 @@ struct BlankInfoWidget : ModuleWidget {
 		setModule(module);
 
 		// Main panels from Inkscape
-        setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/WhiteLight/BlankInfo-WL.svg")));
-		darkPanel = new SvgPanel();
-		darkPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DarkMatter/BlankInfo-DM.svg")));
-		darkPanel->setVisible(false);
-		addChild(darkPanel);
-		int panelTheme = isDark(module ? &(((BlankInfo*)module)->panelTheme) : NULL) ? 1 : 0;// need this here since step() not called for module browser
-		getPanel()->setVisible(panelTheme == 0);
-		darkPanel->setVisible(panelTheme == 1);
+ 		light_svg = APP->window->loadSvg(asset::plugin(pluginInstance, "res/WhiteLight/BlankInfo-WL.svg"));
+		dark_svg = APP->window->loadSvg(asset::plugin(pluginInstance, "res/DarkMatter/BlankInfo-DM.svg"));
+		int panelTheme = isDark(module ? (&(((BlankInfo*)module)->panelTheme)) : NULL) ? 1 : 0;// need this here since step() not called for module browser
+		setPanel(panelTheme == 0 ? light_svg : dark_svg);		
 		
 		// Screws
 		// part of svg panel, no code required
@@ -109,9 +106,9 @@ struct BlankInfoWidget : ModuleWidget {
 		int panelTheme = isDark(module ? (&(((BlankInfo*)module)->panelTheme)) : NULL) ? 1 : 0;
 		if (lastPanelTheme != panelTheme) {
 			lastPanelTheme = panelTheme;
-			Widget* panel = getPanel();
-			panel->setVisible(panelTheme == 0);
-			darkPanel->setVisible(panelTheme == 1);
+			SvgPanel* panel = (SvgPanel*)getPanel();
+			panel->setBackground(panelTheme == 0 ? light_svg : dark_svg);
+			panel->fb->dirty = true;
 		}
 		Widget::step();
 	}
