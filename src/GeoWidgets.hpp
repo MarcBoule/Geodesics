@@ -15,8 +15,17 @@ using namespace rack;
 
 // ******** Panel Theme management ********
 
-void saveDarkAsDefault(bool darkAsDefault);
-bool loadDarkAsDefault();
+extern bool defaultPanelTheme;// matches the file
+
+void writeDarkAsDefault(bool darkAsDefault);
+bool readDarkAsDefault();
+
+inline void saveDarkAsDefault(bool darkAsDefault) {
+	defaultPanelTheme = darkAsDefault;
+}
+inline bool loadDarkAsDefault() {
+	return defaultPanelTheme;
+}
 
 struct DarkDefaultItem : MenuItem {
 	void onAction(const event::Action &e) override {

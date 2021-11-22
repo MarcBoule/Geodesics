@@ -28,8 +28,13 @@ void init(Plugin *p) {
 	p->addModel(modelFate);
 	p->addModel(modelBlankLogo);
 	p->addModel(modelBlankInfo);
+	
+	defaultPanelTheme = readDarkAsDefault();
 }
 
+void destroy() {
+	writeDarkAsDefault(defaultPanelTheme);
+}
 
 
 

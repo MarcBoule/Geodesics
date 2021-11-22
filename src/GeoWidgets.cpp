@@ -10,7 +10,9 @@
 
 // ******** Panel Theme management ********
 
-void saveDarkAsDefault(bool darkAsDefault) {
+bool defaultPanelTheme;
+
+void writeDarkAsDefault(bool darkAsDefault) {
 	json_t *settingsJ = json_object();
 	json_object_set_new(settingsJ, "darkAsDefault", json_boolean(darkAsDefault));
 	std::string settingsFilename = asset::user("Geodesics.json");
@@ -22,12 +24,12 @@ void saveDarkAsDefault(bool darkAsDefault) {
 	json_decref(settingsJ);
 }
 
-bool loadDarkAsDefault() {
+bool readDarkAsDefault() {
 	bool ret = false;
 	std::string settingsFilename = asset::user("Geodesics.json");
 	FILE *file = fopen(settingsFilename.c_str(), "r");
 	if (!file) {
-		saveDarkAsDefault(false);
+		writeDarkAsDefault(false);
 		return ret;
 	}
 	json_error_t error;
@@ -35,7 +37,7 @@ bool loadDarkAsDefault() {
 	if (!settingsJ) {
 		// invalid setting json file
 		fclose(file);
-		saveDarkAsDefault(false);
+		writeDarkAsDefault(false);
 		return ret;
 	}
 	json_t *darkAsDefaultJ = json_object_get(settingsJ, "darkAsDefault");
