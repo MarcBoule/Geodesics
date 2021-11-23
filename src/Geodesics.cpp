@@ -17,6 +17,8 @@ Plugin *pluginInstance;
 
 void init(Plugin *p) {
 	pluginInstance = p;
+	
+	readDarkAsDefault();
 
 	p->addModel(modelBlackHoles);
 	p->addModel(modelPulsars);
@@ -28,8 +30,6 @@ void init(Plugin *p) {
 	p->addModel(modelFate);
 	p->addModel(modelBlankLogo);
 	p->addModel(modelBlankInfo);
-	
-	readDarkAsDefault();
 }
 
 void destroy() {
