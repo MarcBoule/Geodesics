@@ -81,7 +81,7 @@ struct Energy : Module {
 	Energy() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		
-		configParam(Energy::CROSS_PARAM, 0.0f, 1.0f, 0.0f, "Momentum crossing");		
+		configParam(CROSS_PARAM, 0.0f, 1.0f, 0.0f, "Momentum crossing");		
 		configParam(Energy::MOMENTUM_PARAMS + 0, 0.0f, 1.0f, 0.0f, "Momentum M");
 		configParam(Energy::MOMENTUM_PARAMS + 1, 0.0f, 1.0f, 0.0f, "Momentum C");
 		configParam(Energy::FREQ_PARAMS + 0, -3.0f, 3.0f, 0.0f, "Freq M");
@@ -91,6 +91,15 @@ struct Energy : Module {
 		configParam(Energy::PLANCK_PARAMS + 1, 0.0f, 1.0f, 0.0f, "Quantize (Planck) C");
 		configParam(Energy::MODTYPE_PARAMS + 0, 0.0f, 1.0f, 0.0f, "CV mod type M");
 		configParam(Energy::MODTYPE_PARAMS + 1, 0.0f, 1.0f, 0.0f, "CV mod type C");		
+		
+		configInput(FREQCV_INPUTS + 0, "Mass");
+		configInput(FREQCV_INPUTS + 1, "Speed of light");
+		configInput(FREQCV_INPUT, "1V/oct");
+		configInput(MULTIPLY_INPUT, "Multiply");
+		configInput(MOMENTUM_INPUTS + 0, "Momentum M");
+		configInput(MOMENTUM_INPUTS + 1, "Momentum C");
+		
+		configOutput(ENERGY_OUTPUT, "Energy");
 		
 		for (int c = 0; c < N_POLY; c++) {
 			oscM[c].construct(APP->engine->getSampleRate());

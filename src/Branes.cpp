@@ -198,6 +198,43 @@ struct Branes : Module {
 		configParam(NOISE_RANGE_PARAMS + 0, 0.0f, 1.0f, 0.0f, "Top brane noise range");
 		configParam(NOISE_RANGE_PARAMS + 1, 0.0f, 1.0f, 0.0f, "Bottom brane noise range");		
 		
+		configInput(IN_INPUTS + 0, "Top left pink S&H");
+		configInput(IN_INPUTS + 1, "Top left red S&H");
+		configInput(IN_INPUTS + 2, "Top left blue S&H");
+		configInput(IN_INPUTS + 3, "Top white S&H");
+		configInput(IN_INPUTS + 4, "Top right blue S&H");
+		configInput(IN_INPUTS + 5, "Top right red S&H");
+		configInput(IN_INPUTS + 6, "Top right pink S&H");
+		configInput(IN_INPUTS + 7, "Bottom right pink S&H");
+		configInput(IN_INPUTS + 8, "Bottom right red S&H");
+		configInput(IN_INPUTS + 9, "Bottom right blue S&H");
+		configInput(IN_INPUTS + 10, "Bottom white S&H");
+		configInput(IN_INPUTS + 11, "Bottom left blue S&H");
+		configInput(IN_INPUTS + 12, "Bottom left red S&H");
+		configInput(IN_INPUTS + 13, "Bottom left pink S&H");
+		configInput(TRIG_INPUTS + 0, "Top S&H trigger");
+		configInput(TRIG_INPUTS + 1, "Bottom S&H trigger");
+		configInput(TRIG_BYPASS_INPUTS + 0, "Top brane bypass");
+		configInput(TRIG_BYPASS_INPUTS + 1, "Bottom brane bypass");
+		configInput(NOISE_RANGE_INPUTS + 0, "Top brane noise range");
+		configInput(NOISE_RANGE_INPUTS + 1, "Bottom brane noise range");
+		
+		configOutput(OUT_OUTPUTS + 0, "Top left pink");
+		configOutput(OUT_OUTPUTS + 1, "Top left red");
+		configOutput(OUT_OUTPUTS + 2, "Top left blue");
+		configOutput(OUT_OUTPUTS + 3, "Top white");
+		configOutput(OUT_OUTPUTS + 4, "Top right blue");
+		configOutput(OUT_OUTPUTS + 5, "Top right red");
+		configOutput(OUT_OUTPUTS + 6, "Top right pink");
+		configOutput(OUT_OUTPUTS + 7, "Bottom right pink");
+		configOutput(OUT_OUTPUTS + 8, "Bottom right red");
+		configOutput(OUT_OUTPUTS + 9, "Bottom right blue");
+		configOutput(OUT_OUTPUTS + 10, "Bottom white");
+		configOutput(OUT_OUTPUTS + 11, "Bottom left blue");
+		configOutput(OUT_OUTPUTS + 12, "Bottom left red");
+		configOutput(OUT_OUTPUTS + 13, "Bottom left pink");
+
+		
 		noiseEngine.setCutoffs(APP->engine->getSampleRate());
 		
 		onReset();

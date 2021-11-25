@@ -126,8 +126,8 @@ struct Ions : Module {
 		configParam(PROB_PARAM, 0.0f, 1.0f, 0.0f, "Probability");
 		configParam(PLANK_PARAM, 0.0f, 1.0f, 0.0f, "Quantize (Planck) blue");	
 		configParam(PLANK2_PARAM, 0.0f, 1.0f, 0.0f, "Quantize (Planck) yellow");	
-		configParam(OCT_PARAMS + 0, 0.0f, 1.0f, 0.0f, "Octaves blue");	
-		configParam(OCT_PARAMS + 1, 0.0f, 1.0f, 0.0f, "Octaves yellow");	
+		configParam(OCT_PARAMS + 0, 0.0f, 1.0f, 0.0f, "Octaves (Energy) blue");	
+		configParam(OCT_PARAMS + 1, 0.0f, 1.0f, 0.0f, "Octaves (Energy) yellow");	
 		configParam(RUN_PARAM, 0.0f, 1.0f, 0.0f, "Run");	
 		configParam(RESET_PARAM, 0.0f, 1.0f, 0.0f, "Reset");	
 		configParam(STEPCLOCKS_PARAM, 0.0f, 1.0f, 0.0f, "Magnetic clock");			
@@ -137,6 +137,24 @@ struct Ions : Module {
 		configParam(LEAP_PARAM, 0.0f, 1.0f, 0.0f, "Quantum leap");	
 		configParam(UNCERTANTY_PARAM, 0.0f, 1.0f, 0.0f, "Uncertainty");	
 
+		configInput(CLK_INPUT, "Global clock");
+		configInput(CLK_INPUTS + 0, "Local clock blue");
+		configInput(CLK_INPUTS + 1, "Local clock yellow");
+		configInput(RUN_INPUT, "Run");
+		configInput(RESET_INPUT, "Reset");
+		configInput(PROB_INPUT, "Probability");
+		configInput(OCTCV_INPUTS + 0, "Octaves (Energy) blue");
+		configInput(OCTCV_INPUTS + 1, "Octaves (Energy) yellow");
+		configInput(STATECV_INPUTS + 0, "State blue");
+		configInput(STATECV_INPUTS + 1, "State yellow");
+		configInput(LEAP_INPUT, "Quantum leap");
+		configInput(UNCERTANTY_INPUT, "Uncertainty");
+		
+		configOutput(SEQ_OUTPUTS + 0, "Blue");
+		configOutput(SEQ_OUTPUTS + 1, "Yellow");
+		configOutput(JUMP_OUTPUTS + 0, "Jump blue");
+		configOutput(JUMP_OUTPUTS + 1, "Jump yellow");
+		
 		onReset();
 
 		panelTheme = (loadDarkAsDefault() ? 1 : 0);

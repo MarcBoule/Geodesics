@@ -91,19 +91,23 @@ struct BlackHoles : Module {
 	BlackHoles() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		
-		configParam(LEVEL_PARAMS + 0, -1.0f, 1.0f, 0.0f, "Top BH level 1");
-		configParam(LEVEL_PARAMS + 1, -1.0f, 1.0f, 0.0f, "Top BH level 2");
-		configParam(LEVEL_PARAMS + 2, -1.0f, 1.0f, 0.0f, "Top BH level 3");
-		configParam(LEVEL_PARAMS + 3, -1.0f, 1.0f, 0.0f, "Top BH level 4");
-		configParam(LEVEL_PARAMS + 4, -1.0f, 1.0f, 0.0f, "Button BH level 1");
-		configParam(LEVEL_PARAMS + 5, -1.0f, 1.0f, 0.0f, "Button BH level 2");
-		configParam(LEVEL_PARAMS + 6, -1.0f, 1.0f, 0.0f, "Button BH level 3");
-		configParam(LEVEL_PARAMS + 7, -1.0f, 1.0f, 0.0f, "Button BH level 4");
+		for (int i = 0; i < 8; i++) {
+			configParam(LEVEL_PARAMS + i, -1.0f, 1.0f, 0.0f, string::f("VCA %i level", i + 1));
+		}
 		configParam(EXP_PARAMS + 0, 0.0f, 1.0f, 0.0f, "Top BH exponential");
 		configParam(EXP_PARAMS + 1, 0.0f, 1.0f, 0.0f, "Bottom BH exponential");
 		configParam(WORMHOLE_PARAM, 0.0f, 1.0f, 0.0f, "Wormhole");
 		configParam(CVLEVEL_PARAMS + 0, 0.0f, 1.0f, 0.0f, "Top BH gravity");
 		configParam(CVLEVEL_PARAMS + 1, 0.0f, 1.0f, 0.0f, "Bottom BH gravity");		
+		
+		for (int i = 0; i < 8; i++) {
+			configInput(IN_INPUTS + i, string::f("VCA %i", i + 1));
+			configInput(LEVELCV_INPUTS + i, string::f("VCA %i level CV", i + 1));
+			configOutput(OUT_OUTPUTS + i, string::f("VCA %i", i + 1));
+		}
+		configOutput(BLACKHOLE_OUTPUTS + 0, "Top blackhole");
+		configOutput(BLACKHOLE_OUTPUTS + 1, "Bottom blackhole");
+			
 		
 		onReset();		
 		

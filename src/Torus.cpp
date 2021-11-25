@@ -185,7 +185,7 @@ struct Torus : Module {
 		NUM_INPUTS
 	};
 	enum OutputIds {
-		ENUMS(MIX_OUTPUTS, 8),
+		ENUMS(MIX_OUTPUTS, 7),
 		NUM_OUTPUTS
 	};
 	enum LightIds {
@@ -219,6 +219,13 @@ struct Torus : Module {
 		
 		configParam(Torus::MODE_PARAM, 0.0f, 1.0f, 0.0f, "Mode");
 		configParam(Torus::GAIN_PARAM, 0.0f, 2.0f, 1.0f, "Gain");
+
+		for (int i = 0; i < 16; i++) {
+			configInput(MIX_INPUTS + i, string::f("Mix %i", i + 1));
+		}
+		for (int i = 0; i < 7; i++) {
+			configOutput(MIX_OUTPUTS + i, string::f("Mix %i", i + 1));
+		}
 
 		onReset();
 

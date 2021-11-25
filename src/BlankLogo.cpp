@@ -74,6 +74,8 @@ struct BlankLogo : Module {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 
 		configParam(CLK_FREQ_PARAM, -2.0f, 4.0f, 1.0f, "CLK freq", " BPM", 2.0f, 60.0f);// 120 BMP when default value  (120 = 60*2^1) diplay params 
+		
+		configOutput(OUT_OUTPUT, "Mystery");
 
 		clkTrigger.reset();
 		onReset();

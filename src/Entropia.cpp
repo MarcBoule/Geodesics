@@ -43,7 +43,7 @@ struct Entropia : Module {
 		SWITCHADD_INPUT,
 		ENUMS(OCTCV_INPUTS, 2),
 		ENUMS(EXTSIG_INPUTS, 2),
-		ENUMS(QUANTIZE_INPUTS, 2),
+		ENUMS(QUANTIZE_INPUTS, 2),// unused
 		GPROB_INPUT,
 		NUM_INPUTS
 	};
@@ -155,7 +155,7 @@ struct Entropia : Module {
 		configParam(LENGTH_PARAM, 0.0f, 1.0f, 0.0f, "Length");
 		configParam(CLKSRC_PARAM, 0.0f, 1.0f, 0.0f, "Clock sources");
 		
-		configParam(SWITCHADD_PARAM, 0.0f, 1.0f, 0.0f, "Add");
+		configParam(SWITCHADD_PARAM, 0.0f, 1.0f, 0.0f, "Macrostate mode");
 		configParam(STATESWITCH_PARAM, 0.0f, 1.0f, 0.0f, "Invert microstate");
 		configParam(QUANTIZE_PARAMS + 0, 0.0f, 1.0f, 0.0f, "Quantize (Planck) blue");
 		configParam(QUANTIZE_PARAMS + 1, 0.0f, 1.0f, 0.0f, "Quantize (Planck) yellow");
@@ -176,7 +176,24 @@ struct Entropia : Module {
 		configParam(RESET_PARAM, 0.0f, 1.0f, 0.0f, "Reset");	
 		configParam(STEPCLOCK_PARAM, 0.0f, 1.0f, 0.0f, "Magnetic clock");			
 		configParam(RESETONRUN_PARAM, 0.0f, 1.0f, 0.0f, "Reset on run");				
-						
+			
+		configInput(CERTAIN_CLK_INPUT, "Certain clock");
+		configInput(UNCERTAIN_CLK_INPUT, "Uncertain clock");
+		configInput(LENGTH_INPUT, "Length");
+		configInput(RUN_INPUT, "Run");
+		configInput(RESET_INPUT, "Reset");
+		configInput(STATESWITCH_INPUT, "Invert microstate");
+		configInput(SWITCHADD_INPUT, "Macrostate mode");
+		configInput(OCTCV_INPUTS + 0, "Octaves (Energy) blue");
+		configInput(OCTCV_INPUTS + 1, "Octaves (Energy) yellow");
+		configInput(EXTSIG_INPUTS + 0, "External blue signal");
+		configInput(EXTSIG_INPUTS + 1, "External yellow signal");
+		configInput(QUANTIZE_INPUTS + 0, "Unused blue");
+		configInput(QUANTIZE_INPUTS + 1, "Unused yellow");
+		configInput(GPROB_INPUT, "Global probability");
+		
+		configOutput(CV_OUTPUT, "CV");
+			
 		onReset();
 
 		panelTheme = (loadDarkAsDefault() ? 1 : 0);

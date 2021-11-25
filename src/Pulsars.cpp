@@ -181,6 +181,23 @@ struct Pulsars : Module {
 		configParam(RND_PARAMS + 1, 0.0f, 1.0f, 0.0f, "Bottom pulsar random");		
 		configParam(CVLEVEL_PARAMS + 1, 0.0f, 1.0f, 0.0f, "Bottom pulsar uni/bi-polar");
 
+		for (int i = 0; i < 8; i++) {
+			configInput(INA_INPUTS + i, string::f("Top pulsar, #%i", i + 1));
+		}
+		configOutput(OUTA_OUTPUT, "Top pulsar");
+		
+		configInput(INB_INPUT, "Bottom pulsar");
+		for (int i = 0; i < 8; i++) {
+			configOutput(OUTB_OUTPUTS + i, string::f("Bottom pulsar, #%i", i + 1));
+		}
+		
+		configInput(LFO_INPUTS + 0, "Top pulsar rotation");
+		configInput(LFO_INPUTS + 1, "Bottom pulsar rotation");
+		configInput(VOID_INPUTS + 0, "Top pulsar cosmic void");
+		configInput(VOID_INPUTS + 1, "Bottom pulsar cosmic void");
+		configInput(REV_INPUTS + 0, "Top pulsar reverse");
+		configInput(REV_INPUTS + 1, "Bottom pulsar reverse");
+
 		onReset();
 
 		panelTheme = (loadDarkAsDefault() ? 1 : 0);

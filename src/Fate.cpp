@@ -64,6 +64,16 @@ struct Fate : Module {
 		
 		configParam(Fate::FREEWILL_PARAM, 0.0f, 1.0f, 0.0f, "Free will");
 		configParam(Fate::CHOICESDEPTH_PARAM, -1.0f, 1.0f, 0.0f, "Choices depth");
+	
+		configInput(FREEWILL_INPUT, "Free will");
+		configInput(CLOCK_INPUT, "Clock (trigger)");
+		configInput(MAIN_INPUTS + 0, "Event 1");
+		configInput(MAIN_INPUTS + 1, "Event 2");
+		configInput(CHOICSDEPTH_INPUT, "Choice depth");
+		
+		configOutput(MAIN_OUTPUTS + 0, "Event 1");
+		configOutput(MAIN_OUTPUTS + 1, "Event 2");
+		configOutput(TRIGGER_OUTPUT, "Trigger");
 
 		onReset();
 
