@@ -32,10 +32,6 @@ void init(Plugin *p) {
 	p->addModel(modelBlankInfo);
 }
 
-void destroy() {
-	writeDarkAsDefault();
-}
-
 
 
 // other

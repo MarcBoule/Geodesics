@@ -21,7 +21,6 @@ bool loadDarkAsDefault();
 
 bool isDark(int* panelTheme);
 
-void writeDarkAsDefault();
 void readDarkAsDefault();
 
 struct DarkDefaultItem : MenuItem {

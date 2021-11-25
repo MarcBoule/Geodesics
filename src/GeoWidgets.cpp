@@ -13,21 +13,6 @@
 bool defaultPanelTheme;
 
 
-void saveDarkAsDefault(bool darkAsDefault) {
-	defaultPanelTheme = darkAsDefault;
-}
-bool loadDarkAsDefault() {
-	return defaultPanelTheme;
-}
-
-bool isDark(int* panelTheme) {
-	if (panelTheme != NULL) {
-		return (*panelTheme != 0);
-	}
-	return defaultPanelTheme;
-}
-
-
 void writeDarkAsDefault() {
 	json_t *settingsJ = json_object();
 	json_object_set_new(settingsJ, "darkAsDefault", json_boolean(defaultPanelTheme));
@@ -38,6 +23,22 @@ void writeDarkAsDefault() {
 		fclose(file);
 	}
 	json_decref(settingsJ);
+}
+
+
+void saveDarkAsDefault(bool darkAsDefault) {
+	defaultPanelTheme = darkAsDefault;
+	writeDarkAsDefault();
+}
+bool loadDarkAsDefault() {
+	return defaultPanelTheme;
+}
+
+bool isDark(int* panelTheme) {
+	if (panelTheme != NULL) {
+		return (*panelTheme != 0);
+	}
+	return defaultPanelTheme;
 }
 
 
