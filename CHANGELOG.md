@@ -1,3 +1,9 @@
+### 2.2.4 (2021-11-27)
+
+- First v2 library candidate
+- Many changes that are not listed here
+
+
 ### 1.2.0 (2020-07-13)
 
 - Convert svgs from px to mm
