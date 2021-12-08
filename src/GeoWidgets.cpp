@@ -72,6 +72,29 @@ void readDarkAsDefault() {
 }
 
 
+void createPanelThemeMenu(ui::Menu* menu, int* panelTheme) {
+	menu->addChild(new MenuSeparator());
+
+	menu->addChild(createMenuLabel("Panel Theme"));
+	
+	menu->addChild(createCheckMenuItem("White light edition", "",
+		[=]() {return *panelTheme == 0;},
+		[=]() {*panelTheme = 0;}
+	));
+	
+	menu->addChild(createCheckMenuItem("Dark matter edition", "",
+		[=]() {return *panelTheme == 1;},
+		[=]() {*panelTheme = 1;}
+	));
+		
+	menu->addChild(createCheckMenuItem("Dark as default", "",
+		[=]() {return loadDarkAsDefault();},
+		[=]() {saveDarkAsDefault(!loadDarkAsDefault());}
+	));
+}
+
+
+
 // Dynamic SVGPort
 
 void DynamicSVGPort::addFrame(std::shared_ptr<Svg> svg) {

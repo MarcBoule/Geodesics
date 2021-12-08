@@ -303,40 +303,11 @@ struct BlackHolesWidget : ModuleWidget {
 	std::shared_ptr<window::Svg> light_svg;
 	std::shared_ptr<window::Svg> dark_svg;
 
-	struct PanelThemeItem : MenuItem {
-		BlackHoles *module;
-		int theme;
-		void onAction(const event::Action &e) override {
-			module->panelTheme = theme;
-		}
-		void step() override {
-			rightText = (module->panelTheme == theme) ? "✔" : "";
-		}
-	};
 	void appendContextMenu(Menu *menu) override {
-		MenuLabel *spacerLabel = new MenuLabel();
-		menu->addChild(spacerLabel);
-
 		BlackHoles *module = dynamic_cast<BlackHoles*>(this->module);
 		assert(module);
 
-		MenuLabel *themeLabel = new MenuLabel();
-		themeLabel->text = "Panel Theme";
-		menu->addChild(themeLabel);
-
-		PanelThemeItem *lightItem = new PanelThemeItem();
-		lightItem->text = lightPanelID;// Geodesics.hpp
-		lightItem->module = module;
-		lightItem->theme = 0;
-		menu->addChild(lightItem);
-
-		PanelThemeItem *darkItem = new PanelThemeItem();
-		darkItem->text = darkPanelID;// Geodesics.hpp
-		darkItem->module = module;
-		darkItem->theme = 1;
-		menu->addChild(darkItem);
-		
-		menu->addChild(createMenuItem<DarkDefaultItem>("Dark as default", CHECKMARK(loadDarkAsDefault())));
+		createPanelThemeMenu(menu, &(module->panelTheme));
 	}	
 	
 	BlackHolesWidget(BlackHoles *module) {

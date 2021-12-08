@@ -492,16 +492,6 @@ struct BranesWidget : ModuleWidget {
 	std::shared_ptr<window::Svg> light_svg;
 	std::shared_ptr<window::Svg> dark_svg;
 
-	struct PanelThemeItem : MenuItem {
-		Branes *module;
-		int theme;
-		void onAction(const event::Action &e) override {
-			module->panelTheme = theme;
-		}
-		void step() override {
-			rightText = (module->panelTheme == theme) ? "✔" : "";
-		}
-	};	
 	struct SecretModeItem : MenuItem {
 		Branes *module;
 		int braneIndex = 0;
@@ -513,35 +503,13 @@ struct BranesWidget : ModuleWidget {
 		}
 	};	
 	void appendContextMenu(Menu *menu) override {
-		MenuLabel *spacerLabel = new MenuLabel();
-		menu->addChild(spacerLabel);
-
 		Branes *module = dynamic_cast<Branes*>(this->module);
 		assert(module);
 
-		MenuLabel *themeLabel = new MenuLabel();
-		themeLabel->text = "Panel Theme";
-		menu->addChild(themeLabel);
+		createPanelThemeMenu(menu, &(module->panelTheme));
 
-		PanelThemeItem *lightItem = new PanelThemeItem();
-		lightItem->text = lightPanelID;// Geodesics.hpp
-		lightItem->module = module;
-		lightItem->theme = 0;
-		menu->addChild(lightItem);
-
-		PanelThemeItem *darkItem = new PanelThemeItem();
-		darkItem->text = darkPanelID;// Geodesics.hpp
-		darkItem->module = module;
-		darkItem->theme = 1;
-		menu->addChild(darkItem);
-		
-		menu->addChild(createMenuItem<DarkDefaultItem>("Dark as default", CHECKMARK(loadDarkAsDefault())));
-
-		menu->addChild(new MenuLabel());// empty line
-		
-		MenuLabel *settingsLabel = new MenuLabel();
-		settingsLabel->text = "Settings";
-		menu->addChild(settingsLabel);
+		menu->addChild(new MenuSeparator());
+		menu->addChild(createMenuLabel("Settings"));
 		
 		SecretModeItem *secretItemH = createMenuItem<SecretModeItem>("High brane Young mode (long push)", CHECKMARK(module->vibrations[0] > 1));
 		secretItemH->module = module;

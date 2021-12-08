@@ -435,47 +435,15 @@ struct TorusWidget : ModuleWidget {
 		}
 	};
 
-	struct PanelThemeItem : MenuItem {
-		Torus *module;
-		int theme;
-		void onAction(const event::Action &e) override {
-			module->panelTheme = theme;
-		}
-		void step() override {
-			rightText = (module->panelTheme == theme) ? "✔" : "";
-		}
-	};	
 	void appendContextMenu(Menu *menu) override {
-		MenuLabel *spacerLabel = new MenuLabel();
-		menu->addChild(spacerLabel);
-
 		Torus *module = dynamic_cast<Torus*>(this->module);
 		assert(module);
 
-		MenuLabel *themeLabel = new MenuLabel();
-		themeLabel->text = "Panel Theme";
-		menu->addChild(themeLabel);
-
-		PanelThemeItem *lightItem = new PanelThemeItem();
-		lightItem->text = lightPanelID;// Geodesics.hpp
-		lightItem->module = module;
-		lightItem->theme = 0;
-		menu->addChild(lightItem);
-
-		PanelThemeItem *darkItem = new PanelThemeItem();
-		darkItem->text = darkPanelID;// Geodesics.hpp
-		darkItem->module = module;
-		darkItem->theme = 1;
-		menu->addChild(darkItem);
+		createPanelThemeMenu(menu, &(module->panelTheme));
 		
-		menu->addChild(createMenuItem<DarkDefaultItem>("Dark as default", CHECKMARK(loadDarkAsDefault())));
+		menu->addChild(new MenuSeparator());
+		menu->addChild(createMenuLabel("Settings"));
 		
-		menu->addChild(new MenuLabel());// empty line
-		
-		MenuLabel *settingsLabel = new MenuLabel();
-		settingsLabel->text = "Settings";
-		menu->addChild(settingsLabel);
-
 		FilterSlopeModeItem *filtSlopeItem = createMenuItem<FilterSlopeModeItem>("Filters", RIGHT_ARROW);
 		filtSlopeItem->filterSlope = &(module->filterSlope);
 		menu->addChild(filtSlopeItem);

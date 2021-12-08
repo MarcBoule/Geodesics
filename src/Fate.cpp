@@ -213,16 +213,6 @@ struct FateWidget : ModuleWidget {
 	std::shared_ptr<window::Svg> light_svg;
 	std::shared_ptr<window::Svg> dark_svg;
 
-	struct PanelThemeItem : MenuItem {
-		Fate *module;
-		int theme;
-		void onAction(const event::Action &e) override {
-			module->panelTheme = theme;
-		}
-		void step() override {
-			rightText = (module->panelTheme == theme) ? "✔" : "";
-		}
-	};	
 	struct HoldTrigOutItem : MenuItem {
 		Fate *module;
 		void onAction(const event::Action &e) override {
@@ -232,32 +222,11 @@ struct FateWidget : ModuleWidget {
 	void appendContextMenu(Menu *menu) override {
 		Fate *module = dynamic_cast<Fate*>(this->module);
 		assert(module);
-
-		menu->addChild(new MenuLabel());// empty space
 		
-		MenuLabel *themeLabel = new MenuLabel();
-		themeLabel->text = "Panel Theme";
-		menu->addChild(themeLabel);
-
-		PanelThemeItem *lightItem = new PanelThemeItem();
-		lightItem->text = lightPanelID;// Geodesics.hpp
-		lightItem->module = module;
-		lightItem->theme = 0;
-		menu->addChild(lightItem);
-
-		PanelThemeItem *darkItem = new PanelThemeItem();
-		darkItem->text = darkPanelID;// Geodesics.hpp
-		darkItem->module = module;
-		darkItem->theme = 1;
-		menu->addChild(darkItem);
+		createPanelThemeMenu(menu, &(module->panelTheme));
 		
-		menu->addChild(createMenuItem<DarkDefaultItem>("Dark as default", CHECKMARK(loadDarkAsDefault())));
-		
-		menu->addChild(new MenuLabel());// empty space
-	
-		MenuLabel *settingsLabel = new MenuLabel();
-		settingsLabel->text = "Settings";
-		menu->addChild(settingsLabel);
+		menu->addChild(new MenuSeparator());
+		menu->addChild(createMenuLabel("Settings"));
 
 		HoldTrigOutItem *htItem = createMenuItem<HoldTrigOutItem>("Hold trigger out during step", CHECKMARK(module->holdTrigOut != 0));
 		htItem->module = module;

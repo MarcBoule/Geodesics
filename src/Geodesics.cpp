@@ -54,3 +54,4 @@ int getWeighted1to8random() {
 		return 7;
 	return 8;
 }
+

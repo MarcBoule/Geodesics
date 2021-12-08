@@ -23,12 +23,7 @@ bool isDark(int* panelTheme);
 
 void readDarkAsDefault();
 
-struct DarkDefaultItem : MenuItem {
-	void onAction(const event::Action &e) override {
-		saveDarkAsDefault(rightText.empty());// implicitly toggled
-	}
-};	
-
+void createPanelThemeMenu(ui::Menu* menu, int* panelTheme);
 
 
 // ******** Dynamic Ports ********
