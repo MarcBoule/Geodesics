@@ -1,3 +1,8 @@
+### 2.2.5 (in development)
+
+- Re-code menus so that cmd-click can be used to change options without closing the menus
+
+
 ### 2.2.4 (2021-11-27)
 
 - First v2 library candidate
