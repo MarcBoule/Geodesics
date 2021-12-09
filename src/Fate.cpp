@@ -213,12 +213,6 @@ struct FateWidget : ModuleWidget {
 	std::shared_ptr<window::Svg> light_svg;
 	std::shared_ptr<window::Svg> dark_svg;
 
-	struct HoldTrigOutItem : MenuItem {
-		Fate *module;
-		void onAction(const event::Action &e) override {
-			module->holdTrigOut ^= 0x1;
-		}
-	};	
 	void appendContextMenu(Menu *menu) override {
 		Fate *module = dynamic_cast<Fate*>(this->module);
 		assert(module);
@@ -228,9 +222,10 @@ struct FateWidget : ModuleWidget {
 		menu->addChild(new MenuSeparator());
 		menu->addChild(createMenuLabel("Settings"));
 
-		HoldTrigOutItem *htItem = createMenuItem<HoldTrigOutItem>("Hold trigger out during step", CHECKMARK(module->holdTrigOut != 0));
-		htItem->module = module;
-		menu->addChild(htItem);
+		menu->addChild(createCheckMenuItem("Hold trigger out during step", "",
+			[=]() {return module->holdTrigOut != 0;},
+			[=]() {module->holdTrigOut ^= 0x1;}
+		));
 	}	
 	
 	FateWidget(Fate *module) {

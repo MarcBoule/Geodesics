@@ -409,32 +409,6 @@ struct TorusWidget : ModuleWidget {
 	std::shared_ptr<window::Svg> light_svg;
 	std::shared_ptr<window::Svg> dark_svg;
 
-	// Filter slope mode menu
-	struct FilterSlopeModeItem : MenuItem {
-		int *filterSlope;
-		
-		struct FilterSlopeSubItem : MenuItem {
-			int *filterSlope;
-			void onAction(const event::Action &e) override {
-				*filterSlope ^= 1;
-			}
-		};
-		
-		Menu *createChildMenu() override {
-			Menu *menu = new Menu;
-
-			std::string filterSlopeNames[2] = {"6 dB/oct", "12 dB/oct"};
-			
-			for (int i = 0; i < 2; i++) {
-				FilterSlopeSubItem *slopeModeItem = createMenuItem<FilterSlopeSubItem>(filterSlopeNames[i], CHECKMARK(*filterSlope == i));
-				slopeModeItem->filterSlope = filterSlope;
-				menu->addChild(slopeModeItem);
-			}
-			
-			return menu;
-		}
-	};
-
 	void appendContextMenu(Menu *menu) override {
 		Torus *module = dynamic_cast<Torus*>(this->module);
 		assert(module);
@@ -444,9 +418,16 @@ struct TorusWidget : ModuleWidget {
 		menu->addChild(new MenuSeparator());
 		menu->addChild(createMenuLabel("Settings"));
 		
-		FilterSlopeModeItem *filtSlopeItem = createMenuItem<FilterSlopeModeItem>("Filters", RIGHT_ARROW);
-		filtSlopeItem->filterSlope = &(module->filterSlope);
-		menu->addChild(filtSlopeItem);
+		menu->addChild(createSubmenuItem("Filters", "", [=](Menu* menu) {
+			menu->addChild(createCheckMenuItem("6 dB/oct", "",
+				[=]() {return module->filterSlope == 0;},
+				[=]() {module->filterSlope ^= 0x1;}
+			));
+			menu->addChild(createCheckMenuItem("12 dB/oct", "",
+				[=]() {return module->filterSlope == 1;},
+				[=]() {module->filterSlope ^= 0x1;}
+			));
+		}));	
 	}	
 	
 	TorusWidget(Torus *module) {

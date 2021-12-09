@@ -492,16 +492,6 @@ struct BranesWidget : ModuleWidget {
 	std::shared_ptr<window::Svg> light_svg;
 	std::shared_ptr<window::Svg> dark_svg;
 
-	struct SecretModeItem : MenuItem {
-		Branes *module;
-		int braneIndex = 0;
-		void onAction(const event::Action &e) override {
-			if (module->vibrations[braneIndex] > 1)
-				module->vibrations[braneIndex] = 0;// turn off secret mode
-			else
-				module->vibrations[braneIndex] = 2;// turn on secret mode
-		}
-	};	
 	void appendContextMenu(Menu *menu) override {
 		Branes *module = dynamic_cast<Branes*>(this->module);
 		assert(module);
@@ -511,14 +501,25 @@ struct BranesWidget : ModuleWidget {
 		menu->addChild(new MenuSeparator());
 		menu->addChild(createMenuLabel("Settings"));
 		
-		SecretModeItem *secretItemH = createMenuItem<SecretModeItem>("High brane Young mode (long push)", CHECKMARK(module->vibrations[0] > 1));
-		secretItemH->module = module;
-		menu->addChild(secretItemH);
+		menu->addChild(createCheckMenuItem("High brane Young mode (long push)", "",
+			[=]() {return module->vibrations[0] > 1;},
+			[=]() {
+				if (module->vibrations[0] > 1)
+					module->vibrations[0] = 0;// turn off secret mode
+				else
+					module->vibrations[0] = 2;// turn on secret mode
+			}
+		));
 		
-		SecretModeItem *secretItemL = createMenuItem<SecretModeItem>("Low brane Young mode (long push)", CHECKMARK(module->vibrations[1] > 1));
-		secretItemL->module = module;
-		secretItemL->braneIndex = 1;
-		menu->addChild(secretItemL);
+		menu->addChild(createCheckMenuItem("Low brane Young mode (long push)", "",
+			[=]() {return module->vibrations[1] > 1;},
+			[=]() {
+				if (module->vibrations[1] > 1)
+					module->vibrations[1] = 0;// turn off secret mode
+				else
+					module->vibrations[1] = 2;// turn on secret mode
+			}
+		));
 	}	
 	
 	BranesWidget(Branes *module) {
