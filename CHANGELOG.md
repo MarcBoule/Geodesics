@@ -1,4 +1,4 @@
-### 2.2.5 (in development)
+### 2.2.5 (2021)
 
 - Re-code menus so that cmd-click can be used to change options without closing the menus
 
