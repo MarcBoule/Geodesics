@@ -29,6 +29,7 @@ struct Energy : Module {
 		FREQCV_INPUT, // main voct input
 		MULTIPLY_INPUT,
 		ENUMS(MOMENTUM_INPUTS, 2),
+		ENUMS(RESET_INPUTS, 2),
 		NUM_INPUTS
 	};
 	enum OutputIds {
@@ -74,6 +75,7 @@ struct Energy : Module {
 	Trigger routingTrigger;
 	Trigger planckTriggers[2];
 	Trigger modtypeTriggers[2];
+	Trigger resetTriggers[2];
 	Trigger crossTrigger;
 	SlewLimiter multiplySlewers[N_POLY];
 	
@@ -98,6 +100,8 @@ struct Energy : Module {
 		configInput(MULTIPLY_INPUT, "Multiply");
 		configInput(MOMENTUM_INPUTS + 0, "Momentum M");
 		configInput(MOMENTUM_INPUTS + 1, "Momentum C");
+		configInput(RESET_INPUTS + 0, "Reset M");
+		configInput(RESET_INPUTS + 1, "Reset C");
 		
 		configOutput(ENERGY_OUTPUT, "Energy");
 		
@@ -259,6 +263,21 @@ struct Energy : Module {
 				if (++cross > 1)
 					cross = 0;
 			}
+			
+			// reset
+			if (resetTriggers[0].process(inputs[RESET_INPUTS + 0].getVoltage())) {
+				for (int c = 0; c < N_POLY; c++) {
+					oscM[c].onReset();
+				}
+			}
+			if (resetTriggers[1].process(inputs[RESET_INPUTS + 1].getVoltage())) {
+				for (int c = 0; c < N_POLY; c++) {
+					oscC[c].onReset();
+				}
+			}
+
+			
+			
 		}// userInputs refresh
 		
 		
@@ -428,9 +447,15 @@ struct EnergyWidget : ModuleWidget {
 		// part of svg panel, no code required
 		
 		float colRulerCenter = box.size.x / 2.0f;
+		static const float offsetX = 30.0f;
 
 		// main output
 		addOutput(createDynamicPort<GeoPort>(VecPx(colRulerCenter, 380.0f - 332.5f), false, module, Energy::ENERGY_OUTPUT, module ? &module->panelTheme : NULL));
+		
+		// reset inputs (temporary location)
+		addInput(createDynamicPort<GeoPort>(VecPx(colRulerCenter - offsetX, 380.0f - 332.5f), true, module, Energy::RESET_INPUTS + 0, module ? &module->panelTheme : NULL));
+		addInput(createDynamicPort<GeoPort>(VecPx(colRulerCenter + offsetX, 380.0f - 332.5f), true, module, Energy::RESET_INPUTS + 1, module ? &module->panelTheme : NULL));
+		
 
 		// multiply input
 		addInput(createDynamicPort<GeoPort>(VecPx(colRulerCenter, 380.0f - 280.5f), true, module, Energy::MULTIPLY_INPUT, module ? &module->panelTheme : NULL));
@@ -449,7 +474,6 @@ struct EnergyWidget : ModuleWidget {
 		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(VecPx(45, 380.0f - 148.5f), module, Energy::ROUTING_LIGHTS + 2));// middle
 		
 		// momentum knobs
-		static const float offsetX = 30.0f;
 		addParam(createDynamicParam<GeoKnob>(VecPx(colRulerCenter - offsetX, 380 - 209), module, Energy::MOMENTUM_PARAMS + 0, module ? &module->panelTheme : NULL));
 		addParam(createDynamicParam<GeoKnob>(VecPx(colRulerCenter + offsetX, 380 - 209), module, Energy::MOMENTUM_PARAMS + 1, module ? &module->panelTheme : NULL));
 		
