@@ -103,7 +103,7 @@ For a video introduction to this module, please see Omri Cohen's [Torus tutorial
 ![Geodesics](res/img/Energy.jpg)
 
 How would the most meaningful equation of modern physics sound? If a small amount of mass can be turned into an incredibly big amount of energy, two simple sine waves can create unexpected tones with rich harmonic content. [ENERGY](doc/geodesics2.0-energy.pdf) is a digital oscillator/synth voice that focuses on ring modulation synthesis. Two sines are multiplied according Einstein/Poincaré’s famous equation. It is capable of meditative drones, organ tones, extreme noises, and low modulations.
-For a video introduction to this module, please see Omri Cohen's [Energy tutorial](https://www.youtube.com/watch?v=pNjUCVg9O_Y).
+For a video introduction to this module, please see Omri Cohen's [Energy tutorial](https://www.youtube.com/watch?v=pNjUCVg9O_Y), and his [Complex LFO quicktip](https://www.youtube.com/watch?v=Tw9HK9fhiSg).
 
 
 
