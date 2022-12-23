@@ -214,7 +214,7 @@ void FMOp::onSampleRateChange(float newSampleRate) {
 	_feedbackSL.setParams(sampleRate, 5.0f, 1.0f);
 }
 
-float FMOp::step(float voct, float momentum) {
+float FMOp::step(float voct, float momentum, float fmDepth, float fmInput) {
 	++_steps;
 	if (_steps >= modulationSteps) {
 		_steps = 0;
@@ -234,10 +234,17 @@ float FMOp::step(float voct, float momentum) {
 		offset = feedback * _feedbackDelayedSample;
 	}
 
+	bool depthOn = false;
+	if (fmDepth != 0.0f) {
+		offset += fmInput * fmDepth * 2.0f;
+		depthOn = fmDepth > 0.001f;
+	}
+
+
 	float sample = 0.0f;
 	
 	Phasor::phase_delta_t o = Phasor::radiansToPhase(offset);
-	if (feedbackOn) {
+	if (feedbackOn || depthOn) {
 		if (_oversampleMix < 1.0f) {
 			_oversampleMix += oversampleMixIncrement;
 		}

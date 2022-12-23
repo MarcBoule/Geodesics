@@ -22,6 +22,7 @@ struct Energy : Module {
 		ENUMS(FREQ_PARAMS, 2),// rotary knobs (middle)
 		ENUMS(MOMENTUM_PARAMS, 2),// rotary knobs (top)
 		CROSS_PARAM,
+		ENUMS(DEPTH_PARAMS, 2),// rotary knobs
 		NUM_PARAMS
 	};
 	enum InputIds {
@@ -84,15 +85,17 @@ struct Energy : Module {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		
 		configParam(CROSS_PARAM, 0.0f, 1.0f, 0.0f, "Momentum crossing");		
-		configParam(Energy::MOMENTUM_PARAMS + 0, 0.0f, 1.0f, 0.0f, "Momentum M");
-		configParam(Energy::MOMENTUM_PARAMS + 1, 0.0f, 1.0f, 0.0f, "Momentum C");
-		configParam(Energy::FREQ_PARAMS + 0, -3.0f, 3.0f, 0.0f, "Freq M");
-		configParam(Energy::FREQ_PARAMS + 1, -3.0f, 3.0f, 0.0f, "Freq C");
-		configParam(Energy::ROUTING_PARAM, 0.0f, 1.0f, 0.0f, "Routing");
-		configParam(Energy::PLANCK_PARAMS + 0, 0.0f, 1.0f, 0.0f, "Quantize (Planck) M");
-		configParam(Energy::PLANCK_PARAMS + 1, 0.0f, 1.0f, 0.0f, "Quantize (Planck) C");
-		configParam(Energy::MODTYPE_PARAMS + 0, 0.0f, 1.0f, 0.0f, "CV mod type M");
-		configParam(Energy::MODTYPE_PARAMS + 1, 0.0f, 1.0f, 0.0f, "CV mod type C");		
+		configParam(MOMENTUM_PARAMS + 0, 0.0f, 1.0f, 0.0f, "Momentum M");
+		configParam(MOMENTUM_PARAMS + 1, 0.0f, 1.0f, 0.0f, "Momentum C");
+		configParam(DEPTH_PARAMS + 0, 0.0f, 1.0f, 0.0f, "Depth M");
+		configParam(DEPTH_PARAMS + 1, 0.0f, 1.0f, 0.0f, "Depth C");
+		configParam(FREQ_PARAMS + 0, -3.0f, 3.0f, 0.0f, "Freq M");
+		configParam(FREQ_PARAMS + 1, -3.0f, 3.0f, 0.0f, "Freq C");
+		configParam(ROUTING_PARAM, 0.0f, 1.0f, 0.0f, "Routing");
+		configParam(PLANCK_PARAMS + 0, 0.0f, 1.0f, 0.0f, "Quantize (Planck) M");
+		configParam(PLANCK_PARAMS + 1, 0.0f, 1.0f, 0.0f, "Quantize (Planck) C");
+		configParam(MODTYPE_PARAMS + 0, 0.0f, 1.0f, 0.0f, "CV mod type M");
+		configParam(MODTYPE_PARAMS + 1, 0.0f, 1.0f, 0.0f, "CV mod type C");		
 		
 		configInput(FREQCV_INPUTS + 0, "Mass");
 		configInput(FREQCV_INPUTS + 1, "Speed of light");
@@ -302,8 +305,8 @@ struct Energy : Module {
 			float vocts[2] = {modSignals[0][c] + inputs[FREQCV_INPUT].getVoltage(c), modSignals[1][c] + inputs[FREQCV_INPUT].getVoltage(c)};
 			
 			// oscillators
-			float oscMout = oscM[c].step(vocts[0], feedbacks[0][c] * 0.3f);
-			float oscCout = oscC[c].step(vocts[1], feedbacks[1][c] * 0.3f);
+			float oscMout = oscM[c].step(vocts[0], feedbacks[0][c] * 0.3f, params[DEPTH_PARAMS + 0].getValue(), oscC[c]._feedbackDelayedSample);
+			float oscCout = oscC[c].step(vocts[1], feedbacks[1][c] * 0.3f, params[DEPTH_PARAMS + 1].getValue(), oscM[c]._feedbackDelayedSample);
 			
 			// multiply 
 			float slewInput = 1.0f;
@@ -456,6 +459,9 @@ struct EnergyWidget : ModuleWidget {
 		addInput(createDynamicPort<GeoPort>(VecPx(colRulerCenter - offsetX, 380.0f - 332.5f), true, module, Energy::RESET_INPUTS + 0, module ? &module->panelTheme : NULL));
 		addInput(createDynamicPort<GeoPort>(VecPx(colRulerCenter + offsetX, 380.0f - 332.5f), true, module, Energy::RESET_INPUTS + 1, module ? &module->panelTheme : NULL));
 		
+		// depth knobs (temporary location)
+		addParam(createDynamicParam<GeoKnob>(VecPx(colRulerCenter - offsetX, 380.0f - 362.5f), module, Energy::DEPTH_PARAMS + 0, module ? &module->panelTheme : NULL));
+		addParam(createDynamicParam<GeoKnob>(VecPx(colRulerCenter + offsetX, 380.0f - 362.5f), module, Energy::DEPTH_PARAMS + 1, module ? &module->panelTheme : NULL));		
 
 		// multiply input
 		addInput(createDynamicPort<GeoPort>(VecPx(colRulerCenter, 380.0f - 280.5f), true, module, Energy::MULTIPLY_INPUT, module ? &module->panelTheme : NULL));

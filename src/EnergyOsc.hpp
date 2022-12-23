@@ -305,5 +305,5 @@ struct FMOp {
 	void dataToJson(json_t *rootJ, std::string id);
 	void dataFromJson(json_t *rootJ, std::string id);
 	void onSampleRateChange(float newSampleRate);
-	float step(float voct, float momentum);
+	float step(float voct, float momentum, float fmDepth, float fmInput);
 };
