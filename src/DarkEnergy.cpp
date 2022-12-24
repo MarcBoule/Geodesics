@@ -17,15 +17,13 @@
 struct DarkEnergy : Module {
 	enum ParamIds {
 		ENUMS(PLANCK_PARAMS, 2),// push buttons
-		ENUMS(MODTYPE_PARAMS, 2),// push buttons
-		ROUTING_PARAM,// push button
 		ENUMS(FREQ_PARAMS, 2),// rotary knobs
 		FREQ_PARAM,// rotary knobs
 		DEPTHCV_PARAM,// rotary knob, FM depth CV aka antigravity CV
 		ENUMS(DEPTH_PARAMS, 2),// rotary knobs, FM depth aka antigravity
 		MOMENTUMCV_PARAM,// rotary knob, feedback CV
 		ENUMS(MOMENTUM_PARAMS, 2),// rotary knobs, feedback
-		CROSS_PARAM,
+		MODE_PARAM,
 		RESET_PARAM,
 		NUM_PARAMS
 	};
@@ -46,12 +44,10 @@ struct DarkEnergy : Module {
 	};
 	enum LightIds {
 		ENUMS(PLANCK_LIGHTS, 4), // low M (yellow), ratio M (blue), low C (yellow), ratio C (blue)
-		ENUMS(ADD_LIGHTS, 2),
-		ENUMS(AMP_LIGHTS, 2),
-		ENUMS(ROUTING_LIGHTS, 3),
 		ENUMS(MOMENTUM_LIGHTS, 2),
-		ENUMS(FREQ_ROUTING_LIGHTS, 2 * 2),// room for blue/yellow
-		CROSS_LIGHT,
+		ENUMS(ANTIGRAV_LIGHTS, 2),
+		ENUMS(FREQ_LIGHTS, 2 * 2),// room for blue/yellow
+		ENUMS(MODE_LIGHTS, 2),// index 0 is fmDepth, index 1 is feedback
 		ENUMS(RESET_LIGHTS, 2),
 		NUM_LIGHTS
 	};
@@ -66,49 +62,41 @@ struct DarkEnergy : Module {
 	// Need to save, with reset
 	FMOp oscM[N_POLY];
 	FMOp oscC[N_POLY];
-	int routing;// routing of knob 1. 
-		// 0 is independant (i.e. blue only) (bottom light, light index 0),
-		// 1 is control (i.e. blue and yellow) (top light, light index 1),
-		// 2 is spread (i.e. blue and inv yellow) (middle, light index 2)
 	int plancks[2];// index is left/right, value is: 0 = not quantized, 1 = 5th+octs, 2 = adds -10V offset (LFO)
-	int modtypes[2];// index is left/right, value is: {0 to 3} = {bypass, add, amp}
-	int cross;// cross momentum active or not
+	int mode;// main center modulation modes (bit 0 is fmDepth mode, bit 1 is feedback mode; a 0 bit means both sides CV modulated the same, a 1 bit means pos attenuverter mods right side only, neg atten means mod left side only (but still a positive attenuverter value though!))
 	
 	// No need to save, with reset
 	int numChan;
 	float feedbacks[2][N_POLY];
+	float depths[2][N_POLY];// fm depth
 	float modSignals[2][N_POLY];
 	
 	// No need to save, no reset
 	RefreshCounter refresh;
 	float resetLight0 = 0.0f;
 	float resetLight1 = 0.0f;
-	Trigger routingTrigger;
 	Trigger planckTriggers[2];
 	Trigger modtypeTriggers[2];
 	Trigger resetTriggers[3];// M inut, C input, button (trigs both)
-	Trigger crossTrigger;
+	Trigger modeTrigger;
 	SlewLimiter multiplySlewers[N_POLY];
 	
 	
 	DarkEnergy() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		
-		configParam(DEPTHCV_PARAM, -1.0f, 1.0f, 0.0f, "Depth CV");		
-		configParam(DEPTH_PARAMS + 0, 0.0f, 1.0f, 0.0f, "Depth M");
-		configParam(DEPTH_PARAMS + 1, 0.0f, 1.0f, 0.0f, "Depth C");
+		configParam(DEPTHCV_PARAM, -1.0f, 1.0f, 0.0f, "Anti-gravity CV");		
+		configParam(DEPTH_PARAMS + 0, 0.0f, 1.0f, 0.0f, "Anti-gravity M");
+		configParam(DEPTH_PARAMS + 1, 0.0f, 1.0f, 0.0f, "Anti-gravity C");
 		configParam(MOMENTUMCV_PARAM, -1.0f, 1.0f, 0.0f, "Momentum CV");		
 		configParam(MOMENTUM_PARAMS + 0, 0.0f, 1.0f, 0.0f, "Momentum M");
 		configParam(MOMENTUM_PARAMS + 1, 0.0f, 1.0f, 0.0f, "Momentum C");
 		configParam(FREQ_PARAMS + 0, -3.0f, 3.0f, 0.0f, "Freq M");
 		configParam(FREQ_PARAMS + 1, -3.0f, 3.0f, 0.0f, "Freq C");
 		configParam(FREQ_PARAM, -3.0f, 3.0f, 0.0f, "Freq offset");
-		configParam(ROUTING_PARAM, 0.0f, 1.0f, 0.0f, "Routing");
 		configParam(PLANCK_PARAMS + 0, 0.0f, 1.0f, 0.0f, "Planck mode M");
 		configParam(PLANCK_PARAMS + 1, 0.0f, 1.0f, 0.0f, "Planck mode C");
-		configParam(MODTYPE_PARAMS + 0, 0.0f, 1.0f, 0.0f, "CV mod type M");
-		configParam(MODTYPE_PARAMS + 1, 0.0f, 1.0f, 0.0f, "CV mod type C");		
-		configParam(CROSS_PARAM, 0.0f, 1.0f, 0.0f, "Momentum crossing");
+		configParam(MODE_PARAM, 0.0f, 1.0f, 0.0f, "Anti-gravity and momentum CV mode");
 		configParam(RESET_PARAM, 0.0f, 1.0f, 0.0f, "Reset");
 		
 		configInput(FREQCV_INPUTS + 0, "Mass");
@@ -129,6 +117,8 @@ struct DarkEnergy : Module {
 			oscC[c].construct(APP->engine->getSampleRate());
 			feedbacks[0][c] = 0.0f;
 			feedbacks[1][c] = 0.0f;
+			depths[0][c] = 0.0f;
+			depths[1][c] = 0.0f;
 		}
 		onSampleRateChange();
 		onReset();
@@ -142,12 +132,10 @@ struct DarkEnergy : Module {
 			oscM[c].onReset();
 			oscC[c].onReset();
 		}
-		routing = 1;// default is control (i.e. blue and yellow) (top light, light index 1),
 		for (int i = 0; i < 2; i++) {
 			plancks[i] = 0;
-			modtypes[i] = 1;// default is add mode
 		}
-		cross = 0;
+		mode = 0x0;
 		resetNonJson();
 	}
 	void resetNonJson() {
@@ -187,19 +175,12 @@ struct DarkEnergy : Module {
 			oscC[c].dataToJson(rootJ, string::f("osc%iC_",c));
 		}
 
-		// routing
-		json_object_set_new(rootJ, "routing", json_integer(routing));
-
 		// plancks
 		json_object_set_new(rootJ, "planck0", json_integer(plancks[0]));
 		json_object_set_new(rootJ, "planck1", json_integer(plancks[1]));
-
-		// modtypes
-		json_object_set_new(rootJ, "modtype0", json_integer(modtypes[0]));
-		json_object_set_new(rootJ, "modtype1", json_integer(modtypes[1]));
 		
-		// cross
-		json_object_set_new(rootJ, "cross", json_integer(cross));
+		// mode
+		json_object_set_new(rootJ, "mode", json_integer(mode));
 
 		return rootJ;
 	}
@@ -219,11 +200,6 @@ struct DarkEnergy : Module {
 			oscC[c].dataFromJson(rootJ, string::f("osc%iC_",c));
 		}
 
-		// routing
-		json_t *routingJ = json_object_get(rootJ, "routing");
-		if (routingJ)
-			routing = json_integer_value(routingJ);
-
 		// plancks
 		json_t *planck0J = json_object_get(rootJ, "planck0");
 		if (planck0J)
@@ -232,18 +208,10 @@ struct DarkEnergy : Module {
 		if (planck1J)
 			plancks[1] = json_integer_value(planck1J);
 
-		// modtypes
-		json_t *modtype0J = json_object_get(rootJ, "modtype0");
-		if (modtype0J)
-			modtypes[0] = json_integer_value(modtype0J);
-		json_t *modtype1J = json_object_get(rootJ, "modtype1");
-		if (modtype1J)
-			modtypes[1] = json_integer_value(modtype1J);
-
-		// cross
-		json_t *crossJ = json_object_get(rootJ, "cross");
-		if (crossJ)
-			cross = json_integer_value(crossJ);
+		// mode
+		json_t *modeJ = json_object_get(rootJ, "mode");
+		if (modeJ)
+			mode = json_integer_value(modeJ);
 		
 		resetNonJson();
 	}
@@ -257,12 +225,6 @@ struct DarkEnergy : Module {
 			outputs[M_OUTPUT].setChannels(numChan);
 			outputs[C_OUTPUT].setChannels(numChan);
 
-			// routing
-			if (routingTrigger.process(params[ROUTING_PARAM].getValue())) {
-				if (++routing > 2)
-					routing = 0;
-			}
-			
 			// plancks
 			for (int i = 0; i < 2; i++) {
 				if (planckTriggers[i].process(params[PLANCK_PARAMS + i].getValue())) {
@@ -270,19 +232,11 @@ struct DarkEnergy : Module {
 						plancks[i] = 0;
 				}
 			}
-			
-			// modtypes
-			for (int i = 0; i < 2; i++) {
-				if (modtypeTriggers[i].process(params[MODTYPE_PARAMS + i].getValue())) {
-					if (++modtypes[i] > 2)
-						modtypes[i] = 0;
-				}
-			}
-			
-			// cross
-			if (crossTrigger.process(params[CROSS_PARAM].getValue())) {
-				if (++cross > 1)
-					cross = 0;
+						
+			// mode
+			if (modeTrigger.process(params[MODE_PARAM].getValue())) {
+				if (++mode > 0x3)
+					mode = 0x0;
 			}
 			
 			// reset
@@ -311,8 +265,9 @@ struct DarkEnergy : Module {
 		
 		// main signal flow
 		// ----------------		
+		float oscOuts[2] = {};// for freq leds in lfo mode
 		for (int c = 0; c < numChan; c++) {
-			// pitch modulation and feedbacks
+			// pitch modulation, feedbacks and depths
 			if ((refresh.refreshCounter & 0x3) == (c & 0x3)) {
 				// stagger0 updates channels 0, 4, 8,  12
 				// stagger1 updates channels 1, 5, 9,  13
@@ -320,19 +275,25 @@ struct DarkEnergy : Module {
 				// stagger3 updates channels 3, 7, 11, 15
 				calcModSignals(c);// voct modulation, a given channel is updated at sample_rate / 4
 				calcFeedbacks(c);// feedback (momentum), a given channel is updated at sample_rate / 4
+				calcDepths(c);// fmDepth (anti-gravity), a given channel is updated at sample_rate / 4
 			}
 			
-			if (!outputs[ENERGY_OUTPUT].isConnected() && !outputs[M_OUTPUT].isConnected() && !outputs[C_OUTPUT].isConnected()) {// this is placed here such that feedbacks and mod signals of chan 0 are always calculated, since they are used in lights
+			if (!outputs[ENERGY_OUTPUT].isConnected() && !outputs[M_OUTPUT].isConnected() && !outputs[C_OUTPUT].isConnected()) {// this is placed here such that feedbacks, depths and mod signals of chan 0 are always calculated, since they are used in lights
 				break;
 			}
 			
 			// vocts
-			float base = inputs[FREQCV_INPUT].getVoltage(c) + params[FREQ_PARAM].getValue();
+			float base = inputs[FREQCV_INPUT].getVoltage(c);
 			float vocts[2] = {base + modSignals[0][c], base + modSignals[1][c]};
 			
 			// oscillators
-			float oscMout = oscM[c].step(vocts[0], feedbacks[0][c] * 0.3f, params[DEPTH_PARAMS + 0].getValue(), oscC[c]._feedbackDelayedSample);
-			float oscCout = oscC[c].step(vocts[1], feedbacks[1][c] * 0.3f, params[DEPTH_PARAMS + 1].getValue(), oscM[c]._feedbackDelayedSample);
+			float oscMout = oscM[c].step(vocts[0], feedbacks[0][c] * 0.3f, depths[0][c], oscC[c]._feedbackDelayedSample);
+			float oscCout = oscC[c].step(vocts[1], feedbacks[1][c] * 0.3f, depths[1][c], oscM[c]._feedbackDelayedSample);
+			
+			if (c == 0) {// for freq leds in lfo mode
+				oscOuts[0] = oscMout;
+				oscOuts[1] = oscCout;
+			}
 			
 			// multiply 
 			float slewInput = 1.0f;
@@ -340,11 +301,11 @@ struct DarkEnergy : Module {
 				int chan = std::min(inputs[MULTIPLY_INPUT].getChannels() - 1, c);
 				slewInput = (clamp(inputs[MULTIPLY_INPUT].getVoltage(chan) / 10.0f, 0.0f, 1.0f));
 			}
-			float multiplySlewValue = multiplySlewers[c].next(slewInput) * 0.2f;
+			float multiplySlewValue = multiplySlewers[c].next(slewInput);
 			
-			// final attenuverters
-			float attv1 = oscCout * oscCout * multiplySlewValue;
-			float attv2 = attv1 * oscMout * 0.2f;
+			// final signals
+			float attv1 = oscCout * oscCout * 0.2f * multiplySlewValue;// C^2 is done here, with multiply
+			float attv2 = attv1 * oscMout * 0.2f;// ring mod is here
 			
 			// outputs
 			outputs[ENERGY_OUTPUT].setVoltage(-attv2, c);// inverted as per spec from Pyer
@@ -355,31 +316,32 @@ struct DarkEnergy : Module {
 		// lights
 		if (refresh.processLights()) {
 			float deltaTime = args.sampleTime * (RefreshCounter::displayRefreshStepSkips >> 2);
-			
-			// routing
-			for (int i = 0; i < 3; i++)
-				lights[ROUTING_LIGHTS + i].setBrightness(routing == i ? 1.0f : 0.0f);
-			
+						
 			for (int i = 0; i < 2; i++) {
 				// plancks
 				lights[PLANCK_LIGHTS + i * 2 + 0].setBrightness(plancks[i] == 1 ? 1.0f : 0.0f);// low
 				lights[PLANCK_LIGHTS + i * 2 + 1].setBrightness(plancks[i] == 2 ? 1.0f : 0.0f);// ratio
-				
-				// modtypes
-				lights[ADD_LIGHTS + i].setBrightness(modtypes[i] == 1 ? 1.0f : 0.0f);
-				lights[AMP_LIGHTS + i].setBrightness(modtypes[i] == 2 ? 1.0f : 0.0f);
-				
-				// momentum (cross)
+								
+				// momentum (feedback) and anti-gravity (fmDepth)
 				lights[MOMENTUM_LIGHTS + i].setBrightness(feedbacks[i][0]);// lights show first channel only when poly
+				lights[ANTIGRAV_LIGHTS + i].setBrightness(depths[i][0]);// lights show first channel only when poly
 
-				// momentum (cross)
-				float modSignalLight = modSignals[i][0] / 3.0f;
-				lights[FREQ_ROUTING_LIGHTS + 2 * i + 0].setBrightness(modSignalLight);// blue diode
-				lights[FREQ_ROUTING_LIGHTS + 2 * i + 1].setBrightness(-modSignalLight);// yellow diode
+				// freqs
+				if (plancks[i] == 1) {// if LFO			
+					float modSignalLight = oscOuts[i] * 0.2f;
+					lights[FREQ_LIGHTS + 2 * i + 0].setBrightness(-modSignalLight);// blue diode
+					lights[FREQ_LIGHTS + 2 * i + 1].setBrightness(modSignalLight);// yellow diode
+				}
+				else {// not LFO
+					float modSignalLight = modSignals[i][0] / 3.0f;
+					lights[FREQ_LIGHTS + 2 * i + 0].setBrightness(modSignalLight);// blue diode
+					lights[FREQ_LIGHTS + 2 * i + 1].setBrightness(-modSignalLight);// yellow diode
+				}
 			}
 			
-			// cross
-			lights[CROSS_LIGHT].setBrightness(cross == 1 ? 1.0f : 0.0f);
+			// mode
+			lights[MODE_LIGHTS + 0].setBrightness((mode & 0x1) != 0 ? 1.0f : 0.0f);
+			lights[MODE_LIGHTS + 1].setBrightness((mode & 0x2) != 0 ? 1.0f : 0.0f);
 
 			// Reset light
 			lights[RESET_LIGHTS + 0].setSmoothBrightness(resetLight0, deltaTime);	
@@ -405,55 +367,74 @@ struct DarkEnergy : Module {
 	
 	inline void calcModSignals(int chan) {
 		for (int osci = 0; osci < 2; osci++) {
-			float freqValue = calcFreqKnob(osci);
-			if (modtypes[osci] == 0 || !inputs[FREQCV_INPUTS + osci].isConnected()) {// bypass
-				modSignals[osci][chan] = freqValue;
-			}
-			else {
-				int chanIn = std::min(inputs[FREQCV_INPUTS + osci].getChannels() - 1, chan);
-				if (modtypes[osci] == 1) {// add
-					modSignals[osci][chan] = freqValue + inputs[FREQCV_INPUTS + osci].getVoltage(chanIn);
-				}
-				else {// amp
-					modSignals[osci][chan] = freqValue * (clamp(inputs[FREQCV_INPUTS + osci].getVoltage(chanIn), 0.0f, 10.0f) / 10.0f);
-				}
-			}
-		}
-		if (routing == 1) {
-			modSignals[1][chan] += modSignals[0][chan];
-		}
-		else if (routing == 2) {
-			modSignals[1][chan] -= modSignals[0][chan];
+			float freqValue = calcFreqKnob(osci) + params[FREQ_PARAM].getValue();
+			int chanIn = std::min(inputs[FREQCV_INPUTS + osci].getChannels() - 1, chan);
+			modSignals[osci][chan] = freqValue + inputs[FREQCV_INPUTS + osci].getVoltage(chanIn);
 		}
 	}
 	
 	inline void calcFeedbacks(int chan) {
-		float moIn[2]; 	
+		float moPar = params[MOMENTUMCV_PARAM].getValue();
+		float moIn = moPar;
+		if (inputs[MOMENTUM_INPUT].isConnected()) {
+			int chanIn = std::min(inputs[MOMENTUM_INPUT].getChannels() - 1, chan);
+			moIn *= inputs[MOMENTUM_INPUT].getVoltage(chanIn) * 0.1f;
+		}
+			
 		for (int osci = 0; osci < 2; osci++) {
-			moIn[osci] = 0.0f;
-			if (inputs[MOMENTUM_INPUT].isConnected()) {
-				int chanIn = std::min(inputs[MOMENTUM_INPUT].getChannels() - 1, chan);
-				moIn[osci] = inputs[MOMENTUM_INPUT].getVoltage(chanIn);
-			}
 			feedbacks[osci][chan] = params[MOMENTUM_PARAMS + osci].getValue();
 		}
 		
-		if (cross == 0) {
-			feedbacks[0][chan] += moIn[0] * 0.1f;
-			feedbacks[1][chan] += moIn[1] * 0.1f;
+		if ((mode & 0x2) != 0) {
+			if (moPar > 0.0f) {
+				// modulate feedback of right side only
+				feedbacks[1][chan] += moIn;
+			}
+			else {
+				// modulate feedback of left side only
+				feedbacks[0][chan] -= moIn;// this has to modulate positively but moPar is negative, so correct for this
+			}
 		}
-		else {// cross momentum
-			if (moIn[0] > 0)
-				feedbacks[0][chan] += moIn[0] * 0.2f;
-			else 
-				feedbacks[1][chan] += moIn[0] * -0.2f;
-			if (moIn[1] > 0)
-				feedbacks[1][chan] += moIn[1] * 0.2f;
-			else 
-				feedbacks[0][chan] += moIn[1] * -0.2f;
+		else {
+			// modulate both feedbacks the same
+			feedbacks[0][chan] += moIn;
+			feedbacks[1][chan] += moIn;
 		}
+		
 		feedbacks[0][chan] = clamp(feedbacks[0][chan], 0.0f, 1.0f);
 		feedbacks[1][chan] = clamp(feedbacks[1][chan], 0.0f, 1.0f);
+	}	
+	
+	inline void calcDepths(int chan) {
+		float moPar = params[DEPTHCV_PARAM].getValue();
+		float moIn = moPar;
+		if (inputs[ANTIGRAV_INPUT].isConnected()) {
+			int chanIn = std::min(inputs[ANTIGRAV_INPUT].getChannels() - 1, chan);
+			moIn *= inputs[ANTIGRAV_INPUT].getVoltage(chanIn) * 0.1f;
+		}
+			
+		for (int osci = 0; osci < 2; osci++) {
+			depths[osci][chan] = params[DEPTH_PARAMS + osci].getValue();
+		}
+		
+		if ((mode & 0x1) != 0) {
+			if (moPar > 0.0f) {
+				// modulate depth of right side only
+				depths[1][chan] += moIn;
+			}
+			else {
+				// modulate depth of left side only
+				depths[0][chan] -= moIn;// this has to modulate positively but moPar is negative, so correct for this
+			}
+		}
+		else {
+			// modulate both depths the same
+			depths[0][chan] += moIn;
+			depths[1][chan] += moIn;
+		}
+		
+		depths[0][chan] = clamp(depths[0][chan], 0.0f, 1.0f);
+		depths[1][chan] = clamp(depths[1][chan], 0.0f, 1.0f);
 	}
 };
 
@@ -501,9 +482,18 @@ struct DarkEnergyWidget : ModuleWidget {
 		addParam(createDynamicParam<GeoKnob>(mm2px(Vec(colC - oX2, 54.80f)), module, DarkEnergy::DEPTH_PARAMS + 0, module ? &module->panelTheme : NULL));
 		addParam(createDynamicParam<GeoKnob>(mm2px(Vec(colC + oX2, 54.80f)), module, DarkEnergy::DEPTH_PARAMS + 1, module ? &module->panelTheme : NULL));		
 
+		// depth lights
+		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(mm2px(Vec(colC - oX2, 62.74f)), module, DarkEnergy::ANTIGRAV_LIGHTS + 0));
+		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(mm2px(Vec(colC + oX2, 62.74f)), module, DarkEnergy::ANTIGRAV_LIGHTS + 1));
+
 		// depth and momentum inputs
 		addInput(createDynamicPort<GeoPort>(mm2px(Vec(colC - oX1, 63.75f)), true, module, DarkEnergy::ANTIGRAV_INPUT, module ? &module->panelTheme : NULL));
 		addInput(createDynamicPort<GeoPort>(mm2px(Vec(colC + oX1, 63.75f)), true, module, DarkEnergy::MOMENTUM_INPUT, module ? &module->panelTheme : NULL));
+		
+		// mode button and lights
+		addParam(createDynamicParam<GeoPushButton>(mm2px(Vec(colC, 63.75f)), module, DarkEnergy::MODE_PARAM, module ? &module->panelTheme : NULL));		
+		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(mm2px(Vec(colC, 58.19f)), module, DarkEnergy::MODE_LIGHTS + 0));
+		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(mm2px(Vec(colC, 69.36f)), module, DarkEnergy::MODE_LIGHTS + 1));
 
 		// MOMENTUM (FEEDBACK)
 		// momentum knobs
@@ -520,8 +510,16 @@ struct DarkEnergyWidget : ModuleWidget {
 		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(mm2px(Vec(22.86f, 90.46f)), module, DarkEnergy::RESET_LIGHTS + 0));
 		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(mm2px(Vec(55.88f - 22.86f, 90.46f)), module, DarkEnergy::RESET_LIGHTS + 1));
 		addParam(createDynamicParam<GeoPushButton>(mm2px(Vec(colC, 90.46f)), module, DarkEnergy::RESET_PARAM, module ? &module->panelTheme : NULL));
+		
+		
+		// momentum lights
+		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(mm2px(Vec(colC - oX2, 84.21f)), module, DarkEnergy::MOMENTUM_LIGHTS + 0));
+		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(mm2px(Vec(colC + oX2, 84.21f)), module, DarkEnergy::MOMENTUM_LIGHTS + 1));
 
-
+		// FREQ
+		// freq lights (below momentum lights)
+		addChild(createLightCentered<SmallLight<GeoBlueYellowLight>>(mm2px(Vec(colC - oX2, 87.25f)), module, DarkEnergy::FREQ_LIGHTS + 2 * 0));
+		addChild(createLightCentered<SmallLight<GeoBlueYellowLight>>(mm2px(Vec(colC + oX2, 87.25f)), module, DarkEnergy::FREQ_LIGHTS + 2 * 1));		
 		
 		// freq knobs
 		addParam(createDynamicParam<GeoKnob>(mm2px(Vec(colC - oX2, 95.37f)), module, DarkEnergy::FREQ_PARAMS + 0, module ? &module->panelTheme : NULL));
@@ -543,39 +541,6 @@ struct DarkEnergyWidget : ModuleWidget {
 		addInput(createDynamicPort<GeoPort>(mm2px(Vec(13.39f, 117.87f)), true, module, DarkEnergy::FREQCV_INPUTS + 0, module ? &module->panelTheme : NULL));
 		addInput(createDynamicPort<GeoPort>(mm2px(Vec(42.51f, 117.87f)), true, module, DarkEnergy::FREQCV_INPUTS + 1, module ? &module->panelTheme : NULL));
 
-		
-		// cross button and light
-/*		addParam(createDynamicParam<GeoPushButton>(VecPx(colRulerCenter, 380.0f - 205.5f), module, DarkEnergy::CROSS_PARAM, module ? &module->panelTheme : NULL));		
-		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(VecPx(colRulerCenter - 7.5f, 380.0f - 219.5f), module, DarkEnergy::CROSS_LIGHT));
-		
-		// routing lights
-		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(VecPx(39, 380.0f - 141.5f), module, DarkEnergy::ROUTING_LIGHTS + 0));// bottom
-		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(VecPx(51, 380.0f - 154.5f), module, DarkEnergy::ROUTING_LIGHTS + 1));// top
-		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(VecPx(45, 380.0f - 148.5f), module, DarkEnergy::ROUTING_LIGHTS + 2));// middle
-		
-		// momentum lights
-		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(VecPx(colRulerCenter - offsetX, 380.0f - 186.0f), module, DarkEnergy::MOMENTUM_LIGHTS + 0));
-		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(VecPx(colRulerCenter + offsetX, 380.0f - 186.0f), module, DarkEnergy::MOMENTUM_LIGHTS + 1));
-
-		// freq routing lights (below momentum lights)
-		addChild(createLightCentered<SmallLight<GeoBlueYellowLight>>(VecPx(colRulerCenter - offsetX, 380.0f - 177.0f), module, DarkEnergy::FREQ_ROUTING_LIGHTS + 2 * 0));
-		addChild(createLightCentered<SmallLight<GeoBlueYellowLight>>(VecPx(colRulerCenter + offsetX, 380.0f - 177.0f), module, DarkEnergy::FREQ_ROUTING_LIGHTS + 2 * 1));
-
-		// routing button
-		addParam(createDynamicParam<GeoPushButton>(VecPx(colRulerCenter, 380.0f - 113.5f), module, DarkEnergy::ROUTING_PARAM, module ? &module->panelTheme : NULL));
-		
-				
-		// mod type buttons
-		addParam(createDynamicParam<GeoPushButton>(VecPx(colRulerCenter - offsetX - 0.5f, 380.0f - 57.5f), module, DarkEnergy::MODTYPE_PARAMS + 0, module ? &module->panelTheme : NULL));
-		addParam(createDynamicParam<GeoPushButton>(VecPx(colRulerCenter + offsetX + 0.5f, 380.0f - 57.5f), module, DarkEnergy::MODTYPE_PARAMS + 1, module ? &module->panelTheme : NULL));
-		
-		// mod type lights
-		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(VecPx(colRulerCenter - 17.5f, 380.0f - 62.5f), module, DarkEnergy::ADD_LIGHTS + 0));
-		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(VecPx(colRulerCenter + 17.5f, 380.0f - 62.5f), module, DarkEnergy::ADD_LIGHTS + 1));
-		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(VecPx(colRulerCenter - 41.5f, 380.0f - 47.5f), module, DarkEnergy::AMP_LIGHTS + 0));
-		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(VecPx(colRulerCenter + 41.5f, 380.0f - 47.5f), module, DarkEnergy::AMP_LIGHTS + 1));
-		
-		*/
 	}
 	
 	void step() override {
