@@ -22,7 +22,6 @@ struct Energy : Module {
 		ENUMS(FREQ_PARAMS, 2),// rotary knobs (middle)
 		ENUMS(MOMENTUM_PARAMS, 2),// rotary knobs (top)
 		CROSS_PARAM,
-		ENUMS(DEPTH_PARAMS, 2),// rotary knobs
 		NUM_PARAMS
 	};
 	enum InputIds {
@@ -30,7 +29,6 @@ struct Energy : Module {
 		FREQCV_INPUT, // main voct input
 		MULTIPLY_INPUT,
 		ENUMS(MOMENTUM_INPUTS, 2),
-		ENUMS(RESET_INPUTS, 2),
 		NUM_INPUTS
 	};
 	enum OutputIds {
@@ -76,7 +74,6 @@ struct Energy : Module {
 	Trigger routingTrigger;
 	Trigger planckTriggers[2];
 	Trigger modtypeTriggers[2];
-	Trigger resetTriggers[2];
 	Trigger crossTrigger;
 	SlewLimiter multiplySlewers[N_POLY];
 	
@@ -87,8 +84,6 @@ struct Energy : Module {
 		configParam(CROSS_PARAM, 0.0f, 1.0f, 0.0f, "Momentum crossing");		
 		configParam(MOMENTUM_PARAMS + 0, 0.0f, 1.0f, 0.0f, "Momentum M");
 		configParam(MOMENTUM_PARAMS + 1, 0.0f, 1.0f, 0.0f, "Momentum C");
-		configParam(DEPTH_PARAMS + 0, 0.0f, 1.0f, 0.0f, "Depth M");
-		configParam(DEPTH_PARAMS + 1, 0.0f, 1.0f, 0.0f, "Depth C");
 		configParam(FREQ_PARAMS + 0, -3.0f, 3.0f, 0.0f, "Freq M");
 		configParam(FREQ_PARAMS + 1, -3.0f, 3.0f, 0.0f, "Freq C");
 		configParam(ROUTING_PARAM, 0.0f, 1.0f, 0.0f, "Routing");
@@ -103,8 +98,6 @@ struct Energy : Module {
 		configInput(MULTIPLY_INPUT, "Multiply");
 		configInput(MOMENTUM_INPUTS + 0, "Momentum M");
 		configInput(MOMENTUM_INPUTS + 1, "Momentum C");
-		configInput(RESET_INPUTS + 0, "Reset M");
-		configInput(RESET_INPUTS + 1, "Reset C");
 		
 		configOutput(ENERGY_OUTPUT, "Energy");
 		
@@ -266,21 +259,6 @@ struct Energy : Module {
 				if (++cross > 1)
 					cross = 0;
 			}
-			
-			// reset
-			if (resetTriggers[0].process(inputs[RESET_INPUTS + 0].getVoltage())) {
-				for (int c = 0; c < N_POLY; c++) {
-					oscM[c].onReset();
-				}
-			}
-			if (resetTriggers[1].process(inputs[RESET_INPUTS + 1].getVoltage())) {
-				for (int c = 0; c < N_POLY; c++) {
-					oscC[c].onReset();
-				}
-			}
-
-			
-			
 		}// userInputs refresh
 		
 		
@@ -305,8 +283,8 @@ struct Energy : Module {
 			float vocts[2] = {modSignals[0][c] + inputs[FREQCV_INPUT].getVoltage(c), modSignals[1][c] + inputs[FREQCV_INPUT].getVoltage(c)};
 			
 			// oscillators
-			float oscMout = oscM[c].step(vocts[0], feedbacks[0][c] * 0.3f, params[DEPTH_PARAMS + 0].getValue(), oscC[c]._feedbackDelayedSample);
-			float oscCout = oscC[c].step(vocts[1], feedbacks[1][c] * 0.3f, params[DEPTH_PARAMS + 1].getValue(), oscM[c]._feedbackDelayedSample);
+			float oscMout = oscM[c].step(vocts[0], feedbacks[0][c] * 0.3f);
+			float oscCout = oscC[c].step(vocts[1], feedbacks[1][c] * 0.3f);
 			
 			// multiply 
 			float slewInput = 1.0f;
@@ -454,14 +432,6 @@ struct EnergyWidget : ModuleWidget {
 
 		// main output
 		addOutput(createDynamicPort<GeoPort>(VecPx(colRulerCenter, 380.0f - 332.5f), false, module, Energy::ENERGY_OUTPUT, module ? &module->panelTheme : NULL));
-		
-		// reset inputs (temporary location)
-		addInput(createDynamicPort<GeoPort>(VecPx(colRulerCenter - offsetX, 380.0f - 332.5f), true, module, Energy::RESET_INPUTS + 0, module ? &module->panelTheme : NULL));
-		addInput(createDynamicPort<GeoPort>(VecPx(colRulerCenter + offsetX, 380.0f - 332.5f), true, module, Energy::RESET_INPUTS + 1, module ? &module->panelTheme : NULL));
-		
-		// depth knobs (temporary location)
-		addParam(createDynamicParam<GeoKnob>(VecPx(colRulerCenter - offsetX, 380.0f - 362.5f), module, Energy::DEPTH_PARAMS + 0, module ? &module->panelTheme : NULL));
-		addParam(createDynamicParam<GeoKnob>(VecPx(colRulerCenter + offsetX, 380.0f - 362.5f), module, Energy::DEPTH_PARAMS + 1, module ? &module->panelTheme : NULL));		
 
 		// multiply input
 		addInput(createDynamicPort<GeoPort>(VecPx(colRulerCenter, 380.0f - 280.5f), true, module, Energy::MULTIPLY_INPUT, module ? &module->panelTheme : NULL));

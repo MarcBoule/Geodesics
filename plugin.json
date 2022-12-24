@@ -56,6 +56,13 @@
 			"tags": ["Oscillator", "Synth voice", "Polyphonic", "Digital", "LFO"]
 		},
 		{
+			"slug": "DarkEnergy",
+			"name": "DarkEnergy",
+			"description": "Complex RM FM oscillator",
+			"manualUrl": "https://www.pyer.be/energy.html",
+			"tags": ["Oscillator", "Synth voice", "Polyphonic", "Digital", "LFO"]
+		},
+		{
 			"slug": "Torus",
 			"name": "Torus",
 			"description": "Bi-dimensional multimixer",
