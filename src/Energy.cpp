@@ -321,7 +321,7 @@ struct Energy : Module {
 				// momentum (cross)
 				lights[MOMENTUM_LIGHTS + i].setBrightness(feedbacks[i][0]);// lights show first channel only when poly
 
-				// momentum (cross)
+				// freq
 				float modSignalLight = modSignals[i][0] / 3.0f;
 				lights[FREQ_ROUTING_LIGHTS + 2 * i + 0].setBrightness(modSignalLight);// blue diode
 				lights[FREQ_ROUTING_LIGHTS + 2 * i + 1].setBrightness(-modSignalLight);// yellow diode

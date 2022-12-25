@@ -24,6 +24,7 @@ struct DarkEnergy : Module {
 		MOMENTUMCV_PARAM,// rotary knob, feedback CV
 		ENUMS(MOMENTUM_PARAMS, 2),// rotary knobs, feedback
 		MODE_PARAM,
+		MULTEN_PARAM,
 		RESET_PARAM,
 		NUM_PARAMS
 	};
@@ -49,6 +50,7 @@ struct DarkEnergy : Module {
 		ENUMS(FREQ_LIGHTS, 2 * 2),// room for blue/yellow
 		ENUMS(MODE_LIGHTS, 2),// index 0 is fmDepth, index 1 is feedback
 		ENUMS(RESET_LIGHTS, 2),
+		MULTEN_LIGHT,
 		NUM_LIGHTS
 	};
 	
@@ -64,6 +66,7 @@ struct DarkEnergy : Module {
 	FMOp oscC[N_POLY];
 	int plancks[2];// index is left/right, value is: 0 = not quantized, 1 = 5th+octs, 2 = adds -10V offset (LFO)
 	int mode;// main center modulation modes (bit 0 is fmDepth mode, bit 1 is feedback mode; a 0 bit means both sides CV modulated the same, a 1 bit means pos attenuverter mods right side only, neg atten means mod left side only (but still a positive attenuverter value though!))
+	int multEnable;
 	
 	// No need to save, with reset
 	int numChan;
@@ -79,6 +82,7 @@ struct DarkEnergy : Module {
 	Trigger modtypeTriggers[2];
 	Trigger resetTriggers[3];// M inut, C input, button (trigs both)
 	Trigger modeTrigger;
+	Trigger multEnableTrigger;
 	SlewLimiter multiplySlewers[N_POLY];
 	
 	
@@ -97,6 +101,7 @@ struct DarkEnergy : Module {
 		configParam(PLANCK_PARAMS + 0, 0.0f, 1.0f, 0.0f, "Planck mode M");
 		configParam(PLANCK_PARAMS + 1, 0.0f, 1.0f, 0.0f, "Planck mode C");
 		configParam(MODE_PARAM, 0.0f, 1.0f, 0.0f, "Anti-gravity and momentum CV mode");
+		configParam(MULTEN_PARAM, 0.0f, 1.0f, 0.0f, "Multiply enable");
 		configParam(RESET_PARAM, 0.0f, 1.0f, 0.0f, "Reset");
 		
 		configInput(FREQCV_INPUTS + 0, "Mass");
@@ -136,6 +141,7 @@ struct DarkEnergy : Module {
 			plancks[i] = 0;
 		}
 		mode = 0x0;
+		multEnable = 0x1;
 		resetNonJson();
 	}
 	void resetNonJson() {
@@ -182,6 +188,9 @@ struct DarkEnergy : Module {
 		// mode
 		json_object_set_new(rootJ, "mode", json_integer(mode));
 
+		// multEnable
+		json_object_set_new(rootJ, "multEnable", json_integer(multEnable));
+
 		return rootJ;
 	}
 
@@ -213,6 +222,11 @@ struct DarkEnergy : Module {
 		if (modeJ)
 			mode = json_integer_value(modeJ);
 		
+		// multEnable
+		json_t *multEnableJ = json_object_get(rootJ, "multEnable");
+		if (multEnableJ)
+			multEnable = json_integer_value(multEnableJ);
+		
 		resetNonJson();
 	}
 
@@ -237,6 +251,11 @@ struct DarkEnergy : Module {
 			if (modeTrigger.process(params[MODE_PARAM].getValue())) {
 				if (++mode > 0x3)
 					mode = 0x0;
+			}
+			
+			// multEnable
+			if (multEnableTrigger.process(params[MULTEN_PARAM].getValue())) {
+				multEnable ^= 0x1;
 			}
 			
 			// reset
@@ -265,7 +284,6 @@ struct DarkEnergy : Module {
 		
 		// main signal flow
 		// ----------------		
-		float oscOuts[2] = {};// for freq leds in lfo mode
 		for (int c = 0; c < numChan; c++) {
 			// pitch modulation, feedbacks and depths
 			if ((refresh.refreshCounter & 0x3) == (c & 0x3)) {
@@ -289,12 +307,7 @@ struct DarkEnergy : Module {
 			// oscillators
 			float oscMout = oscM[c].step(vocts[0], feedbacks[0][c] * 0.3f, depths[0][c], oscC[c]._feedbackDelayedSample);
 			float oscCout = oscC[c].step(vocts[1], feedbacks[1][c] * 0.3f, depths[1][c], oscM[c]._feedbackDelayedSample);
-			
-			if (c == 0) {// for freq leds in lfo mode
-				oscOuts[0] = oscMout;
-				oscOuts[1] = oscCout;
-			}
-			
+						
 			// multiply 
 			float slewInput = 1.0f;
 			if (inputs[MULTIPLY_INPUT].isConnected()) {
@@ -327,16 +340,22 @@ struct DarkEnergy : Module {
 				lights[ANTIGRAV_LIGHTS + i].setBrightness(depths[i][0]);// lights show first channel only when poly
 
 				// freqs
-				if (plancks[i] == 1) {// if LFO			
-					float modSignalLight = oscOuts[i] * 0.2f;
-					lights[FREQ_LIGHTS + 2 * i + 0].setBrightness(-modSignalLight);// blue diode
-					lights[FREQ_LIGHTS + 2 * i + 1].setBrightness(modSignalLight);// yellow diode
-				}
-				else {// not LFO
+				// if (plancks[i] == 1) {// if LFO			
+					// float modSignalLight;
+					// if (i == 0) {
+						// modSignalLight = outputs[M_OUTPUT].getVoltage(0) * 0.2f;
+					// }
+					// else {
+						
+					// }
+					// lights[FREQ_LIGHTS + 2 * i + 0].setBrightness(-modSignalLight);// blue diode
+					// lights[FREQ_LIGHTS + 2 * i + 1].setBrightness(modSignalLight);// yellow diode
+				// }
+				// else {// not LFO
 					float modSignalLight = modSignals[i][0] / 3.0f;
 					lights[FREQ_LIGHTS + 2 * i + 0].setBrightness(modSignalLight);// blue diode
 					lights[FREQ_LIGHTS + 2 * i + 1].setBrightness(-modSignalLight);// yellow diode
-				}
+				// }
 			}
 			
 			// mode
@@ -474,6 +493,11 @@ struct DarkEnergyWidget : ModuleWidget {
 		
 		// multiply input
 		addInput(createDynamicPort<GeoPort>(mm2px(Vec(49.61f, 16.07f)), true, module, DarkEnergy::MULTIPLY_INPUT, module ? &module->panelTheme : NULL));
+		
+		// mult enable button and light
+		addParam(createDynamicParam<GeoPushButton>(mm2px(Vec(36.75f, 38.57f)), module, DarkEnergy::MULTEN_PARAM, module ? &module->panelTheme : NULL));		
+		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(mm2px(Vec(41.49f, 38.57f)), module, DarkEnergy::MULTEN_LIGHT));
+
 		
 		// ANTIGRAVITY (FM DEPTH)
 		// depth CV knob 
