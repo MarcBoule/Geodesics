@@ -25,6 +25,7 @@ struct DarkEnergy : Module {
 		ENUMS(MOMENTUM_PARAMS, 2),// rotary knobs, feedback
 		MODE_PARAM,
 		MULTEN_PARAM,
+		MULTDECAY_PARAM,
 		RESET_PARAM,
 		NUM_PARAMS
 	};
@@ -32,6 +33,7 @@ struct DarkEnergy : Module {
 		ENUMS(FREQCV_INPUTS, 2), // respectively "mass" and "speed of light"
 		FREQCV_INPUT, // main voct input
 		MULTIPLY_INPUT,
+		MULTDECAY_INPUT,
 		ANTIGRAV_INPUT,
 		MOMENTUM_INPUT,
 		ENUMS(RESET_INPUTS, 2),
@@ -41,6 +43,7 @@ struct DarkEnergy : Module {
 		ENERGY_OUTPUT,// main output
 		M_OUTPUT,// m oscillator output
 		C_OUTPUT,// c oscillator output
+		MULT_OUTPUT,
 		NUM_OUTPUTS
 	};
 	enum LightIds {
@@ -51,12 +54,14 @@ struct DarkEnergy : Module {
 		ENUMS(MODE_LIGHTS, 2),// index 0 is fmDepth, index 1 is feedback
 		ENUMS(RESET_LIGHTS, 2),
 		MULTEN_LIGHT,
+		MULTDECAY_LIGHT,
 		NUM_LIGHTS
 	};
 	
 	
 	// Constants
 	static const int N_POLY = 16;
+	static constexpr float MULTSLEW_RISETIME = 2.5f;
 	
 	// Need to save, no reset
 	int panelTheme;
@@ -86,6 +91,18 @@ struct DarkEnergy : Module {
 	SlewLimiter multiplySlewers[N_POLY];
 	
 	
+	float getDecayTime(int chan) {
+		if (inputs[MULTDECAY_INPUT].isConnected()) {
+			int chanIn = std::min(inputs[MULTDECAY_INPUT].getChannels() - 1, chan);
+			float decay = inputs[MULTDECAY_INPUT].getVoltage(chanIn);// assumes decay input is 0-10V CV
+			decay *= params[MULTDECAY_PARAM].getValue();
+			decay = clamp(decay, 0.0f, 10.0f);
+			return decay * 20.0f + 2.5f;// decay ranges from 2.5ms to 202.5ms
+		}
+		return 20.0f;// default decay is 20ms
+	}
+	
+	
 	DarkEnergy() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		
@@ -102,12 +119,14 @@ struct DarkEnergy : Module {
 		configParam(PLANCK_PARAMS + 1, 0.0f, 1.0f, 0.0f, "Planck mode C");
 		configParam(MODE_PARAM, 0.0f, 1.0f, 0.0f, "Anti-gravity and momentum CV mode");
 		configParam(MULTEN_PARAM, 0.0f, 1.0f, 0.0f, "Multiply enable");
+		configParam(MULTDECAY_PARAM, 0.0f, 1.0f, 1.0f, "Multiply decay CV atten");
 		configParam(RESET_PARAM, 0.0f, 1.0f, 0.0f, "Reset");
 		
 		configInput(FREQCV_INPUTS + 0, "Mass");
 		configInput(FREQCV_INPUTS + 1, "Speed of light");
 		configInput(FREQCV_INPUT, "1V/oct");
 		configInput(MULTIPLY_INPUT, "Multiply");
+		configInput(MULTDECAY_INPUT, "Multiply decay CV");
 		configInput(ANTIGRAV_INPUT, "Anti-gravity (FM depth) CV");
 		configInput(MOMENTUM_INPUT, "Momentum (feedback) CV");
 		configInput(RESET_INPUTS + 0, "Reset M");
@@ -116,6 +135,7 @@ struct DarkEnergy : Module {
 		configOutput(ENERGY_OUTPUT, "Energy");
 		configOutput(M_OUTPUT, "M");
 		configOutput(C_OUTPUT, "C");
+		configOutput(MULT_OUTPUT, "Multiply");
 		
 		for (int c = 0; c < N_POLY; c++) {
 			oscM[c].construct(APP->engine->getSampleRate());
@@ -155,14 +175,13 @@ struct DarkEnergy : Module {
 	
 	void onRandomize() override {
 	}
-	
 
 	void onSampleRateChange() override {
 		float sampleRate = APP->engine->getSampleRate();
 		for (int c = 0; c < N_POLY; c++) {
 			oscM[c].onSampleRateChange(sampleRate);
 			oscC[c].onSampleRateChange(sampleRate);
-			multiplySlewers[c].setParams2(sampleRate, 2.5f, 20.0f, 1.0f);
+			multiplySlewers[c].setParams2(sampleRate, MULTSLEW_RISETIME, getDecayTime(c), 1.0f);
 		}
 	}
 	
@@ -238,6 +257,7 @@ struct DarkEnergy : Module {
 			outputs[ENERGY_OUTPUT].setChannels(numChan);
 			outputs[M_OUTPUT].setChannels(numChan);
 			outputs[C_OUTPUT].setChannels(numChan);
+			outputs[MULT_OUTPUT].setChannels(numChan);
 
 			// plancks
 			for (int i = 0; i < 2; i++) {
@@ -257,6 +277,11 @@ struct DarkEnergy : Module {
 			if (multEnableTrigger.process(params[MULTEN_PARAM].getValue())) {
 				multEnable ^= 0x1;
 			}
+			
+			// refresh multslewers fall time (aka mult decay)
+			for (int c = 0; c < numChan; c++) {
+				multiplySlewers[c].setParams2(args.sampleRate, MULTSLEW_RISETIME, getDecayTime(c), 1.0f);
+			}				
 			
 			// reset
 			if (resetTriggers[0].process(inputs[RESET_INPUTS + 0].getVoltage())) {
@@ -285,7 +310,15 @@ struct DarkEnergy : Module {
 		// main signal flow
 		// ----------------		
 		for (int c = 0; c < numChan; c++) {
-			// pitch modulation, feedbacks and depths
+			// multiply 
+			float slewInput = 1.0f;
+			if (inputs[MULTIPLY_INPUT].isConnected() && multEnable != 0) {
+				int chan = std::min(inputs[MULTIPLY_INPUT].getChannels() - 1, c);
+				slewInput = (clamp(inputs[MULTIPLY_INPUT].getVoltage(chan) / 10.0f, 0.0f, 1.0f));
+			}
+			float multiplySlewValue = multiplySlewers[c].next(slewInput);
+			
+			// pitch modulation, feedbacks and depths (some use multiplySlewers[c]._last)
 			if ((refresh.refreshCounter & 0x3) == (c & 0x3)) {
 				// stagger0 updates channels 0, 4, 8,  12
 				// stagger1 updates channels 1, 5, 9,  13
@@ -296,10 +329,6 @@ struct DarkEnergy : Module {
 				calcDepths(c);// fmDepth (anti-gravity), a given channel is updated at sample_rate / 4
 			}
 			
-			if (!outputs[ENERGY_OUTPUT].isConnected() && !outputs[M_OUTPUT].isConnected() && !outputs[C_OUTPUT].isConnected()) {// this is placed here such that feedbacks, depths and mod signals of chan 0 are always calculated, since they are used in lights
-				break;
-			}
-			
 			// vocts
 			float base = inputs[FREQCV_INPUT].getVoltage(c);
 			float vocts[2] = {base + modSignals[0][c], base + modSignals[1][c]};
@@ -308,14 +337,6 @@ struct DarkEnergy : Module {
 			float oscMout = oscM[c].step(vocts[0], feedbacks[0][c] * 0.3f, depths[0][c], oscC[c]._feedbackDelayedSample);
 			float oscCout = oscC[c].step(vocts[1], feedbacks[1][c] * 0.3f, depths[1][c], oscM[c]._feedbackDelayedSample);
 						
-			// multiply 
-			float slewInput = 1.0f;
-			if (inputs[MULTIPLY_INPUT].isConnected()) {
-				int chan = std::min(inputs[MULTIPLY_INPUT].getChannels() - 1, c);
-				slewInput = (clamp(inputs[MULTIPLY_INPUT].getVoltage(chan) / 10.0f, 0.0f, 1.0f));
-			}
-			float multiplySlewValue = multiplySlewers[c].next(slewInput);
-			
 			// final signals
 			float attv1 = oscCout * oscCout * 0.2f * multiplySlewValue;// C^2 is done here, with multiply
 			float attv2 = attv1 * oscMout * 0.2f;// ring mod is here
@@ -324,6 +345,7 @@ struct DarkEnergy : Module {
 			outputs[ENERGY_OUTPUT].setVoltage(-attv2, c);// inverted as per spec from Pyer
 			outputs[M_OUTPUT].setVoltage(oscMout, c);
 			outputs[C_OUTPUT].setVoltage(attv1, c);
+			outputs[MULT_OUTPUT].setVoltage(multiplySlewValue * 10.0f, c);
 		}
 
 		// lights
@@ -340,23 +362,14 @@ struct DarkEnergy : Module {
 				lights[ANTIGRAV_LIGHTS + i].setBrightness(depths[i][0]);// lights show first channel only when poly
 
 				// freqs
-				// if (plancks[i] == 1) {// if LFO			
-					// float modSignalLight;
-					// if (i == 0) {
-						// modSignalLight = outputs[M_OUTPUT].getVoltage(0) * 0.2f;
-					// }
-					// else {
-						
-					// }
-					// lights[FREQ_LIGHTS + 2 * i + 0].setBrightness(-modSignalLight);// blue diode
-					// lights[FREQ_LIGHTS + 2 * i + 1].setBrightness(modSignalLight);// yellow diode
-				// }
-				// else {// not LFO
-					float modSignalLight = modSignals[i][0] / 3.0f;
-					lights[FREQ_LIGHTS + 2 * i + 0].setBrightness(modSignalLight);// blue diode
-					lights[FREQ_LIGHTS + 2 * i + 1].setBrightness(-modSignalLight);// yellow diode
-				// }
+				float modSignalLight = modSignals[i][0] / 3.0f;
+				lights[FREQ_LIGHTS + 2 * i + 0].setBrightness(modSignalLight);// blue diode
+				lights[FREQ_LIGHTS + 2 * i + 1].setBrightness(-modSignalLight);// yellow diode
 			}
+			
+			// mult enable and decay_cvactive
+			lights[MULTEN_LIGHT].setBrightness(multEnable != 0 ? 1.0f : 0.0f);
+			lights[MULTDECAY_LIGHT].setBrightness(inputs[MULTDECAY_INPUT].isConnected() ? 1.0f : 0.0f);
 			
 			// mode
 			lights[MODE_LIGHTS + 0].setBrightness((mode & 0x1) != 0 ? 1.0f : 0.0f);
@@ -394,9 +407,19 @@ struct DarkEnergy : Module {
 	
 	inline void calcFeedbacks(int chan) {
 		float modIn = params[MOMENTUMCV_PARAM].getValue();
+		float cvIn = 0.0f;
+		bool hasCvIn = false;
+		if (inputs[MULTIPLY_INPUT].isConnected() && multEnable != 0) {
+			cvIn += multiplySlewers[chan]._last;
+			hasCvIn = true;
+		}
 		if (inputs[MOMENTUM_INPUT].isConnected()) {
 			int chanIn = std::min(inputs[MOMENTUM_INPUT].getChannels() - 1, chan);
-			modIn *= inputs[MOMENTUM_INPUT].getVoltage(chanIn) * 0.1f;
+			cvIn += inputs[MOMENTUM_INPUT].getVoltage(chanIn) * 0.1f;
+			hasCvIn = true;
+		}
+		if (hasCvIn) {
+			modIn *= cvIn;
 		}
 			
 		for (int osci = 0; osci < 2; osci++) {
@@ -425,9 +448,19 @@ struct DarkEnergy : Module {
 	
 	inline void calcDepths(int chan) { 
 		float modIn = params[DEPTHCV_PARAM].getValue();
+		float cvIn = 0.0f;
+		bool hasCvIn = false;
+		if (inputs[MULTIPLY_INPUT].isConnected() && multEnable != 0) {
+			cvIn += multiplySlewers[chan]._last;
+			hasCvIn = true;
+		}
 		if (inputs[ANTIGRAV_INPUT].isConnected()) {
 			int chanIn = std::min(inputs[ANTIGRAV_INPUT].getChannels() - 1, chan);
-			modIn *= inputs[ANTIGRAV_INPUT].getVoltage(chanIn) * 0.1f;
+			cvIn += inputs[ANTIGRAV_INPUT].getVoltage(chanIn) * 0.1f;
+			hasCvIn = true;
+		}
+		if (hasCvIn) {
+			modIn *= cvIn;
 		}
 			
 		for (int osci = 0; osci < 2; osci++) {
@@ -489,12 +522,18 @@ struct DarkEnergyWidget : ModuleWidget {
 		addOutput(createDynamicPort<GeoPort>(mm2px(Vec(colC - oX2, 27.57f)), false, module, DarkEnergy::M_OUTPUT, module ? &module->panelTheme : NULL));
 		addOutput(createDynamicPort<GeoPort>(mm2px(Vec(46.23f, 27.57f)), false, module, DarkEnergy::C_OUTPUT, module ? &module->panelTheme : NULL));
 		
-		// multiply input
+		// multiply input and output
 		addInput(createDynamicPort<GeoPort>(mm2px(Vec(49.61f, 16.07f)), true, module, DarkEnergy::MULTIPLY_INPUT, module ? &module->panelTheme : NULL));
+		addOutput(createDynamicPort<GeoPort>(mm2px(Vec(55.88f - 49.61f, 16.07f)), false, module, DarkEnergy::MULT_OUTPUT, module ? &module->panelTheme : NULL));
 		
 		// mult enable button and light
 		addParam(createDynamicParam<GeoPushButton>(mm2px(Vec(36.75f, 38.57f)), module, DarkEnergy::MULTEN_PARAM, module ? &module->panelTheme : NULL));		
 		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(mm2px(Vec(41.49f, 38.57f)), module, DarkEnergy::MULTEN_LIGHT));
+
+		// mult decay knob, input and light
+		addParam(createDynamicParam<GeoKnob>(mm2px(Vec(colC, 32.81f)), module, DarkEnergy::MULTDECAY_PARAM, module ? &module->panelTheme : NULL));
+		addInput(createDynamicPort<GeoPort>(mm2px(Vec(colC - oX1, 40.42f)), true, module, DarkEnergy::MULTDECAY_INPUT, module ? &module->panelTheme : NULL));
+		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(mm2px(Vec(colC, 40.42f)), module, DarkEnergy::MULTDECAY_LIGHT));
 
 		
 		// ANTIGRAVITY (FM DEPTH)
