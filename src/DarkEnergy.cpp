@@ -393,11 +393,10 @@ struct DarkEnergy : Module {
 	}
 	
 	inline void calcFeedbacks(int chan) {
-		float moPar = params[MOMENTUMCV_PARAM].getValue();
-		float moIn = moPar;
+		float modIn = params[MOMENTUMCV_PARAM].getValue();
 		if (inputs[MOMENTUM_INPUT].isConnected()) {
 			int chanIn = std::min(inputs[MOMENTUM_INPUT].getChannels() - 1, chan);
-			moIn *= inputs[MOMENTUM_INPUT].getVoltage(chanIn) * 0.1f;
+			modIn *= inputs[MOMENTUM_INPUT].getVoltage(chanIn) * 0.1f;
 		}
 			
 		for (int osci = 0; osci < 2; osci++) {
@@ -405,31 +404,30 @@ struct DarkEnergy : Module {
 		}
 		
 		if ((mode & 0x2) != 0) {
-			if (moPar > 0.0f) {
+			if (modIn > 0.0f) {
 				// modulate feedback of right side only
-				feedbacks[1][chan] += moIn;
+				feedbacks[1][chan] += modIn;
 			}
 			else {
 				// modulate feedback of left side only
-				feedbacks[0][chan] -= moIn;// this has to modulate positively but moPar is negative, so correct for this
+				feedbacks[0][chan] -= modIn;// this has to modulate positively but modIn is negative, so correct for this
 			}
 		}
 		else {
 			// modulate both feedbacks the same
-			feedbacks[0][chan] += moIn;
-			feedbacks[1][chan] += moIn;
+			feedbacks[0][chan] += modIn;
+			feedbacks[1][chan] += modIn;
 		}
 		
 		feedbacks[0][chan] = clamp(feedbacks[0][chan], 0.0f, 1.0f);
 		feedbacks[1][chan] = clamp(feedbacks[1][chan], 0.0f, 1.0f);
 	}	
 	
-	inline void calcDepths(int chan) {
-		float moPar = params[DEPTHCV_PARAM].getValue();
-		float moIn = moPar;
+	inline void calcDepths(int chan) { 
+		float modIn = params[DEPTHCV_PARAM].getValue();
 		if (inputs[ANTIGRAV_INPUT].isConnected()) {
 			int chanIn = std::min(inputs[ANTIGRAV_INPUT].getChannels() - 1, chan);
-			moIn *= inputs[ANTIGRAV_INPUT].getVoltage(chanIn) * 0.1f;
+			modIn *= inputs[ANTIGRAV_INPUT].getVoltage(chanIn) * 0.1f;
 		}
 			
 		for (int osci = 0; osci < 2; osci++) {
@@ -437,19 +435,19 @@ struct DarkEnergy : Module {
 		}
 		
 		if ((mode & 0x1) != 0) {
-			if (moPar > 0.0f) {
+			if (modIn > 0.0f) {
 				// modulate depth of right side only
-				depths[1][chan] += moIn;
+				depths[1][chan] += modIn;
 			}
 			else {
 				// modulate depth of left side only
-				depths[0][chan] -= moIn;// this has to modulate positively but moPar is negative, so correct for this
+				depths[0][chan] -= modIn;// this has to modulate positively but modIn is negative, so correct for this
 			}
 		}
 		else {
 			// modulate both depths the same
-			depths[0][chan] += moIn;
-			depths[1][chan] += moIn;
+			depths[0][chan] += modIn;
+			depths[1][chan] += modIn;
 		}
 		
 		depths[0][chan] = clamp(depths[0][chan], 0.0f, 1.0f);
