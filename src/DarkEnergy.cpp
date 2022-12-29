@@ -26,6 +26,7 @@ struct DarkEnergy : Module {
 		MODE_PARAM,
 		MULTEN_PARAM,
 		MULTDECAY_PARAM,
+		MULTDEST_PARAM,
 		RESET_PARAM,
 		NUM_PARAMS
 	};
@@ -43,7 +44,6 @@ struct DarkEnergy : Module {
 		ENERGY_OUTPUT,// main output
 		M_OUTPUT,// m oscillator output
 		C_OUTPUT,// c oscillator output
-		MULT_OUTPUT,
 		NUM_OUTPUTS
 	};
 	enum LightIds {
@@ -52,6 +52,7 @@ struct DarkEnergy : Module {
 		ENUMS(ANTIGRAV_LIGHTS, 2),
 		ENUMS(FREQ_LIGHTS, 2 * 2),// room for blue/yellow
 		ENUMS(MODE_LIGHTS, 2),// index 0 is fmDepth, index 1 is feedback
+		ENUMS(DEST_LIGHTS, 2),// index 0 is fmDepth, index 1 is feedback
 		ENUMS(RESET_LIGHTS, 2),
 		MULTEN_LIGHT,
 		MULTDECAY_LIGHT,
@@ -62,6 +63,9 @@ struct DarkEnergy : Module {
 	// Constants
 	static const int N_POLY = 16;
 	static constexpr float MULTSLEW_RISETIME = 2.5f;
+	static constexpr float DECAY_MIN = 2.0f;// ms
+	static constexpr float DECAY_MAX = 2000.0f;// ms
+	static constexpr float DECAY_DEF = 20.0f;// ms
 	
 	// Need to save, no reset
 	int panelTheme;
@@ -71,6 +75,7 @@ struct DarkEnergy : Module {
 	FMOp oscC[N_POLY];
 	int plancks[2];// index is left/right, value is: 0 = not quantized, 1 = 5th+octs, 2 = adds -10V offset (LFO)
 	int mode;// main center modulation modes (bit 0 is fmDepth mode, bit 1 is feedback mode; a 0 bit means both sides CV modulated the same, a 1 bit means pos attenuverter mods right side only, neg atten means mod left side only (but still a positive attenuverter value though!))
+	int dest;// mult destination (bit 0 is fmDepth mode, bit 1 is feedback mode; a 0 bit means both sides CV modulated the same, a 1 bit means pos attenuverter mods right side only, neg atten means mod left side only (but still a positive attenuverter value though!))
 	int multEnable;
 	
 	// No need to save, with reset
@@ -88,18 +93,18 @@ struct DarkEnergy : Module {
 	Trigger resetTriggers[3];// M inut, C input, button (trigs both)
 	Trigger modeTrigger;
 	Trigger multEnableTrigger;
+	Trigger multDestTrigger;
 	SlewLimiter multiplySlewers[N_POLY];
 	
 	
 	float getDecayTime(int chan) {
+		float decay = params[MULTDECAY_PARAM].getValue();// in ms
 		if (inputs[MULTDECAY_INPUT].isConnected()) {
 			int chanIn = std::min(inputs[MULTDECAY_INPUT].getChannels() - 1, chan);
-			float decay = inputs[MULTDECAY_INPUT].getVoltage(chanIn);// assumes decay input is 0-10V CV
-			decay *= params[MULTDECAY_PARAM].getValue();
-			decay = clamp(decay, 0.0f, 10.0f);
-			return decay * 20.0f + 2.5f;// decay ranges from 2.5ms to 202.5ms
+			float decaycv = inputs[MULTDECAY_INPUT].getVoltage(chanIn) * 0.1f * (DECAY_MAX - DECAY_MIN);// assumes decay input is 0-10V CV
+			decay = clamp(decay + decaycv, DECAY_MIN, DECAY_MAX);
 		}
-		return 20.0f;// default decay is 20ms
+		return decay;
 	}
 	
 	
@@ -119,7 +124,8 @@ struct DarkEnergy : Module {
 		configParam(PLANCK_PARAMS + 1, 0.0f, 1.0f, 0.0f, "Planck mode C");
 		configParam(MODE_PARAM, 0.0f, 1.0f, 0.0f, "Anti-gravity and momentum CV mode");
 		configParam(MULTEN_PARAM, 0.0f, 1.0f, 0.0f, "Multiply enable");
-		configParam(MULTDECAY_PARAM, 0.0f, 1.0f, 1.0f, "Multiply decay CV atten");
+		configParam(MULTDECAY_PARAM, DECAY_MIN, DECAY_MAX, DECAY_DEF, "Multiply decay", " ms");
+		configParam(MULTDEST_PARAM, 0.0f, 1.0f, 0.0f, "Multiply destination");
 		configParam(RESET_PARAM, 0.0f, 1.0f, 0.0f, "Reset");
 		
 		configInput(FREQCV_INPUTS + 0, "Mass");
@@ -135,7 +141,6 @@ struct DarkEnergy : Module {
 		configOutput(ENERGY_OUTPUT, "Energy");
 		configOutput(M_OUTPUT, "M");
 		configOutput(C_OUTPUT, "C");
-		configOutput(MULT_OUTPUT, "Multiply");
 		
 		for (int c = 0; c < N_POLY; c++) {
 			oscM[c].construct(APP->engine->getSampleRate());
@@ -161,6 +166,7 @@ struct DarkEnergy : Module {
 			plancks[i] = 0;
 		}
 		mode = 0x0;
+		dest = 0x0;
 		multEnable = 0x1;
 		resetNonJson();
 	}
@@ -207,6 +213,9 @@ struct DarkEnergy : Module {
 		// mode
 		json_object_set_new(rootJ, "mode", json_integer(mode));
 
+		// dest
+		json_object_set_new(rootJ, "dest", json_integer(dest));
+
 		// multEnable
 		json_object_set_new(rootJ, "multEnable", json_integer(multEnable));
 
@@ -241,6 +250,11 @@ struct DarkEnergy : Module {
 		if (modeJ)
 			mode = json_integer_value(modeJ);
 		
+		// dest
+		json_t *destJ = json_object_get(rootJ, "dest");
+		if (destJ)
+			dest = json_integer_value(destJ);
+		
 		// multEnable
 		json_t *multEnableJ = json_object_get(rootJ, "multEnable");
 		if (multEnableJ)
@@ -257,7 +271,6 @@ struct DarkEnergy : Module {
 			outputs[ENERGY_OUTPUT].setChannels(numChan);
 			outputs[M_OUTPUT].setChannels(numChan);
 			outputs[C_OUTPUT].setChannels(numChan);
-			outputs[MULT_OUTPUT].setChannels(numChan);
 
 			// plancks
 			for (int i = 0; i < 2; i++) {
@@ -273,11 +286,17 @@ struct DarkEnergy : Module {
 					mode = 0x0;
 			}
 			
-			// multEnable
+			// dest (aka mult dest)
+			if (multDestTrigger.process(params[MULTDEST_PARAM].getValue())) {
+				if (++dest > 0x3)
+					dest = 0x0;
+			}
+				// multEnable
 			if (multEnableTrigger.process(params[MULTEN_PARAM].getValue())) {
 				multEnable ^= 0x1;
 			}
 			
+		
 			// refresh multslewers fall time (aka mult decay)
 			for (int c = 0; c < numChan; c++) {
 				multiplySlewers[c].setParams2(args.sampleRate, MULTSLEW_RISETIME, getDecayTime(c), 1.0f);
@@ -345,7 +364,6 @@ struct DarkEnergy : Module {
 			outputs[ENERGY_OUTPUT].setVoltage(-attv2, c);// inverted as per spec from Pyer
 			outputs[M_OUTPUT].setVoltage(oscMout, c);
 			outputs[C_OUTPUT].setVoltage(attv1, c);
-			outputs[MULT_OUTPUT].setVoltage(multiplySlewValue * 10.0f, c);
 		}
 
 		// lights
@@ -367,13 +385,17 @@ struct DarkEnergy : Module {
 				lights[FREQ_LIGHTS + 2 * i + 1].setBrightness(-modSignalLight);// yellow diode
 			}
 			
-			// mult enable and decay_cvactive
+			// mult enable and decay
 			lights[MULTEN_LIGHT].setBrightness(multEnable != 0 ? 1.0f : 0.0f);
-			lights[MULTDECAY_LIGHT].setBrightness(inputs[MULTDECAY_INPUT].isConnected() ? 1.0f : 0.0f);
+			lights[MULTDECAY_LIGHT].setBrightness(multiplySlewers[0]._last);
 			
 			// mode
 			lights[MODE_LIGHTS + 0].setBrightness((mode & 0x1) != 0 ? 1.0f : 0.0f);
 			lights[MODE_LIGHTS + 1].setBrightness((mode & 0x2) != 0 ? 1.0f : 0.0f);
+
+			// dest
+			lights[DEST_LIGHTS + 0].setBrightness((dest & 0x1) != 0 ? 1.0f : 0.0f);
+			lights[DEST_LIGHTS + 1].setBrightness((dest & 0x2) != 0 ? 1.0f : 0.0f);
 
 			// Reset light
 			lights[RESET_LIGHTS + 0].setSmoothBrightness(resetLight0, deltaTime);	
@@ -522,10 +544,14 @@ struct DarkEnergyWidget : ModuleWidget {
 		addOutput(createDynamicPort<GeoPort>(mm2px(Vec(colC - oX2, 27.57f)), false, module, DarkEnergy::M_OUTPUT, module ? &module->panelTheme : NULL));
 		addOutput(createDynamicPort<GeoPort>(mm2px(Vec(46.23f, 27.57f)), false, module, DarkEnergy::C_OUTPUT, module ? &module->panelTheme : NULL));
 		
-		// multiply input and output
+		// multiply input
 		addInput(createDynamicPort<GeoPort>(mm2px(Vec(49.61f, 16.07f)), true, module, DarkEnergy::MULTIPLY_INPUT, module ? &module->panelTheme : NULL));
-		addOutput(createDynamicPort<GeoPort>(mm2px(Vec(55.88f - 49.61f, 16.07f)), false, module, DarkEnergy::MULT_OUTPUT, module ? &module->panelTheme : NULL));
 		
+		// mult dest button and dest lights
+		addParam(createDynamicParam<GeoPushButton>(mm2px(Vec(6.28f, 16.10f)), module, DarkEnergy::MULTDEST_PARAM, module ? &module->panelTheme : NULL));		
+		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(mm2px(Vec(23.20f, 58.19f)), module, DarkEnergy::DEST_LIGHTS + 0));
+		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(mm2px(Vec(32.69f, 69.36f)), module, DarkEnergy::DEST_LIGHTS + 1));
+
 		// mult enable button and light
 		addParam(createDynamicParam<GeoPushButton>(mm2px(Vec(36.75f, 38.57f)), module, DarkEnergy::MULTEN_PARAM, module ? &module->panelTheme : NULL));		
 		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(mm2px(Vec(41.49f, 38.57f)), module, DarkEnergy::MULTEN_LIGHT));
