@@ -83,6 +83,7 @@ struct DarkEnergy : Module {
 	float feedbacks[2][N_POLY];
 	float depths[2][N_POLY];// fm depth
 	float modSignals[2][N_POLY];
+	float lastVocts[N_POLY];
 	
 	// No need to save, no reset
 	RefreshCounter refresh;
@@ -95,6 +96,7 @@ struct DarkEnergy : Module {
 	Trigger multEnableTrigger;
 	Trigger multDestTrigger;
 	SlewLimiter multiplySlewers[N_POLY];
+	dsp::PulseGenerator multiplyPulses[N_POLY];// for cv delta to trig
 	
 	
 	float getDecayTime(int chan) {
@@ -175,7 +177,8 @@ struct DarkEnergy : Module {
 		for (int c = 0; c < N_POLY; c++) {
 			calcModSignals(c);
 			calcFeedbacks(c);
-		}			
+			lastVocts[c] = inputs[FREQCV_INPUT].getVoltage(c);
+		}	
 	}	
 
 	
@@ -329,11 +332,22 @@ struct DarkEnergy : Module {
 		// main signal flow
 		// ----------------		
 		for (int c = 0; c < numChan; c++) {
+			// lastVocts
+			if (lastVocts[c] != inputs[FREQCV_INPUT].getVoltage(c)) {
+				lastVocts[c] = inputs[FREQCV_INPUT].getVoltage(c);
+				multiplyPulses[c].trigger(0.01f);// 10 ms
+			}
+			
 			// multiply 
 			float slewInput = 1.0f;
-			if (inputs[MULTIPLY_INPUT].isConnected() && multEnable != 0) {
-				int chan = std::min(inputs[MULTIPLY_INPUT].getChannels() - 1, c);
-				slewInput = (clamp(inputs[MULTIPLY_INPUT].getVoltage(chan) / 10.0f, 0.0f, 1.0f));
+			if (multEnable != 0) {
+				if (inputs[MULTIPLY_INPUT].isConnected()) {
+					int chan = std::min(inputs[MULTIPLY_INPUT].getChannels() - 1, c);
+					slewInput = (clamp(inputs[MULTIPLY_INPUT].getVoltage(chan) / 10.0f, 0.0f, 1.0f));
+				}
+				else {
+					slewInput = multiplyPulses[c].process(args.sampleTime) ? 1.0f : 0.0f;
+				}
 			}
 			float multiplySlewValue = multiplySlewers[c].next(slewInput);
 			
@@ -407,7 +421,7 @@ struct DarkEnergy : Module {
 		
 	}// step()
 	
-	inline float calcFreqKnob(int osci) {
+	float calcFreqKnob(int osci) {
 		if (plancks[osci] == 0)// off (smooth)
 			return params[FREQ_PARAMS + osci].getValue();
 		if (plancks[osci] == 1)// -10V offset
@@ -419,7 +433,7 @@ struct DarkEnergy : Module {
 		return (float)(retcv)/2.0f - 3.0f;
 	}
 	
-	inline void calcModSignals(int chan) {
+	void calcModSignals(int chan) {
 		for (int osci = 0; osci < 2; osci++) {
 			float freqValue = calcFreqKnob(osci) + params[FREQ_PARAM].getValue();
 			int chanIn = std::min(inputs[FREQCV_INPUTS + osci].getChannels() - 1, chan);
@@ -427,11 +441,11 @@ struct DarkEnergy : Module {
 		}
 	}
 	
-	inline void calcFeedbacks(int chan) {
+	void calcFeedbacks(int chan) {
 		float modIn = params[MOMENTUMCV_PARAM].getValue();
 		float cvIn = 0.0f;
 		bool hasCvIn = false;
-		if (inputs[MULTIPLY_INPUT].isConnected() && multEnable != 0) {
+		if (multEnable != 0 && (dest & 0x2) != 0) {
 			cvIn += multiplySlewers[chan]._last;
 			hasCvIn = true;
 		}
@@ -468,11 +482,11 @@ struct DarkEnergy : Module {
 		feedbacks[1][chan] = clamp(feedbacks[1][chan], 0.0f, 1.0f);
 	}	
 	
-	inline void calcDepths(int chan) { 
+	void calcDepths(int chan) { 
 		float modIn = params[DEPTHCV_PARAM].getValue();
 		float cvIn = 0.0f;
 		bool hasCvIn = false;
-		if (inputs[MULTIPLY_INPUT].isConnected() && multEnable != 0) {
+		if (multEnable != 0 && (dest & 0x1) != 0) {
 			cvIn += multiplySlewers[chan]._last;
 			hasCvIn = true;
 		}
