@@ -95,7 +95,8 @@ struct DarkEnergy : Module {
 	Trigger modeTrigger;
 	Trigger multEnableTrigger;
 	Trigger multDestTrigger;
-	SlewLimiter multiplySlewers[N_POLY];
+	SlewLimiter multiplySignalSlewers[N_POLY];
+	SlewLimiter multiplyOnSlewer;
 	dsp::PulseGenerator multiplyPulses[N_POLY];// for cv delta to trig
 	
 	
@@ -169,7 +170,7 @@ struct DarkEnergy : Module {
 		}
 		mode = 0x0;
 		dest = 0x0;
-		multEnable = 0x1;
+		multEnable = 0x0;
 		resetNonJson();
 	}
 	void resetNonJson() {
@@ -190,7 +191,8 @@ struct DarkEnergy : Module {
 		for (int c = 0; c < N_POLY; c++) {
 			oscM[c].onSampleRateChange(sampleRate);
 			oscC[c].onSampleRateChange(sampleRate);
-			multiplySlewers[c].setParams2(sampleRate, MULTSLEW_RISETIME, getDecayTime(c), 1.0f);
+			multiplySignalSlewers[c].setParams2(sampleRate, MULTSLEW_RISETIME, getDecayTime(c), 1.0f);
+			multiplyOnSlewer.setParams(sampleRate, MULTSLEW_RISETIME, 1.0f);
 		}
 	}
 	
@@ -294,15 +296,15 @@ struct DarkEnergy : Module {
 				if (++dest > 0x3)
 					dest = 0x0;
 			}
-				// multEnable
+
+			// multEnable
 			if (multEnableTrigger.process(params[MULTEN_PARAM].getValue())) {
 				multEnable ^= 0x1;
 			}
-			
 		
 			// refresh multslewers fall time (aka mult decay)
 			for (int c = 0; c < numChan; c++) {
-				multiplySlewers[c].setParams2(args.sampleRate, MULTSLEW_RISETIME, getDecayTime(c), 1.0f);
+				multiplySignalSlewers[c].setParams2(args.sampleRate, MULTSLEW_RISETIME, getDecayTime(c), 1.0f);
 			}				
 			
 			// reset
@@ -339,19 +341,19 @@ struct DarkEnergy : Module {
 			}
 			
 			// multiply 
-			float slewInput = 1.0f;
-			if (multEnable != 0) {
-				if (inputs[MULTIPLY_INPUT].isConnected()) {
-					int chan = std::min(inputs[MULTIPLY_INPUT].getChannels() - 1, c);
-					slewInput = (clamp(inputs[MULTIPLY_INPUT].getVoltage(chan) / 10.0f, 0.0f, 1.0f));
-				}
-				else {
-					slewInput = multiplyPulses[c].process(args.sampleTime) ? 1.0f : 0.0f;
-				}
+			float slewInput;
+			if (inputs[MULTIPLY_INPUT].isConnected()) {
+				int chan = std::min(inputs[MULTIPLY_INPUT].getChannels() - 1, c);
+				slewInput = (clamp(inputs[MULTIPLY_INPUT].getVoltage(chan) / 10.0f, 0.0f, 1.0f));
 			}
-			float multiplySlewValue = multiplySlewers[c].next(slewInput);
+			else {
+				slewInput = multiplyPulses[c].process(args.sampleTime) ? 1.0f : 0.0f;
+			}
+			float multiplySignalSlewed = multiplySignalSlewers[c].next(slewInput);
 			
-			// pitch modulation, feedbacks and depths (some use multiplySlewers[c]._last)
+			float multiplyOnSlewed = multiplyOnSlewer.next(multEnable != 0 ? 1.0f : 0.0f);
+			
+			// pitch modulation, feedbacks and depths (some use multiplySignalSlewers[c]._last)
 			if ((refresh.refreshCounter & 0x3) == (c & 0x3)) {
 				// stagger0 updates channels 0, 4, 8,  12
 				// stagger1 updates channels 1, 5, 9,  13
@@ -371,7 +373,7 @@ struct DarkEnergy : Module {
 			float oscCout = oscC[c].step(vocts[1], feedbacks[1][c] * 0.3f, depths[1][c], oscM[c]._feedbackDelayedSample);
 						
 			// final signals
-			float attv1 = oscCout * oscCout * 0.2f * multiplySlewValue;// C^2 is done here, with multiply
+			float attv1 = oscCout * oscCout * 0.2f * crossfade(1.0f, multiplySignalSlewed, multiplyOnSlewed);// C^2 is done here, with multiply
 			float attv2 = attv1 * oscMout * 0.2f;// ring mod is here
 			
 			// outputs
@@ -386,8 +388,8 @@ struct DarkEnergy : Module {
 						
 			for (int i = 0; i < 2; i++) {
 				// plancks
-				lights[PLANCK_LIGHTS + i * 2 + 0].setBrightness(plancks[i] == 1 ? 1.0f : 0.0f);// low
-				lights[PLANCK_LIGHTS + i * 2 + 1].setBrightness(plancks[i] == 2 ? 1.0f : 0.0f);// ratio
+				lights[PLANCK_LIGHTS + i * 2 + 0].setBrightness(plancks[i] == 2 ? 1.0f : 0.0f);// low (LFO)
+				lights[PLANCK_LIGHTS + i * 2 + 1].setBrightness(plancks[i] == 1 ? 1.0f : 0.0f);// ratio
 								
 				// momentum (feedback) and anti-gravity (fmDepth)
 				lights[MOMENTUM_LIGHTS + i].setBrightness(feedbacks[i][0]);// lights show first channel only when poly
@@ -400,8 +402,8 @@ struct DarkEnergy : Module {
 			}
 			
 			// mult enable and decay
-			lights[MULTEN_LIGHT].setBrightness(multEnable != 0 ? 1.0f : 0.0f);
-			lights[MULTDECAY_LIGHT].setBrightness(multiplySlewers[0]._last);
+			lights[MULTEN_LIGHT].setBrightness(multiplyOnSlewer._last);
+			lights[MULTDECAY_LIGHT].setBrightness(multiplySignalSlewers[0]._last);
 			
 			// mode
 			lights[MODE_LIGHTS + 0].setBrightness((mode & 0x1) != 0 ? 1.0f : 0.0f);
@@ -424,9 +426,9 @@ struct DarkEnergy : Module {
 	float calcFreqKnob(int osci) {
 		if (plancks[osci] == 0)// off (smooth)
 			return params[FREQ_PARAMS + osci].getValue();
-		if (plancks[osci] == 1)// -10V offset
+		if (plancks[osci] == 2)// -10V offset
 			return params[FREQ_PARAMS + osci].getValue() - 10.0f;
-		// 5ths and octs (plancks[osci] == 2)
+		// 5ths and octs (plancks[osci] == 1)
 		int retcv = (int)std::round((params[FREQ_PARAMS + osci].getValue() + 3.0f) * 2.0f);
 		if ((retcv & 0x1) != 0)
 			return (float)(retcv)/2.0f - 3.0f + 0.08333333333f;
@@ -445,8 +447,8 @@ struct DarkEnergy : Module {
 		float modIn = params[MOMENTUMCV_PARAM].getValue();
 		float cvIn = 0.0f;
 		bool hasCvIn = false;
-		if (multEnable != 0 && (dest & 0x2) != 0) {
-			cvIn += multiplySlewers[chan]._last;
+		if ((dest & 0x2) != 0) {
+			cvIn += multiplySignalSlewers[chan]._last;
 			hasCvIn = true;
 		}
 		if (inputs[MOMENTUM_INPUT].isConnected()) {
@@ -486,8 +488,8 @@ struct DarkEnergy : Module {
 		float modIn = params[DEPTHCV_PARAM].getValue();
 		float cvIn = 0.0f;
 		bool hasCvIn = false;
-		if (multEnable != 0 && (dest & 0x1) != 0) {
-			cvIn += multiplySlewers[chan]._last;
+		if ((dest & 0x1) != 0) {
+			cvIn += multiplySignalSlewers[chan]._last;
 			hasCvIn = true;
 		}
 		if (inputs[ANTIGRAV_INPUT].isConnected()) {
