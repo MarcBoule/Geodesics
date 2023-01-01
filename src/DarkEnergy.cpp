@@ -333,6 +333,7 @@ struct DarkEnergy : Module {
 		
 		// main signal flow
 		// ----------------		
+		float multiplyOnSlewed = multiplyOnSlewer.next(multEnable != 0 ? 1.0f : 0.0f);
 		for (int c = 0; c < numChan; c++) {
 			// lastVocts
 			if (lastVocts[c] != inputs[FREQCV_INPUT].getVoltage(c)) {
@@ -351,7 +352,6 @@ struct DarkEnergy : Module {
 			}
 			float multiplySignalSlewed = multiplySignalSlewers[c].next(slewInput);
 			
-			float multiplyOnSlewed = multiplyOnSlewer.next(multEnable != 0 ? 1.0f : 0.0f);
 			
 			// pitch modulation, feedbacks and depths (some use multiplySignalSlewers[c]._last)
 			if ((refresh.refreshCounter & 0x3) == (c & 0x3)) {
