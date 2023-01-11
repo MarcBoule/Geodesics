@@ -114,30 +114,30 @@ struct DarkEnergy : Module {
 	DarkEnergy() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		
-		configParam(DEPTHCV_PARAM, -1.0f, 1.0f, 0.0f, "Anti-gravity CV");		
-		configParam(DEPTH_PARAMS + 0, 0.0f, 1.0f, 0.0f, "Anti-gravity M");
-		configParam(DEPTH_PARAMS + 1, 0.0f, 1.0f, 0.0f, "Anti-gravity C");
-		configParam(MOMENTUMCV_PARAM, -1.0f, 1.0f, 0.0f, "Momentum CV");		
-		configParam(MOMENTUM_PARAMS + 0, 0.0f, 1.0f, 0.0f, "Momentum M");
-		configParam(MOMENTUM_PARAMS + 1, 0.0f, 1.0f, 0.0f, "Momentum C");
+		configParam(DEPTHCV_PARAM, -1.0f, 1.0f, 0.0f, "Cross mod CV");		
+		configParam(DEPTH_PARAMS + 0, 0.0f, 1.0f, 0.0f, "Cross mod M");
+		configParam(DEPTH_PARAMS + 1, 0.0f, 1.0f, 0.0f, "Cross mod C");
+		configParam(MOMENTUMCV_PARAM, -1.0f, 1.0f, 0.0f, "Self mod CV");		
+		configParam(MOMENTUM_PARAMS + 0, 0.0f, 1.0f, 0.0f, "Self mod M");
+		configParam(MOMENTUM_PARAMS + 1, 0.0f, 1.0f, 0.0f, "Self mod C");
 		configParam(FREQ_PARAMS + 0, -3.0f, 3.0f, 0.0f, "Freq M");
 		configParam(FREQ_PARAMS + 1, -3.0f, 3.0f, 0.0f, "Freq C");
 		configParam(FREQ_PARAM, -3.0f, 3.0f, 0.0f, "Freq offset");
-		configParam(PLANCK_PARAMS + 0, 0.0f, 1.0f, 0.0f, "Planck mode M");
-		configParam(PLANCK_PARAMS + 1, 0.0f, 1.0f, 0.0f, "Planck mode C");
-		configParam(MODE_PARAM, 0.0f, 1.0f, 0.0f, "Anti-gravity and momentum CV mode");
-		configParam(MULTEN_PARAM, 0.0f, 1.0f, 0.0f, "Multiply enable");
-		configParam(MULTDECAY_PARAM, DECAY_MIN, DECAY_MAX, DECAY_DEF, "Multiply decay", " ms");
-		configParam(MULTDEST_PARAM, 0.0f, 1.0f, 0.0f, "Multiply destination");
+		configParam(PLANCK_PARAMS + 0, 0.0f, 1.0f, 0.0f, "Freq mode M");
+		configParam(PLANCK_PARAMS + 1, 0.0f, 1.0f, 0.0f, "Freq mode C");
+		configParam(MODE_PARAM, 0.0f, 1.0f, 0.0f, "Cross mod and self mod CV mode");
+		configParam(MULTEN_PARAM, 0.0f, 1.0f, 0.0f, "Enable extra mod VCA");
+		configParam(MULTDECAY_PARAM, DECAY_MIN, DECAY_MAX, DECAY_DEF, "Extra mod decay", " ms");
+		configParam(MULTDEST_PARAM, 0.0f, 1.0f, 0.0f, "Extra mod destination");
 		configParam(RESET_PARAM, 0.0f, 1.0f, 0.0f, "Reset");
 		
-		configInput(FREQCV_INPUTS + 0, "Mass");
-		configInput(FREQCV_INPUTS + 1, "Speed of light");
+		configInput(FREQCV_INPUTS + 0, "M freq CV");
+		configInput(FREQCV_INPUTS + 1, "C freq CV");
 		configInput(FREQCV_INPUT, "1V/oct");
-		configInput(MULTIPLY_INPUT, "Multiply");
-		configInput(MULTDECAY_INPUT, "Multiply decay CV");
-		configInput(ANTIGRAV_INPUT, "Anti-gravity (FM depth) CV");
-		configInput(MOMENTUM_INPUT, "Momentum (feedback) CV");
+		configInput(MULTIPLY_INPUT, "Extra mod");
+		configInput(MULTDECAY_INPUT, "Extra mod decay CV");
+		configInput(ANTIGRAV_INPUT, "Cross mod CV");
+		configInput(MOMENTUM_INPUT, "Self mod CV");
 		configInput(RESET_INPUTS + 0, "Reset M");
 		configInput(RESET_INPUTS + 1, "Reset C");
 		
