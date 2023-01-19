@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <svg
-   width="55.880001mm"
-   height="128mm"
-   viewBox="0 0 211.2 483.77958"
+   width="55.879997mm"
+   height="128.5mm"
+   viewBox="0 0 211.19999 485.66934"
    version="1.1"
    id="svg333"
    sodipodi:docname="DarkEnergy-DM.svg"
-   inkscape:version="1.1.1 (3bf5ae0d25, 2021-09-20)"
+   inkscape:version="1.2.1 (9c6d41e410, 2022-07-14)"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:xlink="http://www.w3.org/1999/xlink"
@@ -26,16 +26,18 @@
      fit-margin-left="0"
      fit-margin-right="0"
      fit-margin-bottom="0"
-     inkscape:zoom="1.8921053"
-     inkscape:cx="82.7121"
-     inkscape:cy="190"
+     inkscape:zoom="1.3379205"
+     inkscape:cx="15.322286"
+     inkscape:cy="235.44"
      inkscape:window-width="1920"
      inkscape:window-height="1009"
      inkscape:window-x="-8"
      inkscape:window-y="-8"
      inkscape:window-maximized="1"
      inkscape:current-layer="svg333"
-     inkscape:document-units="mm" />
+     inkscape:document-units="mm"
+     inkscape:showpageshadow="2"
+     inkscape:deskcolor="#d1d1d1" />
   <defs
      id="defs33">
     <linearGradient
@@ -194,7 +196,7 @@
   <g
      id="uuid-ddd77e23-f08c-4107-a166-65fe28cd4159"
      data-name="bg"
-     transform="matrix(1.28,0,0,1.2731039,0,5.0924156e-5)">
+     transform="matrix(1.28,0,0,1.278077,0,5.112308e-5)">
     <rect
        width="165"
        height="380"
@@ -221,7 +223,7 @@
   <g
      id="uuid-de2589bd-6411-4674-86b9-e3019367d726"
      data-name="serigraphy"
-     transform="matrix(1.28,0,0,1.2731039,0,5.0924156e-5)">
+     transform="matrix(1.28,0,0,1.278077,0,5.112308e-5)">
     <g
        id="g226">
       <path
@@ -401,7 +403,7 @@
          fill="#252626"
          id="path128" />
       <polygon
-         points="85.3252,70.30404 85.3252,68.83919 83.02148,68.83919 83.02148,68.32259 85.65527,68.32259 85.65527,66.88314 81.54785,66.88314 81.54785,72.91243 85.59668,72.91243 85.59668,71.4554 83.02148,71.4554 83.02148,70.30404 "
+         points="83.02148,68.32259 85.65527,68.32259 85.65527,66.88314 81.54785,66.88314 81.54785,72.91243 85.59668,72.91243 85.59668,71.4554 83.02148,71.4554 83.02148,70.30404 85.3252,70.30404 85.3252,68.83919 83.02148,68.83919 "
          fill="#252626"
          id="polygon130" />
       <path
@@ -783,7 +785,7 @@
          fill="#e5e5e5"
          id="path272" />
       <polygon
-         points="63.83594,21.02083 63.0957,21.02083 64.83008,23.34798 62.95508,25.86263 63.68555,25.86263 65.17773,23.8265 66.69922,25.86263 67.44922,25.86263 65.5625,23.33822 67.30859,21.02083 66.56641,21.02083 65.21484,22.8597 "
+         points="62.95508,25.86263 63.68555,25.86263 65.17773,23.8265 66.69922,25.86263 67.44922,25.86263 65.5625,23.33822 67.30859,21.02083 66.56641,21.02083 65.21484,22.8597 63.83594,21.02083 63.0957,21.02083 64.83008,23.34798 "
          fill="#e5e5e5"
          id="polygon274" />
       <path

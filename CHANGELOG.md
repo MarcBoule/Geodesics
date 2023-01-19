@@ -1,4 +1,4 @@
-### 2.2.6 (in development)
+### 2.3.0 (in development)
 
 - Add new module DarkEnergy
 - Mix polyphonic signals in Torus' inputs when input cables are polyphonic

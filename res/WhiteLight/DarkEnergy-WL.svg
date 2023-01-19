@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <svg
-   width="55.880001mm"
-   height="128mm"
-   viewBox="0 0 211.2 483.77958"
+   width="55.879997mm"
+   height="128.5mm"
+   viewBox="0 0 211.19999 485.66934"
    version="1.1"
    id="svg527"
    sodipodi:docname="DarkEnergy-WL.svg"
-   inkscape:version="1.1.1 (3bf5ae0d25, 2021-09-20)"
+   inkscape:version="1.2.1 (9c6d41e410, 2022-07-14)"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:xlink="http://www.w3.org/1999/xlink"
@@ -27,15 +27,17 @@
      fit-margin-right="0"
      fit-margin-bottom="0"
      inkscape:zoom="1.8921053"
-     inkscape:cx="82.7121"
-     inkscape:cy="190"
+     inkscape:cx="82.712099"
+     inkscape:cy="190.26425"
      inkscape:window-width="1920"
      inkscape:window-height="1009"
      inkscape:window-x="-8"
      inkscape:window-y="-8"
      inkscape:window-maximized="1"
      inkscape:current-layer="svg527"
-     inkscape:document-units="mm" />
+     inkscape:document-units="mm"
+     inkscape:showpageshadow="2"
+     inkscape:deskcolor="#d1d1d1" />
   <defs
      id="defs26">
     <linearGradient
@@ -174,7 +176,7 @@
   <g
      id="uuid-424b1818-c48b-45c1-a3db-d8c2b08d4cda"
      data-name="bg"
-     transform="scale(1.28,1.273104)">
+     transform="scale(1.28,1.2780771)">
     <rect
        width="165"
        height="380"
@@ -355,7 +357,7 @@
   <g
      id="uuid-d7d45b6a-6534-4107-9e21-c121508a5b10"
      data-name="serigraphy"
-     transform="scale(1.28,1.273104)">
+     transform="scale(1.28,1.2780771)">
     <line
        x1="82.5"
        y1="61.17065"
