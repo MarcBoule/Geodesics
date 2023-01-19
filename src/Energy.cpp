@@ -82,15 +82,15 @@ struct Energy : Module {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		
 		configParam(CROSS_PARAM, 0.0f, 1.0f, 0.0f, "Momentum crossing");		
-		configParam(Energy::MOMENTUM_PARAMS + 0, 0.0f, 1.0f, 0.0f, "Momentum M");
-		configParam(Energy::MOMENTUM_PARAMS + 1, 0.0f, 1.0f, 0.0f, "Momentum C");
-		configParam(Energy::FREQ_PARAMS + 0, -3.0f, 3.0f, 0.0f, "Freq M");
-		configParam(Energy::FREQ_PARAMS + 1, -3.0f, 3.0f, 0.0f, "Freq C");
-		configParam(Energy::ROUTING_PARAM, 0.0f, 1.0f, 0.0f, "Routing");
-		configParam(Energy::PLANCK_PARAMS + 0, 0.0f, 1.0f, 0.0f, "Quantize (Planck) M");
-		configParam(Energy::PLANCK_PARAMS + 1, 0.0f, 1.0f, 0.0f, "Quantize (Planck) C");
-		configParam(Energy::MODTYPE_PARAMS + 0, 0.0f, 1.0f, 0.0f, "CV mod type M");
-		configParam(Energy::MODTYPE_PARAMS + 1, 0.0f, 1.0f, 0.0f, "CV mod type C");		
+		configParam(MOMENTUM_PARAMS + 0, 0.0f, 1.0f, 0.0f, "Momentum M");
+		configParam(MOMENTUM_PARAMS + 1, 0.0f, 1.0f, 0.0f, "Momentum C");
+		configParam(FREQ_PARAMS + 0, -3.0f, 3.0f, 0.0f, "Freq M");
+		configParam(FREQ_PARAMS + 1, -3.0f, 3.0f, 0.0f, "Freq C");
+		configParam(ROUTING_PARAM, 0.0f, 1.0f, 0.0f, "Routing");
+		configParam(PLANCK_PARAMS + 0, 0.0f, 1.0f, 0.0f, "Quantize (Planck) M");
+		configParam(PLANCK_PARAMS + 1, 0.0f, 1.0f, 0.0f, "Quantize (Planck) C");
+		configParam(MODTYPE_PARAMS + 0, 0.0f, 1.0f, 0.0f, "CV mod type M");
+		configParam(MODTYPE_PARAMS + 1, 0.0f, 1.0f, 0.0f, "CV mod type C");		
 		
 		configInput(FREQCV_INPUTS + 0, "Mass");
 		configInput(FREQCV_INPUTS + 1, "Speed of light");
@@ -321,7 +321,7 @@ struct Energy : Module {
 				// momentum (cross)
 				lights[MOMENTUM_LIGHTS + i].setBrightness(feedbacks[i][0]);// lights show first channel only when poly
 
-				// momentum (cross)
+				// freq
 				float modSignalLight = modSignals[i][0] / 3.0f;
 				lights[FREQ_ROUTING_LIGHTS + 2 * i + 0].setBrightness(modSignalLight);// blue diode
 				lights[FREQ_ROUTING_LIGHTS + 2 * i + 1].setBrightness(-modSignalLight);// yellow diode
@@ -428,6 +428,7 @@ struct EnergyWidget : ModuleWidget {
 		// part of svg panel, no code required
 		
 		float colRulerCenter = box.size.x / 2.0f;
+		static const float offsetX = 30.0f;
 
 		// main output
 		addOutput(createDynamicPort<GeoPort>(VecPx(colRulerCenter, 380.0f - 332.5f), false, module, Energy::ENERGY_OUTPUT, module ? &module->panelTheme : NULL));
@@ -449,7 +450,6 @@ struct EnergyWidget : ModuleWidget {
 		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(VecPx(45, 380.0f - 148.5f), module, Energy::ROUTING_LIGHTS + 2));// middle
 		
 		// momentum knobs
-		static const float offsetX = 30.0f;
 		addParam(createDynamicParam<GeoKnob>(VecPx(colRulerCenter - offsetX, 380 - 209), module, Energy::MOMENTUM_PARAMS + 0, module ? &module->panelTheme : NULL));
 		addParam(createDynamicParam<GeoKnob>(VecPx(colRulerCenter + offsetX, 380 - 209), module, Energy::MOMENTUM_PARAMS + 1, module ? &module->panelTheme : NULL));
 		

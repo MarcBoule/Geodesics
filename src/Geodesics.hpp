@@ -28,6 +28,7 @@ extern Model *modelBranes;
 extern Model *modelIons;
 extern Model *modelEntropia;
 extern Model *modelEnergy;
+extern Model *modelDarkEnergy;
 extern Model *modelTorus;
 extern Model *modelFate;
 extern Model *modelBlankLogo;

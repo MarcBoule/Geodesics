@@ -26,6 +26,7 @@ void init(Plugin *p) {
 	p->addModel(modelIons);
 	p->addModel(modelEntropia);
 	p->addModel(modelEnergy);
+	p->addModel(modelDarkEnergy);
 	p->addModel(modelTorus);
 	p->addModel(modelFate);
 	p->addModel(modelBlankLogo);

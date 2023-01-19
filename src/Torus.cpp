@@ -390,13 +390,13 @@ struct Torus : Module {
 		if (mixmode < 2) {// constant or decay modes	
 			for (int i = 0; i < mixMap[outi].numInputs; i++) {
 				int chan = mixMap[outi].cvs[i].chan;
-				outputValue += mixMap[outi].getScaledInput(i, inputs[MIX_INPUTS + chan].getVoltage());
+				outputValue += mixMap[outi].getScaledInput(i, inputs[MIX_INPUTS + chan].getVoltageSum());
 			}
 		}
 		else {// filter mode
 			for (int i = 0; i < mixMap[outi].numInputs; i++) {
 				int chan = mixMap[outi].cvs[i].chan;
-				outputValue += mixMap[outi].getFilteredInput(i, inputs[MIX_INPUTS + chan].getVoltage());
+				outputValue += mixMap[outi].getFilteredInput(i, inputs[MIX_INPUTS + chan].getVoltageSum());
 			}
 		}
 		return outputValue;

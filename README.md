@@ -1,6 +1,6 @@
 This page shows a very brief overview of the modules. For more information, including videos of the modules in use, please see the [Geodesics Website](https://www.pyer.be/geodesics.html). The modules are available in the [plugin library](https://library.vcvrack.com/) of [VCV Rack](https://vcvrack.com). 
 
-* [Complete user manual](doc/geodesics2.0-complete_user_manual.pdf) (version 2.2.2)
+* [Complete user manual](doc/geodesics2.0-complete_user_manual.pdf) (version 2.3.0)
 
 ![Geodesics](res/img/Blanks.jpg)
 
@@ -30,6 +30,8 @@ Each module comes with two panel options, namely White Light and Dark Matter.
 * [Torus](#torus): Bi-dimensional multimixer.
 
 * [Energy](#energy): Relativistic ring modulation oscillator.
+
+* [Dark Energy](#darkenergy): Complex r.m. f.m. oscillator.
 
 * [Fate](#fate): Non-deterministic event modifier.
 
@@ -104,6 +106,15 @@ For a video introduction to this module, please see Omri Cohen's [Torus tutorial
 
 How would the most meaningful equation of modern physics sound? If a small amount of mass can be turned into an incredibly big amount of energy, two simple sine waves can create unexpected tones with rich harmonic content. [ENERGY](doc/geodesics2.0-energy.pdf) is a digital oscillator/synth voice that focuses on ring modulation synthesis. Two sines are multiplied according Einstein/Poincaré’s famous equation. It is capable of meditative drones, organ tones, extreme noises, and low modulations.
 For a video introduction to this module, please see Omri Cohen's [Energy tutorial](https://www.youtube.com/watch?v=pNjUCVg9O_Y), and his [Complex LFO quicktip](https://www.youtube.com/watch?v=Tw9HK9fhiSg).
+
+
+
+<a id="darkenergy"></a>
+## Dark Energy
+
+![Geodesics](res/img/DarkEnergy.jpg)
+
+So much is known about energy but so little about dark energy, so much is yet to be discovered, for all we know, it is expanding over and over... [DARK ENERGY](doc/geodesics-dark-energy.pdf) is the expanded version of ENERGY: a 3 output voice that combines ring modulation and FM synthesis inspired by complex oscillators from the past. Two sinewaves are modulated and multiplied in various ways for creating rich tones, from vibrating drones to sharp screaming leads and percussive effects.
 
 
 

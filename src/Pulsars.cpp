@@ -47,7 +47,7 @@ struct Pulsars : Module {
 	
 	
 	// Constants
-	static constexpr float epsilon = 0.0001f;// pulsar crossovers at epsilon and 1-epsilon in 0.0f to 1.0f space
+	static constexpr float epsilon = 0.001f;// pulsar crossovers at epsilon and 1-epsilon in 0.0f to 1.0f space
 
 	
 	// Need to save, no reset
