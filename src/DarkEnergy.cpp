@@ -438,8 +438,11 @@ struct DarkEnergy : Module {
 	void calcModSignals(int chan) {
 		for (int osci = 0; osci < 2; osci++) {
 			float freqValue = calcFreqKnob(osci) + params[FREQ_PARAM].getValue();
-			int chanIn = std::min(inputs[FREQCV_INPUTS + osci].getChannels() - 1, chan);
-			modSignals[osci][chan] = freqValue + inputs[FREQCV_INPUTS + osci].getVoltage(chanIn);
+			if (inputs[FREQCV_INPUTS + osci].isConnected()) {
+				int chanIn = std::min(inputs[FREQCV_INPUTS + osci].getChannels() - 1, chan);
+				freqValue += inputs[FREQCV_INPUTS + osci].getVoltage(chanIn);
+			}	
+			modSignals[osci][chan] = freqValue;
 		}
 	}
 	
