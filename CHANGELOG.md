@@ -1,10 +1,10 @@
-### 2.3.0 (in development)
+### 2.3.0 (2023-01-21)
 
 - Add new module DarkEnergy
 - Mix polyphonic signals in Torus' inputs when input cables are polyphonic
 
 
-### 2.2.5 (2021)
+### 2.2.5 (2021-12-28)
 
 - Re-code menus so that cmd-click can be used to change options without closing the menus
 
