@@ -1,3 +1,8 @@
+### 2.3.1 (2023-04-11)
+
+- Fix issue with Schmitt trigger
+
+
 ### 2.3.0 (2023-01-21)
 
 - Add new module DarkEnergy
