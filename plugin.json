@@ -12,6 +12,7 @@
 	"sourceUrl": "https://github.com/MarcBoule/Geodesics/",
 	"donateUrl": "https://paypal.me/pyercollard",
 	"changelogUrl": "https://github.com/MarcBoule/Geodesics/tree/master/CHANGELOG.md",
+	"minRackVersion": "2.4.0",
 	"modules": [
 		{
 			"slug": "BlackHoles",
