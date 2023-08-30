@@ -157,7 +157,7 @@ struct Ions : Module {
 		
 		onReset();
 
-		panelTheme = (loadDarkAsDefault() ? 1 : 0);
+		panelTheme = loadDarkAsDefault();
 	}
 
 	

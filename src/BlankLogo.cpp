@@ -80,7 +80,7 @@ struct BlankLogo : Module {
 		clkTrigger.reset();
 		onReset();
 		
-		panelTheme = (loadDarkAsDefault() ? 1 : 0);
+		panelTheme = loadDarkAsDefault();
 	}
 
 

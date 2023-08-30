@@ -16,12 +16,12 @@ using namespace rack;
 // ******** Panel Theme management ********
 
 
-void saveDarkAsDefault(bool darkAsDefault);
-bool loadDarkAsDefault();
+// void saveDarkAsDefault(bool darkAsDefault);
+int loadDarkAsDefault();
 
 bool isDark(int* panelTheme);
 
-void readDarkAsDefault();
+// void readDarkAsDefault();
 
 void createPanelThemeMenu(ui::Menu* menu, int* panelTheme);
 

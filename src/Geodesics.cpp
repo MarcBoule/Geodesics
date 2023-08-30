@@ -18,7 +18,7 @@ Plugin *pluginInstance;
 void init(Plugin *p) {
 	pluginInstance = p;
 	
-	readDarkAsDefault();
+	//readDarkAsDefault();
 
 	p->addModel(modelBlackHoles);
 	p->addModel(modelPulsars);

@@ -1,6 +1,6 @@
 This page shows a very brief overview of the modules. For more information, including videos of the modules in use, please see the [Geodesics Website](https://www.pyer.be/geodesics.html). The modules are available in the [plugin library](https://library.vcvrack.com/) of [VCV Rack](https://vcvrack.com). 
 
-* [Complete user manual](doc/geodesics2.0-complete_user_manual.pdf) (version 2.3.1)
+* [Complete user manual](doc/geodesics2.0-complete_user_manual.pdf) (version 2.3.2)
 
 ![Geodesics](res/img/Blanks.jpg)
 
@@ -17,7 +17,7 @@ See [LICENSE.md](LICENSE.md) for all licenses.
 
 Each module comes with two panel options, namely White Light and Dark Matter.
 
-* [Black Holes](#blackholes): Gravitational voltage controled amplifiers.
+* [Black Holes](#blackholes): Gravitational voltage controlled amplifiers.
 
 * [Pulsars](#pulsars): Neutron powered morphing.
 

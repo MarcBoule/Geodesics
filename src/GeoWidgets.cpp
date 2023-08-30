@@ -10,66 +10,89 @@
 
 // ******** Panel Theme management ********
 
-bool defaultPanelTheme;
+// bool defaultPanelTheme;
 
 
-void writeDarkAsDefault() {
-	json_t *settingsJ = json_object();
-	json_object_set_new(settingsJ, "darkAsDefault", json_boolean(defaultPanelTheme));
-	std::string settingsFilename = asset::user("Geodesics.json");
-	FILE *file = fopen(settingsFilename.c_str(), "w");
-	if (file) {
-		json_dumpf(settingsJ, file, JSON_INDENT(2) | JSON_REAL_PRECISION(9));
-		fclose(file);
-	}
-	json_decref(settingsJ);
-}
+// void writeDarkAsDefault() {
+	// json_t *settingsJ = json_object();
+	// json_object_set_new(settingsJ, "darkAsDefault", json_boolean(defaultPanelTheme));
+	// std::string settingsFilename = asset::user("Geodesics.json");
+	// FILE *file = fopen(settingsFilename.c_str(), "w");
+	// if (file) {
+		// json_dumpf(settingsJ, file, JSON_INDENT(2) | JSON_REAL_PRECISION(9));
+		// fclose(file);
+	// }
+	// json_decref(settingsJ);
+// }
 
 
-void saveDarkAsDefault(bool darkAsDefault) {
-	defaultPanelTheme = darkAsDefault;
-	writeDarkAsDefault();
-}
-bool loadDarkAsDefault() {
-	return defaultPanelTheme;
+// void saveDarkAsDefault(bool darkAsDefault) {
+	// defaultPanelTheme = darkAsDefault;
+	// writeDarkAsDefault();
+// }
+int loadDarkAsDefault() {
+	return 0x2;//defaultPanelTheme;
 }
 
 bool isDark(int* panelTheme) {
+	// if (panelTheme != NULL) {
+		// return (*panelTheme != 0);
+	// }
+	// return defaultPanelTheme;
+	
 	if (panelTheme != NULL) {
-		return (*panelTheme != 0);
+		if ((*panelTheme & 0x2) != 0) {
+			return settings::preferDarkPanels;
+		}
+		return ((*panelTheme & 0x1) != 0);
 	}
-	return defaultPanelTheme;
+	return settings::preferDarkPanels;
 }
 
 
-void readDarkAsDefault() {
-	std::string settingsFilename = asset::user("Geodesics.json");
-	FILE *file = fopen(settingsFilename.c_str(), "r");
-	if (!file) {
-		defaultPanelTheme = false;
-		writeDarkAsDefault();
-		return;
-	}
-	json_error_t error;
-	json_t *settingsJ = json_loadf(file, 0, &error);
-	if (!settingsJ) {
+// void readDarkAsDefault() {
+	// std::string settingsFilename = asset::user("Geodesics.json");
+	// FILE *file = fopen(settingsFilename.c_str(), "r");
+	// if (!file) {
+		// defaultPanelTheme = false;
+		// writeDarkAsDefault();
+		// return;
+	// }
+	// json_error_t error;
+	// json_t *settingsJ = json_loadf(file, 0, &error);
+	// if (!settingsJ) {
 		// invalid setting json file
-		fclose(file);
-		defaultPanelTheme = false;
-		writeDarkAsDefault();
-		return;
-	}
-	json_t *darkAsDefaultJ = json_object_get(settingsJ, "darkAsDefault");
-	if (darkAsDefaultJ) {
-		defaultPanelTheme = json_boolean_value(darkAsDefaultJ);
-	}
-	else {
-		defaultPanelTheme = false;
+		// fclose(file);
+		// defaultPanelTheme = false;
+		// writeDarkAsDefault();
+		// return;
+	// }
+	// json_t *darkAsDefaultJ = json_object_get(settingsJ, "darkAsDefault");
+	// if (darkAsDefaultJ) {
+		// defaultPanelTheme = json_boolean_value(darkAsDefaultJ);
+	// }
+	// else {
+		// defaultPanelTheme = false;
+	// }
+	
+	// fclose(file);
+	// json_decref(settingsJ);
+// }
+
+struct ManualThemeItem : MenuItem {
+	int* panelTheme;
+	int setValue = 0;
+
+	void onAction(const event::Action &e) override {
+		*panelTheme = setValue;
 	}
 	
-	fclose(file);
-	json_decref(settingsJ);
-}
+	void step() override {
+		disabled = (*panelTheme & 0x2) != 0;
+		rightText = CHECKMARK(*panelTheme == setValue);
+		MenuItem::step();
+	}
+};			
 
 
 void createPanelThemeMenu(ui::Menu* menu, int* panelTheme) {
@@ -77,20 +100,36 @@ void createPanelThemeMenu(ui::Menu* menu, int* panelTheme) {
 
 	menu->addChild(createMenuLabel("Panel Theme"));
 	
-	menu->addChild(createCheckMenuItem("White light edition", "",
-		[=]() {return *panelTheme == 0;},
-		[=]() {*panelTheme = 0;}
+	menu->addChild(createCheckMenuItem("Use Rack global theme", "",
+		[=]() {return (*panelTheme & 0x2) != 0;},
+		[=]() {*panelTheme ^= 0x2;}
 	));
+
+	ManualThemeItem *whiteItem = createMenuItem<ManualThemeItem>("White light edition", "");
+	whiteItem->panelTheme = panelTheme;
+	whiteItem->setValue = 0x0;
+	menu->addChild(whiteItem);
+
+	ManualThemeItem *darkItem = createMenuItem<ManualThemeItem>("Dark matter edition", "");
+	darkItem->panelTheme = panelTheme;
+	darkItem->setValue = 0x1;
+	menu->addChild(darkItem);
+
+
+	// menu->addChild(createCheckMenuItem("White light edition", "",
+		// [=]() {return *panelTheme == 0;},
+		// [=]() {*panelTheme = 0;}
+	// ));
 	
-	menu->addChild(createCheckMenuItem("Dark matter edition", "",
-		[=]() {return *panelTheme == 1;},
-		[=]() {*panelTheme = 1;}
-	));
+	// menu->addChild(createCheckMenuItem("Dark matter edition", "",
+		// [=]() {return *panelTheme == 1;},
+		// [=]() {*panelTheme = 1;}
+	// ));
 		
-	menu->addChild(createCheckMenuItem("Dark as default", "",
-		[=]() {return loadDarkAsDefault();},
-		[=]() {saveDarkAsDefault(!loadDarkAsDefault());}
-	));
+	// menu->addChild(createCheckMenuItem("Dark as default", "",
+		// [=]() {return loadDarkAsDefault();},
+		// [=]() {saveDarkAsDefault(!loadDarkAsDefault());}
+	// ));
 }
 
 

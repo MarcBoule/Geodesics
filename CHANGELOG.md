@@ -1,3 +1,8 @@
+### 2.3.2 (2023-08-30)
+
+- Follow global Rack panel theme choice, with per-instance manual theme selection
+
+
 ### 2.3.1 (2023-04-11)
 
 - Fix issue with Schmitt trigger
