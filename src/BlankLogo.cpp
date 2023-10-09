@@ -14,7 +14,12 @@ struct LowFrequencyOscillator {
 	float phase = 0.0f;
 	float freq = 1.0f;
 
-	LowFrequencyOscillator() {}
+	LowFrequencyOscillator() {
+		reset();
+	}
+	void reset() {
+		phase = 0.0f;
+	}
 	void setPitch(float pitch) {
 		pitch = std::fmin(pitch, 8.0f);
 		freq = std::pow(2.0f, pitch);
@@ -62,18 +67,17 @@ struct BlankLogo : Module {
 	// none
 	
 	// No need to save, with reset
-	float clkValue;
+	LowFrequencyOscillator oscillatorClk;
 	int stepIndex;
 	
 	// No need to save, no reset
-	LowFrequencyOscillator oscillatorClk;
 	Trigger clkTrigger;
 	
 	
 	BlankLogo() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 
-		configParam(CLK_FREQ_PARAM, -2.0f, 4.0f, 1.0f, "CLK freq", " BPM", 2.0f, 60.0f);// 120 BMP when default value  (120 = 60*2^1) diplay params 
+		configParam(CLK_FREQ_PARAM, -2.0f, 4.0f, 1.0f, "CLK freq", " BPM", 2.0f, 60.0f);// 120 BMP when default value  (120 = 60*2^1) display params 
 		
 		configOutput(OUT_OUTPUT, "Mystery");
 
@@ -84,11 +88,11 @@ struct BlankLogo : Module {
 	}
 
 
-	void onReset() override {	
+	void onReset() override final {	
 		resetNonJson();
 	}
 	void resetNonJson() {
-		clkValue = 0.0f;
+		oscillatorClk.reset();
 		stepIndex = 0;
 	}
 	
@@ -141,7 +145,7 @@ struct BlankLogoWidget : ModuleWidget {
 	std::shared_ptr<window::Svg> dark_svg;
 
 	void appendContextMenu(Menu *menu) override {
-		BlankLogo *module = dynamic_cast<BlankLogo*>(this->module);
+		BlankLogo *module = static_cast<BlankLogo*>(this->module);
 		assert(module);
 
 		createPanelThemeMenu(menu, &(module->panelTheme));
@@ -153,7 +157,7 @@ struct BlankLogoWidget : ModuleWidget {
 		// Main panels from Inkscape
  		light_svg = APP->window->loadSvg(asset::plugin(pluginInstance, "res/WhiteLight/BlankLogo-WL.svg"));
 		dark_svg = APP->window->loadSvg(asset::plugin(pluginInstance, "res/DarkMatter/BlankLogo-DM.svg"));
-		int panelTheme = isDark(module ? (&(((BlankLogo*)module)->panelTheme)) : NULL) ? 1 : 0;// need this here since step() not called for module browser
+		int panelTheme = isDark(module ? (&((static_cast<BlankLogo*>(module))->panelTheme)) : NULL) ? 1 : 0;// need this here since step() not called for module browser
 		setPanel(panelTheme == 0 ? light_svg : dark_svg);		
 		
 		// Screws
@@ -164,10 +168,10 @@ struct BlankLogoWidget : ModuleWidget {
 	}
 	
 	void step() override {
-		int panelTheme = isDark(module ? (&(((BlankLogo*)module)->panelTheme)) : NULL) ? 1 : 0;
+		int panelTheme = isDark(module ? (&((static_cast<BlankLogo*>(module))->panelTheme)) : NULL) ? 1 : 0;
 		if (lastPanelTheme != panelTheme) {
 			lastPanelTheme = panelTheme;
-			SvgPanel* panel = (SvgPanel*)getPanel();
+			SvgPanel* panel = static_cast<SvgPanel*>(getPanel());
 			panel->setBackground(panelTheme == 0 ? light_svg : dark_svg);
 			panel->fb->dirty = true;
 		}

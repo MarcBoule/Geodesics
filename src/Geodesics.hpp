@@ -287,7 +287,7 @@ struct Trigger {
 
 
 struct HoldDetect {
-	long modeHoldDetect;// 0 when not detecting, downward counter when detecting
+	long modeHoldDetect = 0l;// 0 when not detecting, downward counter when detecting
 	
 	void reset() {
 		modeHoldDetect = 0l;

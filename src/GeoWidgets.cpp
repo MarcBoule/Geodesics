@@ -34,7 +34,7 @@ int loadDarkAsDefault() {
 	return 0x2;//defaultPanelTheme;
 }
 
-bool isDark(int* panelTheme) {
+bool isDark(const int* panelTheme) {
 	// if (panelTheme != NULL) {
 		// return (*panelTheme != 0);
 	// }

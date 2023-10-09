@@ -200,7 +200,7 @@ struct Entropia : Module {
 	}
 
 	
-	void onReset() override {
+	void onReset() override final {
 		running = true;
 		resetOnRun = false;
 		length = 8;
@@ -634,7 +634,7 @@ struct EntropiaWidget : ModuleWidget {
 	std::shared_ptr<window::Svg> dark_svg;
 
 	void appendContextMenu(Menu *menu) override {
-		Entropia *module = dynamic_cast<Entropia*>(this->module);
+		Entropia *module = static_cast<Entropia*>(this->module);
 		assert(module);
 
 		createPanelThemeMenu(menu, &(module->panelTheme));
@@ -646,7 +646,7 @@ struct EntropiaWidget : ModuleWidget {
 		// Main panels from Inkscape
  		light_svg = APP->window->loadSvg(asset::plugin(pluginInstance, "res/WhiteLight/Entropia-WL.svg"));
 		dark_svg = APP->window->loadSvg(asset::plugin(pluginInstance, "res/DarkMatter/Entropia-DM.svg"));
-		int panelTheme = isDark(module ? (&(((Entropia*)module)->panelTheme)) : NULL) ? 1 : 0;// need this here since step() not called for module browser
+		int panelTheme = isDark(module ? (&((static_cast<Entropia*>(module))->panelTheme)) : NULL) ? 1 : 0;// need this here since step() not called for module browser
 		setPanel(panelTheme == 0 ? light_svg : dark_svg);		
 		
 		// Screws 
@@ -847,10 +847,10 @@ struct EntropiaWidget : ModuleWidget {
 	}
 	
 	void step() override {
-		int panelTheme = isDark(module ? (&(((Entropia*)module)->panelTheme)) : NULL) ? 1 : 0;
+		int panelTheme = isDark(module ? (&((static_cast<Entropia*>(module))->panelTheme)) : NULL) ? 1 : 0;
 		if (lastPanelTheme != panelTheme) {
 			lastPanelTheme = panelTheme;
-			SvgPanel* panel = (SvgPanel*)getPanel();
+			SvgPanel* panel = static_cast<SvgPanel*>(getPanel());
 			panel->setBackground(panelTheme == 0 ? light_svg : dark_svg);
 			panel->fb->dirty = true;
 		}

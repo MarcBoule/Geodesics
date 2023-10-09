@@ -243,7 +243,7 @@ struct Branes : Module {
 	}
 
 	
-	void onReset() override {
+	void onReset() override final {
 		for (int i = 0; i < 2; i++) {
 			vibrations[i] = 0;
 			noiseRange[i] = false;
@@ -493,7 +493,7 @@ struct BranesWidget : ModuleWidget {
 	std::shared_ptr<window::Svg> dark_svg;
 
 	void appendContextMenu(Menu *menu) override {
-		Branes *module = dynamic_cast<Branes*>(this->module);
+		Branes *module = static_cast<Branes*>(this->module);
 		assert(module);
 
 		createPanelThemeMenu(menu, &(module->panelTheme));
@@ -528,7 +528,7 @@ struct BranesWidget : ModuleWidget {
 		// Main panels from Inkscape
  		light_svg = APP->window->loadSvg(asset::plugin(pluginInstance, "res/WhiteLight/Branes-WL.svg"));
 		dark_svg = APP->window->loadSvg(asset::plugin(pluginInstance, "res/DarkMatter/Branes-DM.svg"));
-		int panelTheme = isDark(module ? (&(((Branes*)module)->panelTheme)) : NULL) ? 1 : 0;// need this here since step() not called for module browser
+		int panelTheme = isDark(module ? (&((static_cast<Branes*>(module))->panelTheme)) : NULL) ? 1 : 0;// need this here since step() not called for module browser
 		setPanel(panelTheme == 0 ? light_svg : dark_svg);		
 		
 		// Screws 
@@ -613,10 +613,10 @@ struct BranesWidget : ModuleWidget {
 	}
 	
 	void step() override {
-		int panelTheme = isDark(module ? (&(((Branes*)module)->panelTheme)) : NULL) ? 1 : 0;
+		int panelTheme = isDark(module ? (&((static_cast<Branes*>(module))->panelTheme)) : NULL) ? 1 : 0;
 		if (lastPanelTheme != panelTheme) {
 			lastPanelTheme = panelTheme;
-			SvgPanel* panel = (SvgPanel*)getPanel();
+			SvgPanel* panel = static_cast<SvgPanel*>(getPanel());
 			panel->setBackground(panelTheme == 0 ? light_svg : dark_svg);
 			panel->fb->dirty = true;
 		}

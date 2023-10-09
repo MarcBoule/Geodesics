@@ -19,7 +19,7 @@ struct BlankInfo : Module {
 		panelTheme = loadDarkAsDefault();
 	}
 
-	void onReset() override {
+	void onReset() override final {
 	}
 
 	void onRandomize() override {
@@ -53,7 +53,7 @@ struct BlankInfoWidget : ModuleWidget {
 	std::shared_ptr<window::Svg> dark_svg;
 
 	void appendContextMenu(Menu *menu) override {
-		BlankInfo *module = dynamic_cast<BlankInfo*>(this->module);
+		BlankInfo *module = static_cast<BlankInfo*>(this->module);
 		assert(module);
 
 		createPanelThemeMenu(menu, &(module->panelTheme));
@@ -66,7 +66,7 @@ struct BlankInfoWidget : ModuleWidget {
 		// Main panels from Inkscape
  		light_svg = APP->window->loadSvg(asset::plugin(pluginInstance, "res/WhiteLight/BlankInfo-WL.svg"));
 		dark_svg = APP->window->loadSvg(asset::plugin(pluginInstance, "res/DarkMatter/BlankInfo-DM.svg"));
-		int panelTheme = isDark(module ? (&(((BlankInfo*)module)->panelTheme)) : NULL) ? 1 : 0;// need this here since step() not called for module browser
+		int panelTheme = isDark(module ? (&((static_cast<BlankInfo*>(module))->panelTheme)) : NULL) ? 1 : 0;// need this here since step() not called for module browser
 		setPanel(panelTheme == 0 ? light_svg : dark_svg);		
 		
 		// Screws
@@ -74,10 +74,10 @@ struct BlankInfoWidget : ModuleWidget {
 	}
 	
 	void step() override {
-		int panelTheme = isDark(module ? (&(((BlankInfo*)module)->panelTheme)) : NULL) ? 1 : 0;
+		int panelTheme = isDark(module ? (&((static_cast<BlankInfo*>(module))->panelTheme)) : NULL) ? 1 : 0;
 		if (lastPanelTheme != panelTheme) {
 			lastPanelTheme = panelTheme;
-			SvgPanel* panel = (SvgPanel*)getPanel();
+			SvgPanel* panel = static_cast<SvgPanel*>(getPanel());
 			panel->setBackground(panelTheme == 0 ? light_svg : dark_svg);
 			panel->fb->dirty = true;
 		}

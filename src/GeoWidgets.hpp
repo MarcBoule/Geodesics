@@ -19,7 +19,7 @@ using namespace rack;
 // void saveDarkAsDefault(bool darkAsDefault);
 int loadDarkAsDefault();
 
-bool isDark(int* panelTheme);
+bool isDark(const int* panelTheme);
 
 // void readDarkAsDefault();
 

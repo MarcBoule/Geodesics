@@ -122,15 +122,17 @@ struct CICDecimator : Decimator {
 	typedef int64_t T;
 	static constexpr T scale = ((T)1) << 32;
 	int _stages;
-	T* _integrators;
-	T* _combs;
+	T* _integrators = nullptr;
+	T* _combs = nullptr;
 	int _factor = 0;
 	float _gainCorrection;
 
 	CICDecimator(int stages = 4, int factor = 8);
 	virtual ~CICDecimator();
-
-	void setParams(float sampleRate, int factor) override;
+	CICDecimator(const CICDecimator& srcc);
+	void copyFrom(const CICDecimator& srcc);
+	CICDecimator& operator=(const CICDecimator& srcc);
+	void setParams(float sampleRate, int factor) override final;
 	float next(const float* buf) override;
 };
 
@@ -237,7 +239,7 @@ struct Phasor : OscillatorGenerator {
 	void setPhase(phase_t givenPhase) {_phase = givenPhase;}
 	float nextFromPhasor(const Phasor& phasor, phase_delta_t offset = 0);
 	inline float nextForPhase(phase_t phase) { return _nextForPhase(phase); }
-	virtual void _update();
+	void _update();
 	inline void advancePhase() { _phase += _delta; }
 	inline void advancePhase(int n) { assert(n > 0); _phase += n * _delta; }
 	float _next() override final;

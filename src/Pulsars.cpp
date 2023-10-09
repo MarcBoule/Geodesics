@@ -81,7 +81,7 @@ struct Pulsars : Module {
 	void updateConnected() {
 		// builds packed list of connected ports for both pulsars, can be empty list with num = 0
 		// this method takes care of isVoid and isReverse
-		int oldConnectedNum[2] = {connectedNum[0], connectedNum[1]};
+		const int oldConnectedNum[2] = {connectedNum[0], connectedNum[1]};
 		connectedNum[0] = 0;
 		connectedNum[1] = 0;
 		for (int i = 0; i < 8; i++) {
@@ -204,7 +204,7 @@ struct Pulsars : Module {
 	}
 
 	
-	void onReset() override {
+	void onReset() override final {
 		for (int i = 0; i < 2; i++) {
 			cvModes[i] = 0;
 			isVoid[i] = false;
@@ -503,7 +503,7 @@ struct PulsarsWidget : ModuleWidget {
 	std::shared_ptr<window::Svg> dark_svg;
 
 	void appendContextMenu(Menu *menu) override {
-		Pulsars *module = dynamic_cast<Pulsars*>(this->module);
+		Pulsars *module = static_cast<Pulsars*>(this->module);
 		assert(module);
 
 		createPanelThemeMenu(menu, &(module->panelTheme));
@@ -515,7 +515,7 @@ struct PulsarsWidget : ModuleWidget {
 		// Main panels from Inkscape
  		light_svg = APP->window->loadSvg(asset::plugin(pluginInstance, "res/WhiteLight/Pulsars-WL.svg"));
 		dark_svg = APP->window->loadSvg(asset::plugin(pluginInstance, "res/DarkMatter/Pulsars-DM.svg"));
-		int panelTheme = isDark(module ? (&(((Pulsars*)module)->panelTheme)) : NULL) ? 1 : 0;// need this here since step() not called for module browser
+		int panelTheme = isDark(module ? (&((static_cast<Pulsars*>(module))->panelTheme)) : NULL) ? 1 : 0;// need this here since step() not called for module browser
 		setPanel(panelTheme == 0 ? light_svg : dark_svg);		
 		
 		// Screws 
@@ -638,10 +638,10 @@ struct PulsarsWidget : ModuleWidget {
 	}
 	
 	void step() override {
-		int panelTheme = isDark(module ? (&(((Pulsars*)module)->panelTheme)) : NULL) ? 1 : 0;
+		int panelTheme = isDark(module ? (&((static_cast<Pulsars*>(module))->panelTheme)) : NULL) ? 1 : 0;
 		if (lastPanelTheme != panelTheme) {
 			lastPanelTheme = panelTheme;
-			SvgPanel* panel = (SvgPanel*)getPanel();
+			SvgPanel* panel = static_cast<SvgPanel*>(getPanel());
 			panel->setBackground(panelTheme == 0 ? light_svg : dark_svg);
 			panel->fb->dirty = true;
 		}

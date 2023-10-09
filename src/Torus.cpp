@@ -152,7 +152,7 @@ struct mixMapOutput {
 				if (num == 1) return isLowPass ? 12000 : 110;
 				if (num == 2) return isLowPass ? 8000 : 350;
 				if (num == 3) return isLowPass ? 3000 : 750;
-				if (num == 4) return isLowPass ? 1500 : 1500;
+				if (num == 4) return 1500;//isLowPass ? 1500 : 1500;
 				if (num == 5) return isLowPass ? 500 : 2500;
 				return isLowPass ? 200 : 4000;
 			break;
@@ -233,7 +233,7 @@ struct Torus : Module {
 	}
 
 	
-	void onReset() override {
+	void onReset() override final {
 		mixmode = 0;
 		filterSlope = 1;
 		resetNonJson();
@@ -410,7 +410,7 @@ struct TorusWidget : ModuleWidget {
 	std::shared_ptr<window::Svg> dark_svg;
 
 	void appendContextMenu(Menu *menu) override {
-		Torus *module = dynamic_cast<Torus*>(this->module);
+		Torus *module = static_cast<Torus*>(this->module);
 		assert(module);
 
 		createPanelThemeMenu(menu, &(module->panelTheme));
@@ -436,7 +436,7 @@ struct TorusWidget : ModuleWidget {
 		// Main panels from Inkscape
 		light_svg = APP->window->loadSvg(asset::plugin(pluginInstance, "res/WhiteLight/Torus-WL.svg"));
 		dark_svg = APP->window->loadSvg(asset::plugin(pluginInstance, "res/DarkMatter/Torus-DM.svg"));
-		int panelTheme = isDark(module ? (&(((Torus*)module)->panelTheme)) : NULL) ? 1 : 0;// need this here since step() not called for module browser
+		int panelTheme = isDark(module ? (&((static_cast<Torus*>(module))->panelTheme)) : NULL) ? 1 : 0;// need this here since step() not called for module browser
 		setPanel(panelTheme == 0 ? light_svg : dark_svg);		
 
 		// Screws 
@@ -469,10 +469,10 @@ struct TorusWidget : ModuleWidget {
 	}
 	
 	void step() override {
-		int panelTheme = isDark(module ? (&(((Torus*)module)->panelTheme)) : NULL) ? 1 : 0;
+		int panelTheme = isDark(module ? (&((static_cast<Torus*>(module))->panelTheme)) : NULL) ? 1 : 0;
 		if (lastPanelTheme != panelTheme) {
 			lastPanelTheme = panelTheme;
-			SvgPanel* panel = (SvgPanel*)getPanel();
+			SvgPanel* panel = static_cast<SvgPanel*>(getPanel());
 			panel->setBackground(panelTheme == 0 ? light_svg : dark_svg);
 			panel->fb->dirty = true;
 		}

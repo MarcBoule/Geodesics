@@ -95,7 +95,6 @@ struct Ions : Module {
 	Trigger resetTrigger;
 	Trigger stateTriggers[2];
 	Trigger octTriggers[2];
-	Trigger stateCVTriggers[2];
 	Trigger leapTrigger;
 	Trigger plankTrigger;
 	Trigger plank2Trigger;
@@ -161,7 +160,7 @@ struct Ions : Module {
 	}
 
 	
-	void onReset() override {
+	void onReset() override final {
 		running = true;
 		resetOnRun = false;
 		quantize = 3;
@@ -522,7 +521,7 @@ struct IonsWidget : ModuleWidget {
 	std::shared_ptr<window::Svg> dark_svg;
 
 	void appendContextMenu(Menu *menu) override {
-		Ions *module = dynamic_cast<Ions*>(this->module);
+		Ions *module = static_cast<Ions*>(this->module);
 		assert(module);
 
 		createPanelThemeMenu(menu, &(module->panelTheme));
@@ -534,7 +533,7 @@ struct IonsWidget : ModuleWidget {
 		// Main panels from Inkscape
  		light_svg = APP->window->loadSvg(asset::plugin(pluginInstance, "res/WhiteLight/Ions-WL.svg"));
 		dark_svg = APP->window->loadSvg(asset::plugin(pluginInstance, "res/DarkMatter/Ions-DM.svg"));
-		int panelTheme = isDark(module ? (&(((Ions*)module)->panelTheme)) : NULL) ? 1 : 0;// need this here since step() not called for module browser
+		int panelTheme = isDark(module ? (&((static_cast<Ions*>(module))->panelTheme)) : NULL) ? 1 : 0;// need this here since step() not called for module browser
 		setPanel(panelTheme == 0 ? light_svg : dark_svg);		
 		
 		// Screws 
@@ -708,10 +707,10 @@ struct IonsWidget : ModuleWidget {
 	}
 	
 	void step() override {
-		int panelTheme = isDark(module ? (&(((Ions*)module)->panelTheme)) : NULL) ? 1 : 0;
+		int panelTheme = isDark(module ? (&((static_cast<Ions*>(module))->panelTheme)) : NULL) ? 1 : 0;
 		if (lastPanelTheme != panelTheme) {
 			lastPanelTheme = panelTheme;
-			SvgPanel* panel = (SvgPanel*)getPanel();
+			SvgPanel* panel = static_cast<SvgPanel*>(getPanel());
 			panel->setBackground(panelTheme == 0 ? light_svg : dark_svg);
 			panel->fb->dirty = true;
 		}

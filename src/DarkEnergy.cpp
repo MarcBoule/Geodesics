@@ -90,7 +90,6 @@ struct DarkEnergy : Module {
 	float resetLight0 = 0.0f;
 	float resetLight1 = 0.0f;
 	Trigger planckTriggers[2];
-	Trigger modtypeTriggers[2];
 	Trigger resetTriggers[3];// M inut, C input, button (trigs both)
 	Trigger modeTrigger;
 	Trigger multEnableTrigger;
@@ -160,7 +159,7 @@ struct DarkEnergy : Module {
 	}
 	
 	
-	void onReset() override {
+	void onReset() override final {
 		for (int c = 0; c < N_POLY; c++) {
 			oscM[c].onReset();
 			oscC[c].onReset();
@@ -186,7 +185,7 @@ struct DarkEnergy : Module {
 	void onRandomize() override {
 	}
 
-	void onSampleRateChange() override {
+	void onSampleRateChange() override final {
 		float sampleRate = APP->engine->getSampleRate();
 		for (int c = 0; c < N_POLY; c++) {
 			oscM[c].onSampleRateChange(sampleRate);
@@ -366,7 +365,7 @@ struct DarkEnergy : Module {
 			
 			// vocts
 			float base = inputs[FREQCV_INPUT].getVoltage(c);
-			float vocts[2] = {base + modSignals[0][c], base + modSignals[1][c]};
+			const float vocts[2] = {base + modSignals[0][c], base + modSignals[1][c]};
 			
 			// oscillators
 			float oscMout = oscM[c].step(vocts[0], feedbacks[0][c] * 0.3f, depths[0][c], oscC[c]._feedbackDelayedSample);
@@ -536,7 +535,7 @@ struct DarkEnergyWidget : ModuleWidget {
 	std::shared_ptr<window::Svg> dark_svg;
 
 	void appendContextMenu(Menu *menu) override {
-		DarkEnergy *module = dynamic_cast<DarkEnergy*>(this->module);
+		DarkEnergy *module = static_cast<DarkEnergy*>(this->module);
 		assert(module);
 
 		createPanelThemeMenu(menu, &(module->panelTheme));
@@ -548,7 +547,7 @@ struct DarkEnergyWidget : ModuleWidget {
 		// Main panels from Inkscape
  		light_svg = APP->window->loadSvg(asset::plugin(pluginInstance, "res/WhiteLight/DarkEnergy-WL.svg"));
 		dark_svg = APP->window->loadSvg(asset::plugin(pluginInstance, "res/DarkMatter/DarkEnergy-DM.svg"));
-		int panelTheme = isDark(module ? (&(((DarkEnergy*)module)->panelTheme)) : NULL) ? 1 : 0;// need this here since step() not called for module browser
+		int panelTheme = isDark(module ? (&((static_cast<DarkEnergy*>(module))->panelTheme)) : NULL) ? 1 : 0;// need this here since step() not called for module browser
 		setPanel(panelTheme == 0 ? light_svg : dark_svg);		
 
 		// Screws 
@@ -650,10 +649,10 @@ struct DarkEnergyWidget : ModuleWidget {
 	}
 	
 	void step() override {
-		int panelTheme = isDark(module ? (&(((DarkEnergy*)module)->panelTheme)) : NULL) ? 1 : 0;
+		int panelTheme = isDark(module ? (&((static_cast<DarkEnergy*>(module))->panelTheme)) : NULL) ? 1 : 0;
 		if (lastPanelTheme != panelTheme) {
 			lastPanelTheme = panelTheme;
-			SvgPanel* panel = (SvgPanel*)getPanel();
+			SvgPanel* panel = static_cast<SvgPanel*>(getPanel());
 			panel->setBackground(panelTheme == 0 ? light_svg : dark_svg);
 			panel->fb->dirty = true;
 		}

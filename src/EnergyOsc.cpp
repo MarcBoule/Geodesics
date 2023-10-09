@@ -81,6 +81,28 @@ CICDecimator::~CICDecimator() {
 	delete[] _combs;
 }
 
+CICDecimator::CICDecimator(const CICDecimator& srcc) {
+	copyFrom(srcc);
+}
+void CICDecimator::copyFrom(const CICDecimator& srcc) {
+	// just dummy for now, finish implementing if needed
+	_stages = srcc._stages;
+	if (_integrators != nullptr) {
+		delete[] _integrators;
+	}
+	_integrators = new T[_stages + 1] {};// should copy 
+	if (_combs != nullptr) {
+		delete[] _combs;
+	}
+	_combs = new T[_stages] {};// should copy 
+	setParams(0.0f, srcc._factor);	
+}
+
+CICDecimator& CICDecimator::operator=(const CICDecimator& srcc) {
+	copyFrom(srcc);
+	return *this;
+}
+
 void CICDecimator::setParams(float _sampleRate, int factor) {
 	assert(factor > 0);
 	if (_factor != factor) {

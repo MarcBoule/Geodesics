@@ -114,7 +114,7 @@ struct Energy : Module {
 	}
 	
 	
-	void onReset() override {
+	void onReset() override final {
 		for (int c = 0; c < N_POLY; c++) {
 			oscM[c].onReset();
 			oscC[c].onReset();
@@ -140,7 +140,7 @@ struct Energy : Module {
 	}
 	
 
-	void onSampleRateChange() override {
+	void onSampleRateChange() override final {
 		float sampleRate = APP->engine->getSampleRate();
 		for (int c = 0; c < N_POLY; c++) {
 			oscM[c].onSampleRateChange(sampleRate);
@@ -280,7 +280,7 @@ struct Energy : Module {
 			}
 			
 			// vocts
-			float vocts[2] = {modSignals[0][c] + inputs[FREQCV_INPUT].getVoltage(c), modSignals[1][c] + inputs[FREQCV_INPUT].getVoltage(c)};
+			const float vocts[2] = {modSignals[0][c] + inputs[FREQCV_INPUT].getVoltage(c), modSignals[1][c] + inputs[FREQCV_INPUT].getVoltage(c)};
 			
 			// oscillators
 			float oscMout = oscM[c].step(vocts[0], feedbacks[0][c] * 0.3f);
@@ -409,7 +409,7 @@ struct EnergyWidget : ModuleWidget {
 	std::shared_ptr<window::Svg> dark_svg;
 
 	void appendContextMenu(Menu *menu) override {
-		Energy *module = dynamic_cast<Energy*>(this->module);
+		Energy *module = static_cast<Energy*>(this->module);
 		assert(module);
 
 		createPanelThemeMenu(menu, &(module->panelTheme));
@@ -421,7 +421,7 @@ struct EnergyWidget : ModuleWidget {
 		// Main panels from Inkscape
  		light_svg = APP->window->loadSvg(asset::plugin(pluginInstance, "res/WhiteLight/Energy-WL.svg"));
 		dark_svg = APP->window->loadSvg(asset::plugin(pluginInstance, "res/DarkMatter/Energy-DM.svg"));
-		int panelTheme = isDark(module ? (&(((Energy*)module)->panelTheme)) : NULL) ? 1 : 0;// need this here since step() not called for module browser
+		int panelTheme = isDark(module ? (&((static_cast<Energy*>(module))->panelTheme)) : NULL) ? 1 : 0;// need this here since step() not called for module browser
 		setPanel(panelTheme == 0 ? light_svg : dark_svg);		
 
 		// Screws 
@@ -495,10 +495,10 @@ struct EnergyWidget : ModuleWidget {
 	}
 	
 	void step() override {
-		int panelTheme = isDark(module ? (&(((Energy*)module)->panelTheme)) : NULL) ? 1 : 0;
+		int panelTheme = isDark(module ? (&((static_cast<Energy*>(module))->panelTheme)) : NULL) ? 1 : 0;
 		if (lastPanelTheme != panelTheme) {
 			lastPanelTheme = panelTheme;
-			SvgPanel* panel = (SvgPanel*)getPanel();
+			SvgPanel* panel = static_cast<SvgPanel*>(getPanel());
 			panel->setBackground(panelTheme == 0 ? light_svg : dark_svg);
 			panel->fb->dirty = true;
 		}

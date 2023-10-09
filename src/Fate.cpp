@@ -50,7 +50,6 @@ struct Fate : Module {
 	float addCVs0[PORT_MAX_CHANNELS];
 	float addCVs1[PORT_MAX_CHANNELS];
 	float sampledClock[PORT_MAX_CHANNELS];// introduce a 1-sample delay on clock input so that when receiving same clock as sequencer, Fate will sample the proper current CV from the seq.
-	int numChan;
 	
 	// No need to save, no reset
 	RefreshCounter refresh;
@@ -81,7 +80,7 @@ struct Fate : Module {
 	}
 
 	
-	void onReset() override {
+	void onReset() override final {
 		holdTrigOut = 0;
 		resetNonJson(false);
 	}
@@ -92,7 +91,6 @@ struct Fate : Module {
 			addCVs1[i] = 0.0f;
 			sampledClock[i] = 0.0f;
 		}
-		numChan = 0;
 	}
 
 
@@ -214,7 +212,7 @@ struct FateWidget : ModuleWidget {
 	std::shared_ptr<window::Svg> dark_svg;
 
 	void appendContextMenu(Menu *menu) override {
-		Fate *module = dynamic_cast<Fate*>(this->module);
+		Fate *module = static_cast<Fate*>(this->module);
 		assert(module);
 		
 		createPanelThemeMenu(menu, &(module->panelTheme));
@@ -234,7 +232,7 @@ struct FateWidget : ModuleWidget {
 		// Main panels from Inkscape
  		light_svg = APP->window->loadSvg(asset::plugin(pluginInstance, "res/WhiteLight/Fate-WL.svg"));
 		dark_svg = APP->window->loadSvg(asset::plugin(pluginInstance, "res/DarkMatter/Fate-DM.svg"));
-		int panelTheme = isDark(module ? (&(((Fate*)module)->panelTheme)) : NULL) ? 1 : 0;// need this here since step() not called for module browser
+		int panelTheme = isDark(module ? (&((static_cast<Fate*>(module))->panelTheme)) : NULL) ? 1 : 0;// need this here since step() not called for module browser
 		setPanel(panelTheme == 0 ? light_svg : dark_svg);		
 
 		// Screws 
@@ -266,10 +264,10 @@ struct FateWidget : ModuleWidget {
 	}
 	
 	void step() override {
-		int panelTheme = isDark(module ? (&(((Fate*)module)->panelTheme)) : NULL) ? 1 : 0;
+		int panelTheme = isDark(module ? (&((static_cast<Fate*>(module))->panelTheme)) : NULL) ? 1 : 0;
 		if (lastPanelTheme != panelTheme) {
 			lastPanelTheme = panelTheme;
-			SvgPanel* panel = (SvgPanel*)getPanel();
+			SvgPanel* panel = static_cast<SvgPanel*>(getPanel());
 			panel->setBackground(panelTheme == 0 ? light_svg : dark_svg);
 			panel->fb->dirty = true;
 		}
