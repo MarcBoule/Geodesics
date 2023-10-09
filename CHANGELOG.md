@@ -1,6 +1,7 @@
-### 2.3.2 (2023-08-30)
+### 2.3.2 (in development)
 
 - Follow global Rack panel theme choice, with per-instance manual theme selection
+- Fix code warnings using Cppcheck
 
 
 ### 2.3.1 (2023-04-11)
