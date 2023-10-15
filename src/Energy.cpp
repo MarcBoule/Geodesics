@@ -54,8 +54,8 @@ struct Energy : Module {
 	int panelTheme;
 	
 	// Need to save, with reset
-	FMOp oscM[N_POLY];
-	FMOp oscC[N_POLY];
+	std::vector<FMOp> oscM;// size N_POLY
+	std::vector<FMOp> oscC;// size N_POLY
 	int routing;// routing of knob 1. 
 		// 0 is independant (i.e. blue only) (bottom light, light index 0),
 		// 1 is control (i.e. blue and yellow) (top light, light index 1),
@@ -101,9 +101,11 @@ struct Energy : Module {
 		
 		configOutput(ENERGY_OUTPUT, "Energy");
 		
+		oscM.reserve(N_POLY);
+		oscC.reserve(N_POLY);
 		for (int c = 0; c < N_POLY; c++) {
-			oscM[c].construct(APP->engine->getSampleRate());
-			oscC[c].construct(APP->engine->getSampleRate());
+			oscM.push_back(FMOp(APP->engine->getSampleRate()));
+			oscC.push_back(FMOp(APP->engine->getSampleRate()));
 			feedbacks[0][c] = 0.0f;
 			feedbacks[1][c] = 0.0f;
 		}

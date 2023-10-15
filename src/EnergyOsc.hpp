@@ -291,16 +291,16 @@ struct FMOp {
 	int _steps = 0;
 	float _feedbackDelayedSample = 0.0f;
 	float _maxFrequency = 0.0f;
-	float _buffer[oversample];
+	float _buffer[oversample] = {};
 	float _oversampleMix = 0.0f;
 	Phasor _phasor;
 	SineTableOscillator _sineTable;
 	CICDecimator _decimator;
 	SlewLimiter _feedbackSL;
 
-	void construct(float _sampleRate) {
-		onReset();
+	FMOp(float _sampleRate) {
 		onSampleRateChange(_sampleRate);
+		onReset();
 	}
 
 	void onReset();

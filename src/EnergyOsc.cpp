@@ -227,13 +227,12 @@ void FMOp::dataFromJson(json_t *rootJ, std::string id) {
 		_phasor.setPhase((Phasor::phase_t)json_integer_value(phaseJ));
 }
 
-void FMOp::onSampleRateChange(float newSampleRate) {
+void FMOp::onSampleRateChange(const float newSampleRate) {
 	_steps = modulationSteps;
-	float sampleRate = newSampleRate;
-	_phasor.setSampleRate(sampleRate);
-	_decimator.setParams(sampleRate, oversample);
-	_maxFrequency = 0.475f * sampleRate;
-	_feedbackSL.setParams(sampleRate, 5.0f, 1.0f);
+	_phasor.setSampleRate(newSampleRate);
+	_decimator.setParams(newSampleRate, oversample);
+	_maxFrequency = 0.475f * newSampleRate;
+	_feedbackSL.setParams(newSampleRate, 5.0f, 1.0f);
 }
 
 float FMOp::step(float voct, float momentum, float fmDepth, float fmInput) {

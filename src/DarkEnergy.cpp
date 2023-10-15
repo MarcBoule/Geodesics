@@ -71,8 +71,8 @@ struct DarkEnergy : Module {
 	int panelTheme;
 	
 	// Need to save, with reset
-	FMOp oscM[N_POLY];
-	FMOp oscC[N_POLY];
+	std::vector<FMOp> oscM;// size N_POLY
+	std::vector<FMOp> oscC;// size N_POLY
 	int plancks[2];// index is left/right, value is: 0 = not quantized, 1 = 5th+octs, 2 = adds -10V offset (LFO)
 	int mode;// main center modulation modes (bit 0 is fmDepth mode, bit 1 is feedback mode; a 0 bit means both sides CV modulated the same, a 1 bit means pos attenuverter mods right side only, neg atten means mod left side only (but still a positive attenuverter value though!))
 	int dest;// mult destination (bit 0 is fmDepth mode, bit 1 is feedback mode; a 0 bit means both sides CV modulated the same, a 1 bit means pos attenuverter mods right side only, neg atten means mod left side only (but still a positive attenuverter value though!))
@@ -144,9 +144,11 @@ struct DarkEnergy : Module {
 		configOutput(M_OUTPUT, "M");
 		configOutput(C_OUTPUT, "C");
 		
+		oscM.reserve(N_POLY);
+		oscC.reserve(N_POLY);
 		for (int c = 0; c < N_POLY; c++) {
-			oscM[c].construct(APP->engine->getSampleRate());
-			oscC[c].construct(APP->engine->getSampleRate());
+			oscM.push_back(FMOp(APP->engine->getSampleRate()));
+			oscC.push_back(FMOp(APP->engine->getSampleRate()));
 			feedbacks[0][c] = 0.0f;
 			feedbacks[1][c] = 0.0f;
 			depths[0][c] = 0.0f;
