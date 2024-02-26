@@ -359,7 +359,7 @@ struct Pulsars : Module {
 		if (connectedNum[0] > 0) {
 			float indexPercent;
 			float indexNextPercent;
-			int *srcConnected = connected[0];
+			const int *srcConnected = connected[0];
 			if (cvModes[0] < 2) {
 				// regular modes
 				if (!isVoid[0]) {
@@ -405,7 +405,7 @@ struct Pulsars : Module {
 		if (connectedNum[1] > 0) {
 			float indexPercent;
 			float indexNextPercent;
-			int *srcConnected = connected[1];
+			const int *srcConnected = connected[1];
 			if (cvModes[1] < 2) {
 				// regular modes
 				if (!isVoid[1]) {
