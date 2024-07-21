@@ -88,6 +88,13 @@
 			"name": "Blank-Panel Logo",
 			"description": "Blank panel with logo",
 			"tags": ["Blank"]
+		},
+		{
+			"slug": "Twin-Paradox",
+			"name": "Twin Paradox",
+			"description": "Relativistic clock generator",
+			"manualUrl": "https://www.pyer.be/geodesics.html",
+			"tags": ["Clock generator"]
 		}
 	]
 }

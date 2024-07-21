@@ -31,6 +31,7 @@ extern Model *modelEnergy;
 extern Model *modelDarkEnergy;
 extern Model *modelTorus;
 extern Model *modelFate;
+extern Model *modelTwinParadox;
 extern Model *modelBlankLogo;
 extern Model *modelBlankInfo;
 
@@ -276,12 +277,39 @@ struct Trigger {
 		}
 		else {
 			// LOW to HIGH
-			if (in >= 1.0f) {
+			if (in >= 0.9f) {
 				state = true;
 				return true;
 			}
 		}
 		return false;
+	}	
+};	
+
+
+struct TriggerRiseFall {
+	bool state = false;
+
+	void reset() {
+		state = false;
+	}
+
+	int process(float in) {
+		if (state) {
+			// HIGH to LOW
+			if (in <= 0.1f) {
+				state = false;
+				return -1;
+			}
+		}
+		else {
+			// LOW to HIGH
+			if (in >= 0.9f) {
+				state = true;
+				return 1;
+			}
+		}
+		return 0;
 	}	
 };	
 

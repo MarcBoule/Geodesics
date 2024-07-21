@@ -2,7 +2,7 @@
 //Thermodynamic Evolving Sequencer module for VCV Rack by Pierre Collard and Marc Boulé
 //
 //Based on code from the Fundamental plugins by Andrew Belt and graphics  
-//  from the Component Library by Wes Milholen. 
+//  from the Component Library. 
 //See ./LICENSE.txt for all licenses
 //See ./res/fonts/ for font licenses
 //
