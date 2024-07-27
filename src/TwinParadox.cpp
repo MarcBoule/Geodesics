@@ -113,8 +113,6 @@ struct TwinParadox : Module {
 		BPM_PARAM,
 		RESET_PARAM,
 		RUN_PARAM,
-		BPMMODE_DOWN_PARAM,
-		BPMMODE_UP_PARAM,
 		NUM_PARAMS
 	};
 	enum InputIds {
@@ -124,17 +122,18 @@ struct TwinParadox : Module {
 		NUM_INPUTS
 	};
 	enum OutputIds {
-		ENUMS(CLK_OUTPUTS, 2),// master is index 0
+		TWIN1_OUTPUT,
+		TWIN2_OUTPUT,
 		RESET_OUTPUT,
 		RUN_OUTPUT,
-		BPM_OUTPUT,
+		SYNC_OUTPUT,
 		NUM_OUTPUTS
 	};
 	enum LightIds {
 		RESET_LIGHT,
 		RUN_LIGHT,
-		ENUMS(CLK_LIGHTS, 3 * 2),// master is index 0, room for GreenRed
-		ENUMS(BPMSYNC_LIGHT, 2),// room for GreenRed
+		ENUMS(SYNCING_LIGHT, 2),// room for GreenRed
+		ENUMS(SYNCINMODE_LIGHT, 2),// room for GreenRed
 		NUM_LIGHTS
 	};
 	
@@ -156,29 +155,28 @@ struct TwinParadox : Module {
 	
 	// Need to save, with reset
 	bool running;
-	bool bpmDetectionMode;
 	unsigned int resetOnStartStop;// see bit masks ON_STOP_INT_RST_MSK, ON_START_EXT_RST_MSK, etc
-	int ppqn;
+	int syncInPpqn;// 0 means output BPM CV instead
+	int syncOutPpqn;// 0 means output BPM CV instead
 	bool resetClockOutputsHigh;
 	bool momentaryRunInput;// true = trigger (original rising edge only version), false = level sensitive (emulated with rising and falling detection)
 	float bpmInputScale;// -1.0f to 1.0f
 	float bpmInputOffset;// -10.0f to 10.0f
 
 	// No need to save, with reset
-	long editingBpmMode;// 0 when no edit bpmMode, downward step counter timer when edit, negative upward when show can't edit ("--") 
 	double sampleRate;
 	double sampleTime;
-	std::vector<Clock> clk;// size 4
+	std::vector<Clock> clk;// size 3 (REF, TRAV, SYNC_OUT)
 	float bufferedKnobs[2];// must be before ratiosDoubled, master is index 1, ratio knobs are 0 to 0
 	float bufferedBpm;
 	bool syncRatio;
 	double ratioTwin;
-	int extPulseNumber;// 0 to ppqn - 1
+	int extPulseNumber;// 0 to syncInPpqn - 1
 	double extIntervalTime;// also used for auto mode change to P24 (2nd use of this member variable)
 	double timeoutTime;
 	float newMasterLength;
 	float masterLength;
-	float clkOutputs[2];
+	float clkOutputs[3];
 	
 	// No need to save, no reset
 	bool scheduledReset = false;
@@ -191,8 +189,6 @@ struct TwinParadox : Module {
 	Trigger runButtonTrigger;
 	TriggerRiseFall runInputTrigger;
 	Trigger bpmDetectTrigger;
-	Trigger bpmModeUpTrigger;
-	Trigger bpmModeDownTrigger;
 	Trigger displayUpTrigger;
 	Trigger displayDownTrigger;
 	dsp::PulseGenerator resetPulse;
@@ -218,8 +214,6 @@ struct TwinParadox : Module {
 
 		configParam(RESET_PARAM, 0.0f, 1.0f, 0.0f, "Reset");
 		configParam(RUN_PARAM, 0.0f, 1.0f, 0.0f, "Run");
-		configParam(BPMMODE_DOWN_PARAM, 0.0f, 1.0f, 0.0f, "Bpm mode prev");
-		configParam(BPMMODE_UP_PARAM, 0.0f, 1.0f, 0.0f,  "Bpm mode next");
 		configParam(RATIO_PARAMS + 0, 1.0f, 8.0f, 1.0f, "Main duration");
 		paramQuantities[RATIO_PARAMS + 0]->snapEnabled = true;
 		configParam(RATIO_PARAMS + 1, 1.0f, 8.0f, 1.0f, "Twin duration");
@@ -232,18 +226,19 @@ struct TwinParadox : Module {
 		configInput(RUN_INPUT, "Run");
 		configInput(BPM_INPUT, "BPM CV / Ext clock");
 
-		configOutput(CLK_OUTPUTS + 0, "Main clock");
-		configOutput(CLK_OUTPUTS + 1, "Traveler clock");
+		configOutput(TWIN1_OUTPUT, "Twin 1 clock");
+		configOutput(TWIN2_OUTPUT, "Twin 2 clock");
 		configOutput(RESET_OUTPUT, "Reset");
 		configOutput(RUN_OUTPUT, "Run");
-		configOutput(BPM_OUTPUT, "BPM CV / Ext clock thru");
+		configOutput(SYNC_OUTPUT, "Sync clock");
 		
 		configBypass(RESET_INPUT, RESET_OUTPUT);
 		configBypass(RUN_INPUT, RUN_OUTPUT);
-		configBypass(BPM_INPUT, BPM_OUTPUT);
+		configBypass(BPM_INPUT, SYNC_OUTPUT);
 
-		clk.reserve(2);
+		clk.reserve(3);
 		clk.push_back(Clock(nullptr, &resetClockOutputsHigh));
+		clk.push_back(Clock(&clk[0], &resetClockOutputsHigh));		
 		clk.push_back(Clock(&clk[0], &resetClockOutputsHigh));		
 
 		onReset();
@@ -254,9 +249,9 @@ struct TwinParadox : Module {
 
 	void onReset() override final {
 		running = true;
-		bpmDetectionMode = false;
 		resetOnStartStop = 0;
-		ppqn = 4;
+		syncInPpqn = 0;// must start in CV mode, or else users won't understand why run won't turn on (since it's automatic in ppqn!=0 mode)
+		syncOutPpqn = 48;
 		resetClockOutputsHigh = true;
 		momentaryRunInput = true;
 		bpmInputScale = 1.0f;
@@ -264,7 +259,6 @@ struct TwinParadox : Module {
 		resetNonJson(false);
 	}
 	void resetNonJson(bool delayed) {// delay thread sensitive parts (i.e. schedule them so that process() will do them)
-		editingBpmMode = 0l;
 		if (delayed) {
 			scheduledReset = true;// will be a soft reset
 		}
@@ -281,7 +275,7 @@ struct TwinParadox : Module {
 	void resetTwinParadox(bool hardReset) {// set hardReset to true to revert learned BPM to 120 in sync mode, or else when false, learned bmp will stay persistent
 		sampleRate = (double)(APP->engine->getSampleRate());
 		sampleTime = 1.0 / sampleRate;
-		for (int i = 0; i < 2; i++) {
+		for (int i = 0; i < 3; i++) {
 			clk[i].reset();
 			clkOutputs[i] = resetClockOutputsHigh ? 10.0f : 0.0f;
 		}
@@ -292,10 +286,10 @@ struct TwinParadox : Module {
 		ratioTwin = getRatioTwin();
 		extPulseNumber = -1;
 		extIntervalTime = 0.0;// also used for auto mode change to P24 (2nd use of this member variable)
-		timeoutTime = 2.0 / ppqn + 0.1;// worst case. This is a double period at 30 BPM (4s), divided by the expected number of edges in the double period 
-									   //   which is 2*ppqn, plus epsilon. This timeoutTime is only used for timingout the 2nd clock edge
+		timeoutTime = 2.0 / syncInPpqn + 0.1;// worst case. This is a double period at 30 BPM (4s), divided by the expected number of edges in the double period 
+									   //   which is 2*syncInPpqn, plus epsilon. This timeoutTime is only used for timingout the 2nd clock edge
 		if (inputs[BPM_INPUT].isConnected()) {
-			if (bpmDetectionMode) {
+			if (syncInPpqn != 0) {
 				if (hardReset) {
 					newMasterLength = 0.5f;// 120 BPM
 				}
@@ -321,14 +315,14 @@ struct TwinParadox : Module {
 		// running
 		json_object_set_new(rootJ, "running", json_boolean(running));
 		
-		// bpmDetectionMode
-		json_object_set_new(rootJ, "bpmDetectionMode", json_boolean(bpmDetectionMode));
-		
 		// resetOnStartStop
 		json_object_set_new(rootJ, "resetOnStartStop", json_integer(resetOnStartStop));
 		
-		// ppqn
-		json_object_set_new(rootJ, "ppqn", json_integer(ppqn));
+		// syncInPpqn
+		json_object_set_new(rootJ, "syncInPpqn", json_integer(syncInPpqn));
+		
+		// syncOutPpqn
+		json_object_set_new(rootJ, "syncOutPpqn", json_integer(syncOutPpqn));
 		
 		// resetClockOutputsHigh
 		json_object_set_new(rootJ, "resetClockOutputsHigh", json_boolean(resetClockOutputsHigh));
@@ -357,21 +351,21 @@ struct TwinParadox : Module {
 		if (runningJ)
 			running = json_is_true(runningJ);
 
-		// bpmDetectionMode
-		json_t *bpmDetectionModeJ = json_object_get(rootJ, "bpmDetectionMode");
-		if (bpmDetectionModeJ)
-			bpmDetectionMode = json_is_true(bpmDetectionModeJ);
-
 		// resetOnStartStop
 		json_t *resetOnStartStopJ = json_object_get(rootJ, "resetOnStartStop");
 		if (resetOnStartStopJ) {
 			resetOnStartStop = json_integer_value(resetOnStartStopJ);
 		}
 
-		// ppqn
-		json_t *ppqnJ = json_object_get(rootJ, "ppqn");
-		if (ppqnJ)
-			ppqn = json_integer_value(ppqnJ);
+		// syncInPpqn
+		json_t *syncInPpqnJ = json_object_get(rootJ, "syncInPpqn");
+		if (syncInPpqnJ)
+			syncInPpqn = json_integer_value(syncInPpqnJ);
+
+		// syncOutPpqn
+		json_t *syncOutPpqnJ = json_object_get(rootJ, "syncOutPpqn");
+		if (syncOutPpqnJ)
+			syncOutPpqn = json_integer_value(syncOutPpqnJ);
 
 		// resetClockOutputsHigh
 		json_t *resetClockOutputsHighJ = json_object_get(rootJ, "resetClockOutputsHigh");
@@ -398,7 +392,7 @@ struct TwinParadox : Module {
 	
 
 	void toggleRun(void) {
-		if (!(bpmDetectionMode && inputs[BPM_INPUT].isConnected()) || running) {// toggle when not BPM detect, turn off only when BPM detect (allows turn off faster than timeout if don't want any trailing beats after stoppage). If allow manually start in bpmDetectionMode   the clock will not know which pulse is the 1st of a ppqn set, so only allow stop
+		if (!((syncInPpqn != 0) && inputs[BPM_INPUT].isConnected()) || running) {// toggle when not BPM detect, turn off only when BPM detect (allows turn off faster than timeout if don't want any trailing beats after stoppage). If allow manually start in bpmDetectionMode   the clock will not know which pulse is the 1st of a syncInPpqn set, so only allow stop
 			running = !running;
 			runPulse.trigger(0.001f);
 			if (running) {
@@ -478,38 +472,6 @@ struct TwinParadox : Module {
 			if (bufferedBpm != params[BPM_PARAM].getValue()) {
 				bufferedBpm = params[BPM_PARAM].getValue();
 			}
-						
-			// BPM mode
-			bool trigUp = bpmModeUpTrigger.process(params[BPMMODE_UP_PARAM].getValue());
-			bool trigDown = bpmModeDownTrigger.process(params[BPMMODE_DOWN_PARAM].getValue());
-			if (trigUp || trigDown) {
-				if (editingBpmMode != 0ul) {// force active before allow change
-					if (bpmDetectionMode == false) {
-						bpmDetectionMode = true;
-						ppqn = (trigUp ? 2 : 24);
-					}
-					else {
-						if (ppqn == 2) {
-							if (trigUp) ppqn = 4;
-							else bpmDetectionMode = false;
-						}
-						else if (ppqn == 4)
-							ppqn = (trigUp ? 8 : 2);
-						else if (ppqn == 8)
-							ppqn = (trigUp ? 12 : 4);
-						else if (ppqn == 12)
-							ppqn = (trigUp ? 16 : 8);
-						else if (ppqn == 16)
-							ppqn = (trigUp ? 24 : 12);
-						else {// 24
-							if (trigUp) bpmDetectionMode = false;
-							else ppqn = 16;
-						}
-					}
-					extIntervalTime = 0.0;// this is for auto mode change to P24
-				}
-				editingBpmMode = (long) (3.0 * sampleRate / RefreshCounter::displayRefreshStepSkips);
-			}
 		}// userInputs refresh
 	
 		// BPM input and knob
@@ -518,12 +480,12 @@ struct TwinParadox : Module {
 			bool trigBpmInValue = bpmDetectTrigger.process(inputs[BPM_INPUT].getVoltage());
 			
 			// BPM Detection method
-			if (bpmDetectionMode) {
+			if (syncInPpqn != 0) {
 				// rising edge detect
 				if (trigBpmInValue) {
 					if (!running) {
 						// this must be the only way to start running when in bpmDetectionMode or else
-						//   when manually starting, the clock will not know which pulse is the 1st of a ppqn set
+						//   when manually starting, the clock will not know which pulse is the 1st of a syncInPpqn set
 						running = true;
 						runPulse.trigger(0.001f);
 						resetTwinParadox(false);
@@ -537,13 +499,13 @@ struct TwinParadox : Module {
 					}
 					if (running) {
 						extPulseNumber++;
-						if (extPulseNumber >= ppqn)
+						if (extPulseNumber >= syncInPpqn)
 							extPulseNumber = 0;
 						if (extPulseNumber == 0)// if first pulse, start interval timer
 							extIntervalTime = 0.0;
 						else {
-							// all other ppqn pulses except the first one. now we have an interval upon which to plan a stretch 
-							double timeLeft = extIntervalTime * (double)(ppqn - extPulseNumber) / ((double)extPulseNumber);
+							// all other syncInPpqn pulses except the first one. now we have an interval upon which to plan a stretch 
+							double timeLeft = extIntervalTime * (double)(syncInPpqn - extPulseNumber) / ((double)extPulseNumber);
 							newMasterLength = clamp(clk[0].getStep() + timeLeft, masterLengthMin / 1.5f, masterLengthMax * 1.5f);// extended range for better sync ability (20-450 BPM)
 							timeoutTime = extIntervalTime * ((double)(1 + extPulseNumber) / ((double)extPulseNumber)) + 0.1; // when a second or higher clock edge is received, 
 							//  the timeout is the predicted next edge (which is extIntervalTime + extIntervalTime / extPulseNumber) plus epsilon
@@ -587,8 +549,7 @@ struct TwinParadox : Module {
 						if (extIntervalTime > ((60.0 / 300.0) / 24.0) && extIntervalTime < ((60.0 / 30.0) / 4.0)) {
 							// this is the second of two quick successive pulses, so switch to P24
 							extIntervalTime = 0.0;
-							bpmDetectionMode = true;
-							ppqn = 24;
+							syncInPpqn = 24;
 						}
 						else {
 							// too long or too short, so restart and treat this as the first pulse for another check
@@ -603,7 +564,7 @@ struct TwinParadox : Module {
 		}
 		if (newMasterLength != masterLength) {
 			double lengthStretchFactor = ((double)newMasterLength) / ((double)masterLength);
-			for (int i = 0; i < 2; i++) {
+			for (int i = 0; i < 3; i++) {
 				clk[i].applyNewLength(lengthStretchFactor);
 			}
 			masterLength = newMasterLength;
@@ -620,6 +581,7 @@ struct TwinParadox : Module {
 				// See if ratio knob changed (or uninitialized)
 				if (syncRatio) {
 					clk[1].reset();// force reset (thus refresh) of that sub-clock
+					clk[2].reset();// force reset (thus refresh) of that sub-clock
 					ratioTwin = getRatioTwin();
 					syncRatio = false;
 				}
@@ -634,20 +596,26 @@ struct TwinParadox : Module {
 				clk[1].start();
 			}
 			clkOutputs[1] = clk[1].isHigh() ? 10.0f : 0.0f;
+			
+			if (clk[2].isReset()) {
+				clk[2].setup(masterLength / ((double)syncOutPpqn), syncOutPpqn * ratioTwinMainDur, sampleTime);
+				clk[2].start();
+			}
+			clkOutputs[2] = clk[2].isHigh() ? 10.0f : 0.0f;
 
 
 			// Step clocks
-			for (int i = 0; i < 2; i++)
+			for (int i = 0; i < 3; i++)
 				clk[i].stepClock();
 		}
 		
 		// outputs
-		for (int i = 0; i < 2; i++) {
-			outputs[CLK_OUTPUTS + i].setVoltage(clkOutputs[i]);
-		}
+		outputs[TWIN1_OUTPUT].setVoltage(clkOutputs[0]);
+		outputs[TWIN2_OUTPUT].setVoltage(clkOutputs[1]);
+		outputs[SYNC_OUTPUT].setVoltage(clkOutputs[2]);
+		
 		outputs[RESET_OUTPUT].setVoltage((resetPulse.process((float)sampleTime) ? 10.0f : 0.0f));
 		outputs[RUN_OUTPUT].setVoltage((runPulse.process((float)sampleTime) ? 10.0f : 0.0f));
-		outputs[BPM_OUTPUT].setVoltage( inputs[BPM_INPUT].isConnected() ? inputs[BPM_INPUT].getVoltage() : log2f(0.5f / masterLength));
 			
 		
 		// lights
@@ -663,27 +631,21 @@ struct TwinParadox : Module {
 			bool warningFlashState = true;
 			if (cantRunWarning > 0l) 
 				warningFlashState = calcWarningFlash(cantRunWarning, (long) (0.7 * sampleRate / RefreshCounter::displayRefreshStepSkips));
-			lights[BPMSYNC_LIGHT + 0].setBrightness((bpmDetectionMode && warningFlashState) ? 1.0f : 0.0f);
-			lights[BPMSYNC_LIGHT + 1].setBrightness((bpmDetectionMode && warningFlashState) ? (float)((ppqn - 2)*(ppqn - 2))/440.0f : 0.0f);			
+			lights[SYNCINMODE_LIGHT + 0].setBrightness((syncInPpqn != 0 && warningFlashState) ? 1.0f : 0.0f);
+			lights[SYNCINMODE_LIGHT + 1].setBrightness((syncInPpqn != 0 && warningFlashState) ? (float)((syncInPpqn - 2)*(syncInPpqn - 2))/440.0f : 0.0f);			
 			
 			// ratios synched lights
-			for (int i = 0; i < 3; i++) {
-				if (i > 0 && running && syncRatio) {// red
-					lights[CLK_LIGHTS + i * 2 + 0].setBrightness(0.0f);
-					lights[CLK_LIGHTS + i * 2 + 1].setBrightness(1.0f);
-				}
-				else {// off
-					lights[CLK_LIGHTS + i * 2 + 0].setBrightness(0.0f);
-					lights[CLK_LIGHTS + i * 2 + 1].setBrightness(0.0f);
-				}
+			if (running && syncRatio) {// red
+				lights[SYNCING_LIGHT + 0].setBrightness(0.0f);
+				lights[SYNCING_LIGHT + 1].setBrightness(1.0f);
+			}
+			else {// off
+				lights[SYNCING_LIGHT + 0].setBrightness(0.0f);
+				lights[SYNCING_LIGHT + 1].setBrightness(0.0f);
 			}
 
 			if (cantRunWarning > 0l)
 				cantRunWarning--;
-			
-			editingBpmMode--;
-			if (editingBpmMode < 0l)
-				editingBpmMode = 0l;
 			
 		}// lightRefreshCounter
 	}// process()
@@ -695,7 +657,7 @@ struct TwinParadoxWidget : ModuleWidget {
 	std::shared_ptr<window::Svg> light_svg;
 	std::shared_ptr<window::Svg> dark_svg;
 
-	struct BpmRatioDisplayWidget : TransparentWidget {
+	/*struct BpmRatioDisplayWidget : TransparentWidget {
 		TwinParadox *module = nullptr;
 		std::shared_ptr<Font> font;
 		std::string fontPath;
@@ -739,7 +701,7 @@ struct TwinParadoxWidget : ModuleWidget {
 				nvgText(args.vg, textPos.x, textPos.y, displayStr, NULL);
 			}
 		}
-	};		
+	};*/		
 	
 	void appendContextMenu(Menu *menu) override {
 		TwinParadox *module = static_cast<TwinParadox*>(this->module);
@@ -784,6 +746,29 @@ struct TwinParadoxWidget : ModuleWidget {
 			[=]() {return !module->momentaryRunInput;},
 			[=](bool loop) {module->momentaryRunInput = !module->momentaryRunInput;}
 		));
+		
+		menu->addChild(createSubmenuItem("Sync input mode", "", [=](Menu* menu) {
+			const int ppqns[7] = {0, 2, 4, 8, 12, 16, 24};
+			for (int i = 0; i < 7; i++) {
+				std::string label = (i == 0 ? "BPM CV" : string::f("%i PPQN",ppqns[i]));
+				menu->addChild(createCheckMenuItem(label, "",
+					[=]() {return module->syncInPpqn == ppqns[i];},
+					[=]() {module->syncInPpqn = ppqns[i]; 
+							module->extIntervalTime = 0.0;}// this is for auto mode change to P24
+				));
+			}
+		}));
+
+		menu->addChild(createSubmenuItem("Sync output mode", "", [=](Menu* menu) {
+			const int ppqns2[4] = {1, 12, 24, 48};
+			for (int i = 0; i < 4; i++) {
+				std::string label = (string::f("×%i",ppqns2[i]));
+				menu->addChild(createCheckMenuItem(label, "",
+					[=]() {return module->syncOutPpqn == ppqns2[i];},
+					[=]() {module->syncOutPpqn = ppqns2[i];}
+				));
+			}
+		}));
 
 		//createBPMCVInputMenu(menu, &module->bpmInputScale, &module->bpmInputOffset);
 	}
@@ -794,8 +779,8 @@ struct TwinParadoxWidget : ModuleWidget {
 		setModule(module);
 
 		// Main panels from Inkscape
-		light_svg = APP->window->loadSvg(asset::plugin(pluginInstance, "res/WhiteLight/BlankInfo-WL.svg"));
-		dark_svg = APP->window->loadSvg(asset::plugin(pluginInstance, "res/DarkMatter/BlankInfo-DM.svg"));
+		light_svg = APP->window->loadSvg(asset::plugin(pluginInstance, "res/WhiteLight/TwinParadox-WL.svg"));
+		dark_svg = APP->window->loadSvg(asset::plugin(pluginInstance, "res/WhiteLight/TwinParadox-WL.svg"));
 		int panelTheme = isDark(module ? (&((static_cast<TwinParadox*>(module))->panelTheme)) : NULL) ? 1 : 0;// need this here since step() not called for module browser
 		setPanel(panelTheme == 0 ? light_svg : dark_svg);		
 		
@@ -810,9 +795,9 @@ struct TwinParadoxWidget : ModuleWidget {
 		static const int row0 = 58;// reset, run, bpm inputs
 		static const int row1 = 95;// reset and run switches, bpm knob
 		static const int row2 = 148;// bpm display, display index lights, master clk out
-		static const int row3 = 198;// display and mode buttons
+		// static const int row3 = 198;// display and mode buttons
 		static const int row4 = 227;// sub clock ratio knobs
-		static const int row5 = 281;// sub clock outs
+		// static const int row5 = 281;// sub clock outs
 		static const int row6 = 328;// reset, run, bpm outputs
 
 
@@ -823,6 +808,8 @@ struct TwinParadoxWidget : ModuleWidget {
 		addInput(createDynamicPort<GeoPort>(VecPx(colC, row0), true, module, TwinParadox::RUN_INPUT, module ? &module->panelTheme : NULL));
 		// Bpm input
 		addInput(createDynamicPort<GeoPort>(VecPx(colR, row0), true, module, TwinParadox::BPM_INPUT, module ? &module->panelTheme : NULL));
+		// BPM mode light
+		addChild(createLightCentered<SmallLight<GreenRedLight>>(VecPx(colR, row0 - 15.0f), module, TwinParadox::SYNCINMODE_LIGHT));		
 		
 
 		// Row 1
@@ -838,29 +825,25 @@ struct TwinParadoxWidget : ModuleWidget {
 
 		// Row 2
 		// Clock master out
-		addOutput(createDynamicPort<GeoPort>(VecPx(colL, row2), false, module, TwinParadox::CLK_OUTPUTS + 0, module ? &module->panelTheme : NULL));
+		addOutput(createDynamicPort<GeoPort>(VecPx(colL, row2), false, module, TwinParadox::TWIN1_OUTPUT, module ? &module->panelTheme : NULL));
+		addOutput(createDynamicPort<GeoPort>(VecPx(colL, row2 + 28.0f), false, module, TwinParadox::TWIN2_OUTPUT, module ? &module->panelTheme : NULL));	
+
 		// Display index lights
 		static const int delY = 10;
-		addChild(createLightCentered<SmallLight<GreenRedLight>>(VecPx(colC - 10.5f, row2  -2 * delY - 4 ), module, TwinParadox::CLK_LIGHTS + 0 * 2));		
-		for (int y = 1; y < 3; y++) {
-			addChild(createLightCentered<SmallLight<GreenRedLight>>(VecPx(colC - 10.5f, row2 + delY * (y - 2) ), module, TwinParadox::CLK_LIGHTS + y * 2));		
-		}
+		addChild(createLightCentered<SmallLight<GreenRedLight>>(VecPx(colC - 10.5f, row2  -2 * delY - 4 ), module, TwinParadox::SYNCING_LIGHT + 0 * 2));		
 		// BPM display
-		BpmRatioDisplayWidget *bpmRatioDisplay = new BpmRatioDisplayWidget();
+		/*BpmRatioDisplayWidget *bpmRatioDisplay = new BpmRatioDisplayWidget();
 		bpmRatioDisplay->box.size = VecPx(55, 30);// 3 characters
 		bpmRatioDisplay->box.pos = VecPx((colR + colC) / 2.0f + 9, row2).minus(bpmRatioDisplay->box.size.div(2));
 		bpmRatioDisplay->module = module;
-		addChild(bpmRatioDisplay);
-		// svgPanel->fb->addChild(new DisplayBackground(bpmRatioDisplay->box.pos, bpmRatioDisplay->box.size, mode));
+		addChild(bpmRatioDisplay);*/
 		
 
 		// Row 3
-		static const int bspaceX = 24;
-		// BPM mode light
-		addChild(createLightCentered<SmallLight<GreenRedLight>>(VecPx(colC, row3), module, TwinParadox::BPMSYNC_LIGHT));		
+		// static const int bspaceX = 24;
 		// BPM mode buttons
-		addParam(createDynamicParam<GeoPushButton>(VecPx(colR - bspaceX + 4, row3), module, TwinParadox::BPMMODE_DOWN_PARAM, module ? &module->panelTheme : NULL));
-		addParam(createDynamicParam<GeoPushButton>(VecPx(colR + 4, row3), module, TwinParadox::BPMMODE_UP_PARAM, module ? &module->panelTheme : NULL));
+		// addParam(createDynamicParam<GeoPushButton>(VecPx(colR - bspaceX + 4, row3), module, TwinParadox::BPMMODE_DOWN_PARAM, module ? &module->panelTheme : NULL));
+		// addParam(createDynamicParam<GeoPushButton>(VecPx(colR + 4, row3), module, TwinParadox::BPMMODE_UP_PARAM, module ? &module->panelTheme : NULL));
 
 		
 		// Row 4 		
@@ -871,7 +854,6 @@ struct TwinParadoxWidget : ModuleWidget {
 
 		// Row 5
 		// Sub-clock outputs
-		addOutput(createDynamicPort<GeoPort>(VecPx(colL, row5), false, module, TwinParadox::CLK_OUTPUTS + 1, module ? &module->panelTheme : NULL));	
 
 
 		// Row 6 (last row)
@@ -879,8 +861,8 @@ struct TwinParadoxWidget : ModuleWidget {
 		addOutput(createDynamicPort<GeoPort>(VecPx(colL, row6), false, module, TwinParadox::RESET_OUTPUT, module ? &module->panelTheme : NULL));
 		// Run out
 		addOutput(createDynamicPort<GeoPort>(VecPx(colC, row6), false, module, TwinParadox::RUN_OUTPUT, module ? &module->panelTheme : NULL));
-		// Out out
-		addOutput(createDynamicPort<GeoPort>(VecPx(colR, row6), false, module, TwinParadox::BPM_OUTPUT, module ? &module->panelTheme : NULL));
+		// Sync out
+		addOutput(createDynamicPort<GeoPort>(VecPx(colR, row6), false, module, TwinParadox::SYNC_OUTPUT, module ? &module->panelTheme : NULL));
 
 	}
 	
