@@ -760,7 +760,7 @@ struct TwinParadoxWidget : ModuleWidget {
 			}
 		}));
 
-		menu->addChild(createSubmenuItem("Sync output mode", "", [=](Menu* menu) {
+		menu->addChild(createSubmenuItem("Sync output multiplier", "", [=](Menu* menu) {
 			const int ppqns2[4] = {1, 12, 24, 48};
 			for (int i = 0; i < 4; i++) {
 				std::string label = (string::f("×%i",ppqns2[i]));
