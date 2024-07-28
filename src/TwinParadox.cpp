@@ -117,18 +117,25 @@ struct TwinParadox : Module {
 	}	
 
 	enum ParamIds {
-		ENUMS(RATIO_PARAMS, 2), // Duration for Main, Duration for Twin
+		DURREF_PARAM,
+		DURTRAV_PARAM,
 		BPM_PARAM,
 		RESET_PARAM,
 		RUN_PARAM,
 		TRAVPROB_PARAM,
 		SWAPPROB_PARAM,
+		TRAVEL_PARAM,
 		NUM_PARAMS
 	};
 	enum InputIds {
 		RESET_INPUT,
 		RUN_INPUT,
 		BPM_INPUT,
+		TRAVEL_INPUT,
+		TRAVPROB_INPUT,
+		SWAPPROB_INPUT,
+		DURREF_INPUT,
+		DURTRAV_INPUT,
 		NUM_INPUTS
 	};
 	enum OutputIds {
@@ -146,6 +153,7 @@ struct TwinParadox : Module {
 		ENUMS(SYNCINMODE_LIGHT, 2),// room for GreenRed
 		ENUMS(DURREF_LIGHTS, 8),
 		ENUMS(DURTRAV_LIGHTS, 8),
+		TRAVEL_LIGHT,
 		NUM_LIGHTS
 	};
 	
@@ -186,6 +194,7 @@ struct TwinParadox : Module {
 	float newMasterLength;
 	float masterLength;
 	float clkOutputs[3];
+	bool pendingTravelReq;
 	
 	// No need to save, no reset
 	bool scheduledReset = false;
@@ -196,18 +205,21 @@ struct TwinParadox : Module {
 	Trigger runButtonTrigger;
 	TriggerRiseFall runInputTrigger;
 	Trigger bpmDetectTrigger;
-	Trigger displayUpTrigger;
-	Trigger displayDownTrigger;
+	Trigger travelTrigger;
 	dsp::PulseGenerator resetPulse;
 	dsp::PulseGenerator runPulse;
 	dsp::PulseGenerator meetPulse;
 
+
 	int getDurationRef() {
-		return (int)(params[RATIO_PARAMS + 0].getValue() + 0.5f);
+		float durValue = params[DURREF_PARAM].getValue();
+		durValue += inputs[DURREF_INPUT].getVoltage() / 10.0f * (8.0f - 1.0f);
+		return (int)(clamp(durValue, 1.0f, 8.0f) + 0.5f);
 	}
 	int getDurationTrav() {
-		return (int)(params[RATIO_PARAMS + 1].getValue() + 0.5f);
-	}
+		float durValue = params[DURTRAV_PARAM].getValue();
+		durValue += inputs[DURTRAV_INPUT].getVoltage() / 10.0f * (8.0f - 1.0f);
+		return (int)(clamp(durValue, 1.0f, 8.0f) + 0.5f);	}
 	
 	double getRatioTrav(int* durationRef, int* durationTrav) {
 		*durationRef = getDurationRef();
@@ -216,30 +228,40 @@ struct TwinParadox : Module {
 	}
 	
 	bool evalTravel() {
-		return (random::uniform() < params[TRAVPROB_PARAM].getValue()); // random::uniform is [0.0, 1.0), see include/util/common.hpp
+		float travelValue = params[TRAVPROB_PARAM].getValue();
+		travelValue += inputs[TRAVPROB_INPUT].getVoltage() / 10.0f;
+		return (random::uniform() < travelValue); // random::uniform is [0.0, 1.0), see include/util/common.hpp
 	}
 	bool evalSwap() {
-		return (random::uniform() < params[SWAPPROB_PARAM].getValue()); // random::uniform is [0.0, 1.0), see include/util/common.hpp
+		float swapValue = params[SWAPPROB_PARAM].getValue();
+		swapValue += inputs[SWAPPROB_INPUT].getVoltage() / 10.0f;
+		return (random::uniform() < swapValue); // random::uniform is [0.0, 1.0), see include/util/common.hpp
 	}
 	
 	
 	TwinParadox() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 
-		configParam(RATIO_PARAMS + 0, 1.0f, 8.0f, 1.0f, "Reference time");
-		paramQuantities[RATIO_PARAMS + 0]->snapEnabled = true;
-		configParam(RATIO_PARAMS + 1, 1.0f, 8.0f, 1.0f, "Travel time");
-		paramQuantities[RATIO_PARAMS + 1]->snapEnabled = true;
+		configParam(DURREF_PARAM, 1.0f, 8.0f, 1.0f, "Reference time");
+		paramQuantities[DURREF_PARAM]->snapEnabled = true;
+		configParam(DURTRAV_PARAM, 1.0f, 8.0f, 1.0f, "Travel time");
+		paramQuantities[DURTRAV_PARAM]->snapEnabled = true;
 		configParam<BpmParam>(BPM_PARAM, (float)(bpmMin), (float)(bpmMax), 120.0f, "Tempo", " BPM");// must be a snap knob, code in step() assumes that a rounded value is read from the knob	(chaining considerations vs BPM detect)
 		paramQuantities[BPM_PARAM]->snapEnabled = true;
 		configParam(RESET_PARAM, 0.0f, 1.0f, 0.0f, "Reset");
 		configParam(RUN_PARAM, 0.0f, 1.0f, 0.0f, "Run");
 		configParam(TRAVPROB_PARAM, 0.0f, 1.0f, 0.0f, "Probability to travel");
-		configParam(SWAPPROB_PARAM, 0.0f, 1.0f, 0.0f, "probability traveler is twin 1");
+		configParam(SWAPPROB_PARAM, 0.0f, 1.0f, 0.0f, "Traveler selection probability");
+		configParam(TRAVEL_PARAM, 0.0f, 1.0f, 0.0f, "Travel");
 		
 		configInput(RESET_INPUT, "Reset");
 		configInput(RUN_INPUT, "Run");
 		configInput(BPM_INPUT, "BPM CV / Ext clock");
+		configInput(TRAVEL_INPUT, "Travel");
+		configInput(TRAVPROB_INPUT, "Travel probability CV");
+		configInput(SWAPPROB_INPUT, "Traveler selection probability CV");
+		configInput(DURREF_INPUT, "Reference time CV");
+		configInput(DURTRAV_INPUT, "Travel time CV");
 
 		configOutput(TWIN1_OUTPUT, "Twin 1 clock");
 		configOutput(TWIN2_OUTPUT, "Twin 2 clock");
@@ -315,6 +337,7 @@ struct TwinParadox : Module {
 		}
 		newMasterLength = clamp(newMasterLength, masterLengthMin, masterLengthMax);
 		masterLength = newMasterLength;
+		pendingTravelReq = false;
 	}	
 	
 	
@@ -482,7 +505,9 @@ struct TwinParadox : Module {
 		}	
 
 		if (refresh.processInputs()) {
-			// none
+			if (travelTrigger.process(inputs[TRAVEL_INPUT].getVoltage() + params[TRAVEL_PARAM].getValue())) {
+				pendingTravelReq = true;
+			}
 		}// userInputs refresh
 	
 		// BPM input and knob
@@ -599,8 +624,9 @@ struct TwinParadox : Module {
 				double ratioTrav = 1.0;
 				int durRef = 1;
 				int durTrav = 1;
-				if (evalTravel()) {
+				if (evalTravel() || pendingTravelReq) {
 					ratioTrav = getRatioTrav(&durRef, &durTrav);
+					pendingTravelReq = false;
 				}
 				
 				// must call setups before starts
@@ -811,7 +837,7 @@ struct TwinParadoxWidget : ModuleWidget {
 		// Bpm input
 		addInput(createDynamicPort<GeoPort>(VecPx(colR, row0), true, module, TwinParadox::BPM_INPUT, module ? &module->panelTheme : NULL));
 		// BPM mode light
-		addChild(createLightCentered<SmallLight<GreenRedLight>>(VecPx(colR, row0 - 15.0f), module, TwinParadox::SYNCINMODE_LIGHT));		
+		addChild(createLightCentered<SmallLight<GreenRedLight>>(VecPx(colR, row0 - 18.0f), module, TwinParadox::SYNCINMODE_LIGHT));		
 		
 
 		// Row 1
@@ -830,9 +856,7 @@ struct TwinParadoxWidget : ModuleWidget {
 		addOutput(createDynamicPort<GeoPort>(VecPx(colL, row2), false, module, TwinParadox::TWIN1_OUTPUT, module ? &module->panelTheme : NULL));
 		addOutput(createDynamicPort<GeoPort>(VecPx(colL, row2 + 28.0f), false, module, TwinParadox::TWIN2_OUTPUT, module ? &module->panelTheme : NULL));	
 
-		// Display index lights
-		// static const int delY = 10;
-		// addChild(createLightCentered<SmallLight<GreenRedLight>>(VecPx(colC - 10.5f, row2  -2 * delY - 4 ), module, TwinParadox::SYNCING_LIGHT + 0 * 2));		
+		// 	
 		// BPM display
 		/*BpmRatioDisplayWidget *bpmRatioDisplay = new BpmRatioDisplayWidget();
 		bpmRatioDisplay->box.size = VecPx(55, 30);// 3 characters
@@ -845,15 +869,23 @@ struct TwinParadoxWidget : ModuleWidget {
 		// static const int bspaceX = 24;
 		// BPM mode buttons
 		// addParam(createDynamicParam<GeoPushButton>(VecPx(colR - bspaceX + 4, row3), module, TwinParadox::BPMMODE_DOWN_PARAM, module ? &module->panelTheme : NULL));
-		// addParam(createDynamicParam<GeoPushButton>(VecPx(colR + 4, row3), module, TwinParadox::BPMMODE_UP_PARAM, module ? &module->panelTheme : NULL));
-
+		addParam(createDynamicParam<GeoPushButton>(VecPx(colR, row2), module, TwinParadox::TRAVEL_PARAM, module ? &module->panelTheme : NULL));
+		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(VecPx(colR, row2 - 18.0f), module, TwinParadox::TRAVEL_LIGHT));	
+		addInput(createDynamicPort<GeoPort>(VecPx(colR, row2 + 28.0f), true, module, TwinParadox::TRAVEL_INPUT, module ? &module->panelTheme : NULL));
 		
 		// Row 4 		
 		// Ratio knobs
-		addParam(createDynamicParam<GeoKnob>(VecPx(colL, row4), module, TwinParadox::RATIO_PARAMS + 0, module ? &module->panelTheme : NULL));
-		addParam(createDynamicParam<GeoKnob>(VecPx(colC, row4), module, TwinParadox::RATIO_PARAMS + 1, module ? &module->panelTheme : NULL));
+		addParam(createDynamicParam<GeoKnob>(VecPx(colL, row4), module, TwinParadox::DURREF_PARAM, module ? &module->panelTheme : NULL));
+		addInput(createDynamicPort<GeoPort>(VecPx(colL, row4 + 28.0f), true, module, TwinParadox::DURREF_INPUT, module ? &module->panelTheme : NULL));
+		
+		addParam(createDynamicParam<GeoKnob>(VecPx(colC, row4), module, TwinParadox::DURTRAV_PARAM, module ? &module->panelTheme : NULL));
+		addInput(createDynamicPort<GeoPort>(VecPx(colC, row4 + 28.0f), true, module, TwinParadox::DURTRAV_INPUT, module ? &module->panelTheme : NULL));
+		
 		addParam(createDynamicParam<GeoKnob>(VecPx(colR, row4), module, TwinParadox::TRAVPROB_PARAM, module ? &module->panelTheme : NULL));
+		addInput(createDynamicPort<GeoPort>(VecPx(colR, row4 + 28.0f), true, module, TwinParadox::TRAVPROB_INPUT, module ? &module->panelTheme : NULL));
+		
 		addParam(createDynamicParam<GeoKnob>(VecPx(colR2, row4), module, TwinParadox::SWAPPROB_PARAM, module ? &module->panelTheme : NULL));
+		addInput(createDynamicPort<GeoPort>(VecPx(colR2, row4 + 28.0f), true, module, TwinParadox::SWAPPROB_INPUT, module ? &module->panelTheme : NULL));
 
 
 		// Row 5
@@ -893,12 +925,14 @@ struct TwinParadoxWidget : ModuleWidget {
 			
 			// gate lights done in process() since they look at output[], and when connecting/disconnecting cables the cable sizes are reset (and buffers cleared), which makes the gate lights flicker
 			
+			m->lights[TwinParadox::TRAVEL_LIGHT].setBrightness(m->pendingTravelReq ? 1.0f : 0.0f);
+			
 			// duration REF lights
 			for (int i = 0; i < 8; i++) {
 				int dur = m->getDurationRef();
 				int it = m->clk[0].getIterationsOrig() - m->clk[0].getIterations();
 				float light = 0.0f;
-				if (i <= it) light = 1.0f;
+				if ((i <= it && m->running) || (i < dur && !m->running)) light = 1.0f;
 				else if (i < dur) light = 0.3f;
 				m->lights[TwinParadox::DURREF_LIGHTS + i].setBrightness(light);
 			}
@@ -907,7 +941,7 @@ struct TwinParadoxWidget : ModuleWidget {
 				int dur = m->getDurationTrav();
 				int it = m->clk[1].getIterationsOrig() - m->clk[1].getIterations();
 				float light = 0.0f;
-				if (i <= it) light = 1.0f;
+				if ((i <= it && m->running) || (i < dur && !m->running)) light = 1.0f;
 				else if (i < dur) light = 0.3f;
 				m->lights[TwinParadox::DURTRAV_LIGHTS + i].setBrightness(light);
 			}
