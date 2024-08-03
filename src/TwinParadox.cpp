@@ -151,8 +151,8 @@ struct TwinParadox : Module {
 		RESET_LIGHT,
 		RUN_LIGHT,
 		ENUMS(SYNCINMODE_LIGHT, 2),// room for GreenRed
-		ENUMS(DURREF_LIGHTS, 8),
-		ENUMS(DURTRAV_LIGHTS, 8),
+		ENUMS(DURREF_LIGHTS, 8 * 3),// room for GeoBlueYellowWhiteLight
+		ENUMS(DURTRAV_LIGHTS, 8 * 3),// room for GeoBlueYellowWhiteLight
 		TRAVEL_LIGHT,
 		NUM_LIGHTS
 	};
@@ -182,7 +182,6 @@ struct TwinParadox : Module {
 	bool momentaryRunInput;// true = trigger (original rising edge only version), false = level sensitive (emulated with rising and falling detection)
 	float bpmInputScale;// -1.0f to 1.0f
 	float bpmInputOffset;// -10.0f to 10.0f
-	bool swap;// when false, twin1=ref & twin2=trav; when true, twin1=trav & twin2=ref
 
 	// No need to save, with reset
 	double sampleRate;
@@ -194,7 +193,9 @@ struct TwinParadox : Module {
 	float newMasterLength;
 	float masterLength;
 	float clkOutputs[3];
+	bool swap;// when false, twin1=ref & twin2=trav; when true, twin1=trav & twin2=ref
 	bool pendingTravelReq;
+	bool traveling;
 	
 	// No need to save, no reset
 	bool scheduledReset = false;
@@ -294,7 +295,6 @@ struct TwinParadox : Module {
 		momentaryRunInput = true;
 		bpmInputScale = 1.0f;
 		bpmInputOffset = 0.0f;
-		swap = false;
 		resetNonJson(false);
 	}
 	void resetNonJson(bool delayed) {// delay thread sensitive parts (i.e. schedule them so that process() will do them)
@@ -337,7 +337,9 @@ struct TwinParadox : Module {
 		}
 		newMasterLength = clamp(newMasterLength, masterLengthMin, masterLengthMax);
 		masterLength = newMasterLength;
+		swap = false;
 		pendingTravelReq = false;
+		traveling = false;
 	}	
 	
 	
@@ -370,9 +372,6 @@ struct TwinParadox : Module {
 
 		// bpmInputOffset
 		json_object_set_new(rootJ, "bpmInputOffset", json_real(bpmInputOffset));
-
-		// swap
-		json_object_set_new(rootJ, "swap", json_boolean(swap));
 		
 		return rootJ;
 	}
@@ -424,11 +423,6 @@ struct TwinParadox : Module {
 		json_t *bpmInputOffsetJ = json_object_get(rootJ, "bpmInputOffset");
 		if (bpmInputOffsetJ)
 			bpmInputOffset = json_number_value(bpmInputOffsetJ);
-
-		// swap
-		json_t *swapJ = json_object_get(rootJ, "swap");
-		if (swapJ)
-			swap = json_is_true(swapJ);
 
 		resetNonJson(true);
 	}
@@ -627,6 +621,10 @@ struct TwinParadox : Module {
 				if (evalTravel() || pendingTravelReq) {
 					ratioTrav = getRatioTrav(&durRef, &durTrav);
 					pendingTravelReq = false;
+					traveling = true;
+				}
+				else {
+					traveling = false;
 				}
 				
 				// must call setups before starts
@@ -904,8 +902,8 @@ struct TwinParadoxWidget : ModuleWidget {
 		
 		
 		for (int i = 0; i < 8; i++) {
-			addChild(createLightCentered<SmallLight<GeoWhiteLight>>(VecPx(200, 50 + 15 * i), module, TwinParadox::DURREF_LIGHTS + i));
-			addChild(createLightCentered<SmallLight<GeoWhiteLight>>(VecPx(240, 50 + 15 * i), module, TwinParadox::DURTRAV_LIGHTS + i));
+			addChild(createLightCentered<SmallLight<GeoBlueYellowWhiteLight>>(VecPx(200, 50 + 15 * i), module, TwinParadox::DURREF_LIGHTS + i * 3));
+			addChild(createLightCentered<SmallLight<GeoBlueYellowWhiteLight>>(VecPx(240, 50 + 15 * i), module, TwinParadox::DURTRAV_LIGHTS + i * 3));
 		}
 
 	}
@@ -927,23 +925,37 @@ struct TwinParadoxWidget : ModuleWidget {
 			
 			m->lights[TwinParadox::TRAVEL_LIGHT].setBrightness(m->pendingTravelReq ? 1.0f : 0.0f);
 			
+			int durRef = m->getDurationRef();
+			int durTrav = m->getDurationTrav();
+			int itRef = m->clk[0].getIterationsOrig() - std::max(1, m->clk[0].getIterations());
+			int itTrav = m->clk[1].getIterationsOrig() - std::max(1, m->clk[1].getIterations());
+			bool traveling = m->traveling; 
+			bool swap = m->swap;
 			// duration REF lights
 			for (int i = 0; i < 8; i++) {
-				int dur = m->getDurationRef();
-				int it = m->clk[0].getIterationsOrig() - m->clk[0].getIterations();
 				float light = 0.0f;
-				if ((i <= it && m->running) || (i < dur && !m->running)) light = 1.0f;
-				else if (i < dur) light = 0.3f;
-				m->lights[TwinParadox::DURREF_LIGHTS + i].setBrightness(light);
+				if ((i <= itRef && m->running) || (i < durRef && !m->running)) light = 1.0f;
+				else if (i < durRef) light = 0.3f;
+				bool wantWhite = (light < 0.5f || !traveling);
+				float blueL =   !wantWhite && !swap ? light : 0.0f;// twin 1
+				float yellowL = !wantWhite && swap  ? light : 0.0f;// twin 2
+				float whiteL =   wantWhite          ? light : 0.0f;
+				m->lights[TwinParadox::DURREF_LIGHTS + i * 3 + 0].setBrightness(blueL);
+				m->lights[TwinParadox::DURREF_LIGHTS + i * 3 + 1].setBrightness(yellowL);
+				m->lights[TwinParadox::DURREF_LIGHTS + i * 3 + 2].setBrightness(whiteL);
 			}
 			// duration TRAV lights
 			for (int i = 0; i < 8; i++) {
-				int dur = m->getDurationTrav();
-				int it = m->clk[1].getIterationsOrig() - m->clk[1].getIterations();
 				float light = 0.0f;
-				if ((i <= it && m->running) || (i < dur && !m->running)) light = 1.0f;
-				else if (i < dur) light = 0.3f;
-				m->lights[TwinParadox::DURTRAV_LIGHTS + i].setBrightness(light);
+				if ((i <= itTrav && m->running) || (i < durTrav && !m->running)) light = 1.0f;
+				else if (i < durTrav) light = 0.3f;
+				bool wantWhite = (light < 0.5f || !traveling);
+				float blueL =   !wantWhite && swap  ? light : 0.0f;// twin 2
+				float yellowL = !wantWhite && !swap ? light : 0.0f;// twin 1
+				float whiteL =   wantWhite          ? light : 0.0f;
+				m->lights[TwinParadox::DURTRAV_LIGHTS + i * 3 + 0].setBrightness(blueL);
+				m->lights[TwinParadox::DURTRAV_LIGHTS + i * 3 + 1].setBrightness(yellowL);
+				m->lights[TwinParadox::DURTRAV_LIGHTS + i * 3 + 2].setBrightness(whiteL);
 			}
 		}		
 		

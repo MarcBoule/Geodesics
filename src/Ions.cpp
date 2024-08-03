@@ -55,7 +55,7 @@ struct Ions : Module {
 		LEAP_LIGHT,
 		ENUMS(OCTA_LIGHTS, 3),// 0 is center, 1 is inside mirrors, 2 is outside mirrors
 		ENUMS(OCTB_LIGHTS, 3),
-		ENUMS(PLANK_LIGHTS, 2),// blue, yellow (both white leds) (modified for 0.6.4 but no effect on patches)
+		ENUMS(PLANK_LIGHTS, 2),// blue, yellow (both white leds)
 		UNCERTANTY_LIGHT,
 		ENUMS(JUMP_LIGHTS, 2),
 		RESETONRUN_LIGHT,
