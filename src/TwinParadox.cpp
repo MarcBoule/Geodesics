@@ -104,17 +104,21 @@ class Clock {
 
 struct TwinParadox : Module {
 	
-	struct BpmParam : ParamQuantity {
+	struct BpmParamQuantity : ParamQuantity {
 		std::string getDisplayValueString() override {
 			return module->inputs[BPM_INPUT].isConnected() ? "Ext." : ParamQuantity::getDisplayValueString();
 		}
 	};
 	
-	inline bool calcWarningFlash(long count, long countInit) {
-		if ( (count > (countInit * 2l / 4l) && count < (countInit * 3l / 4l)) || (count < (countInit * 1l / 4l)) )
-			return false;
-		return true;
-	}	
+	struct DivMultParamQuantity : ParamQuantity {
+		std::string getDisplayValueString() override {
+			int val = std::round(getValue());
+			if (val < 0) {
+				return string::f( "÷%c", '0' + (0x1 << -val) );
+			}
+			return     string::f( "×%c", '0' + (0x1 <<  val) );
+		}
+	};
 
 	enum ParamIds {
 		DURREF_PARAM,
@@ -125,6 +129,7 @@ struct TwinParadox : Module {
 		TRAVPROB_PARAM,
 		SWAPPROB_PARAM,
 		TRAVEL_PARAM,
+		DIVMULT_PARAM,
 		NUM_PARAMS
 	};
 	enum InputIds {
@@ -212,6 +217,11 @@ struct TwinParadox : Module {
 	dsp::PulseGenerator meetPulse;
 
 
+	bool calcWarningFlash(long count, long countInit) {
+		if ( (count > (countInit * 2l / 4l) && count < (countInit * 3l / 4l)) || (count < (countInit * 1l / 4l)) )
+			return false;
+		return true;
+	}	
 	int getDurationRef() {
 		float durValue = params[DURREF_PARAM].getValue();
 		durValue += inputs[DURREF_INPUT].getVoltage() / 10.0f * (8.0f - 1.0f);
@@ -238,7 +248,19 @@ struct TwinParadox : Module {
 		swapValue += inputs[SWAPPROB_INPUT].getVoltage() / 10.0f;
 		return (random::uniform() < swapValue); // random::uniform is [0.0, 1.0), see include/util/common.hpp
 	}
-	
+	int getDivMultKnob() {
+		// this is inverted ratio, so that the period time can be multiplied with return value
+		return (int)std::round(params[DIVMULT_PARAM].getValue());
+	}	
+	double getDivMult() {
+		// this is inverted ratio, so that the period time can be multiplied with return value
+		int val = getDivMultKnob();
+		if (val < 0) {
+			return (double)(0x1 << -val);
+		}
+		return 1.0 / (double)(0x1 << val);
+	}
+
 	
 	TwinParadox() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
@@ -247,13 +269,15 @@ struct TwinParadox : Module {
 		paramQuantities[DURREF_PARAM]->snapEnabled = true;
 		configParam(DURTRAV_PARAM, 1.0f, 8.0f, 1.0f, "Travel time");
 		paramQuantities[DURTRAV_PARAM]->snapEnabled = true;
-		configParam<BpmParam>(BPM_PARAM, (float)(bpmMin), (float)(bpmMax), 120.0f, "Tempo", " BPM");// must be a snap knob, code in step() assumes that a rounded value is read from the knob	(chaining considerations vs BPM detect)
+		configParam<BpmParamQuantity>(BPM_PARAM, (float)(bpmMin), (float)(bpmMax), 120.0f, "Tempo", " BPM");// must be a snap knob, code in step() assumes that a rounded value is read from the knob	(chaining considerations vs BPM detect)
 		paramQuantities[BPM_PARAM]->snapEnabled = true;
 		configParam(RESET_PARAM, 0.0f, 1.0f, 0.0f, "Reset");
 		configParam(RUN_PARAM, 0.0f, 1.0f, 0.0f, "Run");
 		configParam(TRAVPROB_PARAM, 0.0f, 1.0f, 0.0f, "Probability to travel");
 		configParam(SWAPPROB_PARAM, 0.0f, 1.0f, 0.0f, "Traveler selection probability");
 		configParam(TRAVEL_PARAM, 0.0f, 1.0f, 0.0f, "Travel");
+		configParam<DivMultParamQuantity>(DIVMULT_PARAM, -3.0f, 3.0f, 0.0f, "Div/Mult");
+		paramQuantities[DIVMULT_PARAM]->snapEnabled = true;
 		
 		configInput(RESET_INPUT, "Reset");
 		configInput(RUN_INPUT, "Run");
@@ -276,9 +300,9 @@ struct TwinParadox : Module {
 		configBypass(BPM_INPUT, SYNC_OUTPUT);
 
 		clk.reserve(3);
-		clk.push_back(Clock(nullptr, &resetClockOutputsHigh));
-		clk.push_back(Clock(&clk[0], &resetClockOutputsHigh));		
-		clk.push_back(Clock(&clk[0], &resetClockOutputsHigh));		
+		clk.push_back(Clock(nullptr, &resetClockOutputsHigh));// Ref clock
+		clk.push_back(Clock(&clk[0], &resetClockOutputsHigh));// Traveler clock	
+		clk.push_back(Clock(&clk[0], &resetClockOutputsHigh));// Sync out clock		
 
 		onReset();
 		
@@ -326,14 +350,17 @@ struct TwinParadox : Module {
 			if (syncInPpqn != 0) {
 				if (hardReset) {
 					newMasterLength = 0.5f;// 120 BPM
+					newMasterLength *= getDivMult();
 				}
 			}
 			else {
 				newMasterLength = 0.5f / std::pow(2.0f, inputs[BPM_INPUT].getVoltage());// bpm = 120*2^V, T = 60/bpm = 60/(120*2^V) = 0.5/2^V
+				newMasterLength *= getDivMult();
 			}
 		}
 		else {
 			newMasterLength = 60.0f / params[BPM_PARAM].getValue();
+			newMasterLength *= getDivMult();
 		}
 		newMasterLength = clamp(newMasterLength, masterLengthMin, masterLengthMax);
 		masterLength = newMasterLength;
@@ -528,14 +555,20 @@ struct TwinParadox : Module {
 						}
 					}
 					if (running) {
+						int divMultInt = getDivMultKnob();
+						
+						int syncInPpqnMultDiv = divMultInt >= 0 ? 
+													syncInPpqn / (0x1 << divMultInt) :
+													syncInPpqn * (0x1 << -divMultInt);
+						
 						extPulseNumber++;
-						if (extPulseNumber >= syncInPpqn)
+						if (extPulseNumber >= syncInPpqnMultDiv)
 							extPulseNumber = 0;
 						if (extPulseNumber == 0)// if first pulse, start interval timer
 							extIntervalTime = 0.0;
 						else {
-							// all other syncInPpqn pulses except the first one. now we have an interval upon which to plan a stretch 
-							double timeLeft = extIntervalTime * (double)(syncInPpqn - extPulseNumber) / ((double)extPulseNumber);
+							// all other syncInPpqnMultDiv pulses except the first one. now we have an interval upon which to plan a stretch 
+							double timeLeft = extIntervalTime * (double)(syncInPpqnMultDiv - extPulseNumber) / ((double)extPulseNumber);
 							newMasterLength = clamp(clk[0].getStep() + timeLeft, masterLengthMin / 1.5f, masterLengthMax * 1.5f);// extended range for better sync ability (20-450 BPM)
 							timeoutTime = extIntervalTime * ((double)(1 + extPulseNumber) / ((double)extPulseNumber)) + 0.1; // when a second or higher clock edge is received, 
 							//  the timeout is the predicted next edge (which is extIntervalTime + extIntervalTime / extPulseNumber) plus epsilon
@@ -562,6 +595,7 @@ struct TwinParadox : Module {
 				float bpmCV = inputs[BPM_INPUT].getVoltage() * bpmInputScale + bpmInputOffset;
 				newMasterLength = clamp(0.5f / std::pow(2.0f, bpmCV), masterLengthMin, masterLengthMax);// bpm = 120*2^V, T = 60/bpm = 60/(120*2^V) = 0.5/2^V
 				// no need to round since this clocked's master's BPM knob is a snap knob thus already rounded, and with passthru approach, no cumul error
+				newMasterLength *= getDivMult();
 				
 				// detect two quick pulses to automatically change the mode to P24
 				//   re-uses same variable as in bpmDetectionMode
@@ -591,6 +625,7 @@ struct TwinParadox : Module {
 		}
 		else {// BPM_INPUT not active
 			newMasterLength = clamp(60.0f / params[BPM_PARAM].getValue(), masterLengthMin, masterLengthMax);
+			newMasterLength *= getDivMult();
 		}
 		if (newMasterLength != masterLength) {
 			double lengthStretchFactor = ((double)newMasterLength) / ((double)masterLength);
@@ -773,8 +808,9 @@ struct TwinParadoxWidget : ModuleWidget {
 		));
 		
 		menu->addChild(createSubmenuItem("Sync input mode", "", [=](Menu* menu) {
-			const int ppqns[7] = {0, 2, 4, 8, 12, 16, 24};
-			for (int i = 0; i < 7; i++) {
+			const int numPpqns = 3;
+			const int ppqns[numPpqns] = {0, 24, 48};
+			for (int i = 0; i < numPpqns; i++) {
 				std::string label = (i == 0 ? "BPM CV" : string::f("%i PPQN",ppqns[i]));
 				menu->addChild(createCheckMenuItem(label, "",
 					[=]() {return module->syncInPpqn == ppqns[i];},
@@ -785,12 +821,13 @@ struct TwinParadoxWidget : ModuleWidget {
 		}));
 
 		menu->addChild(createSubmenuItem("Sync output multiplier", "", [=](Menu* menu) {
-			const int ppqns2[4] = {1, 12, 24, 48};
-			for (int i = 0; i < 4; i++) {
-				std::string label = (string::f("×%i",ppqns2[i]));
+			const int numMults = 3;
+			const int mults[numMults] = {1, 24, 48};
+			for (int i = 0; i < numMults; i++) {
+				std::string label = (string::f("×%i",mults[i]));
 				menu->addChild(createCheckMenuItem(label, "",
-					[=]() {return module->syncOutPpqn == ppqns2[i];},
-					[=]() {module->syncOutPpqn = ppqns2[i];}
+					[=]() {return module->syncOutPpqn == mults[i];},
+					[=]() {module->syncOutPpqn = mults[i];}
 				));
 			}
 		}));
@@ -867,9 +904,14 @@ struct TwinParadoxWidget : ModuleWidget {
 		// static const int bspaceX = 24;
 		// BPM mode buttons
 		// addParam(createDynamicParam<GeoPushButton>(VecPx(colR - bspaceX + 4, row3), module, TwinParadox::BPMMODE_DOWN_PARAM, module ? &module->panelTheme : NULL));
-		addParam(createDynamicParam<GeoPushButton>(VecPx(colR, row2), module, TwinParadox::TRAVEL_PARAM, module ? &module->panelTheme : NULL));
-		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(VecPx(colR, row2 - 18.0f), module, TwinParadox::TRAVEL_LIGHT));	
-		addInput(createDynamicPort<GeoPort>(VecPx(colR, row2 + 28.0f), true, module, TwinParadox::TRAVEL_INPUT, module ? &module->panelTheme : NULL));
+		addParam(createDynamicParam<GeoPushButton>(VecPx(colC, row2), module, TwinParadox::TRAVEL_PARAM, module ? &module->panelTheme : NULL));
+		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(VecPx(colC, row2 - 18.0f), module, TwinParadox::TRAVEL_LIGHT));	
+		addInput(createDynamicPort<GeoPort>(VecPx(colC, row2 + 28.0f), true, module, TwinParadox::TRAVEL_INPUT, module ? &module->panelTheme : NULL));
+		
+		addParam(createDynamicParam<GeoKnob>(VecPx(colR, row2), module, TwinParadox::DIVMULT_PARAM, module ? &module->panelTheme : NULL));
+		
+		
+		
 		
 		// Row 4 		
 		// Ratio knobs
