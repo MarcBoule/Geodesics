@@ -646,19 +646,21 @@ struct TwinParadox : Module {
 				// See if ratio knob changed (or uninitialized)
 				clk[1].reset();// force reset (thus refresh) of that sub-clock
 				clk[2].reset();// force reset (thus refresh) of that sub-clock
-				meetPulse.trigger(0.001f);
+				if (traveling) {
+					meetPulse.trigger(0.001f);
+				}
 				
 				swap = evalSwap();
 				
-				double ratioTrav = 1.0;
-				int durRef = 1;
-				int durTrav = 1;
-				if (evalTravel() || pendingTravelReq) {
-					ratioTrav = getRatioTrav(&durRef, &durTrav);
+				int durRef;
+				int durTrav;
+				double ratioTrav = getRatioTrav(&durRef, &durTrav);
+				if (pendingTravelReq || evalTravel()) {
 					pendingTravelReq = false;
 					traveling = true;
 				}
 				else {
+					durTrav = durRef;
 					traveling = false;
 				}
 				
@@ -715,53 +717,7 @@ struct TwinParadox : Module {
 struct TwinParadoxWidget : ModuleWidget {
 	int lastPanelTheme = -1;
 	std::shared_ptr<window::Svg> light_svg;
-	std::shared_ptr<window::Svg> dark_svg;
-
-	/*struct BpmRatioDisplayWidget : TransparentWidget {
-		TwinParadox *module = nullptr;
-		std::shared_ptr<Font> font;
-		std::string fontPath;
-		char displayStr[16] = {};
-		const NVGcolor displayColOn = nvgRGB(0xff, 0xff, 0xff);
-		
-		BpmRatioDisplayWidget() {
-			// fontPath = std::string(asset::plugin(pluginInstance, "res/fonts/Segment14.ttf"));
-			fontPath = asset::system("res/fonts/DSEG7ClassicMini-BoldItalic.ttf");
-		}
-		
-		void drawLayer(const DrawArgs &args, int layer) override {
-			if (layer == 1) {
-				if (!(font = APP->window->loadFont(fontPath))) {
-					return;
-				}
-				nvgFontSize(args.vg, 18);
-				nvgFontFaceId(args.vg, font->handle);
-				//nvgTextLetterSpacing(args.vg, 2.5);
-				nvgTextAlign(args.vg, NVG_ALIGN_RIGHT);
-
-				Vec textPos = VecPx(6, 24);
-				nvgFillColor(args.vg, nvgTransRGBA(displayColOn, 23));
-				nvgText(args.vg, textPos.x, textPos.y, "~~~", NULL);
-				
-				nvgFillColor(args.vg, displayColOn);
-				if (module == NULL) {
-					snprintf(displayStr, 4, "120");
-				}
-				else if (module->editingBpmMode != 0l) {// BPM mode to display
-					if (!module->bpmDetectionMode)
-						snprintf(displayStr, 4, " CV");
-					else
-						snprintf(displayStr, 4, "P%2u", (unsigned) module->ppqn);
-				}
-				else {// BPM to display
-					int bpm = (unsigned)((60.0f / module->masterLength) + 0.5f);
-					snprintf(displayStr, 4, "%3u", bpm);
-				}
-				displayStr[3] = 0;// more safety
-				nvgText(args.vg, textPos.x, textPos.y, displayStr, NULL);
-			}
-		}
-	};*/		
+	std::shared_ptr<window::Svg> dark_svg;	
 	
 	void appendContextMenu(Menu *menu) override {
 		TwinParadox *module = static_cast<TwinParadox*>(this->module);
@@ -976,8 +932,12 @@ struct TwinParadoxWidget : ModuleWidget {
 			// duration REF lights
 			for (int i = 0; i < 8; i++) {
 				float light = 0.0f;
-				if ((i <= itRef && m->running) || (i < durRef && !m->running)) light = 1.0f;
-				else if (i < durRef) light = 0.3f;
+				if ((i <= itRef && m->running) || (i < durRef && !m->running)) {
+					light = 1.0f;
+				}
+				else if (i < durRef) {
+					light = 0.3f;
+				}
 				bool wantWhite = (light < 0.5f || !traveling);
 				float blueL =   !wantWhite && !swap ? light : 0.0f;// twin 1
 				float yellowL = !wantWhite && swap  ? light : 0.0f;// twin 2
@@ -989,8 +949,12 @@ struct TwinParadoxWidget : ModuleWidget {
 			// duration TRAV lights
 			for (int i = 0; i < 8; i++) {
 				float light = 0.0f;
-				if ((i <= itTrav && m->running) || (i < durTrav && !m->running)) light = 1.0f;
-				else if (i < durTrav) light = 0.3f;
+				if (traveling && ((i <= itTrav && m->running) || (i < durTrav && !m->running))) {
+					light = 1.0f;
+				}
+				else if (i < durTrav) {
+					light = 0.3f;
+				}
 				bool wantWhite = (light < 0.5f || !traveling);
 				float blueL =   !wantWhite && swap  ? light : 0.0f;// twin 2
 				float yellowL = !wantWhite && !swap ? light : 0.0f;// twin 1
