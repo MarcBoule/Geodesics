@@ -130,6 +130,7 @@ struct TwinParadox : Module {
 		SWAPPROB_PARAM,
 		TRAVEL_PARAM,
 		DIVMULT_PARAM,
+		MULTITIME_PARAM,
 		NUM_PARAMS
 	};
 	enum InputIds {
@@ -150,6 +151,7 @@ struct TwinParadox : Module {
 		RUN_OUTPUT,
 		SYNC_OUTPUT,
 		MEET_OUTPUT,
+		MULTITIME_OUTPUT,
 		NUM_OUTPUTS
 	};
 	enum LightIds {
@@ -201,6 +203,8 @@ struct TwinParadox : Module {
 	bool swap;// when false, twin1=ref & twin2=trav; when true, twin1=trav & twin2=ref
 	bool pendingTravelReq;
 	bool traveling;
+	int multitimeSwitch;// -1 means ref, 1 means trav, 0 means none
+	dsp::PulseGenerator multitimeGuardPulse;
 	
 	// No need to save, no reset
 	bool scheduledReset = false;
@@ -215,6 +219,8 @@ struct TwinParadox : Module {
 	dsp::PulseGenerator resetPulse;
 	dsp::PulseGenerator runPulse;
 	dsp::PulseGenerator meetPulse;
+	TriggerRiseFall multitime1Trigger;
+	TriggerRiseFall multitime2Trigger;
 
 
 	bool calcWarningFlash(long count, long countInit) {
@@ -260,6 +266,9 @@ struct TwinParadox : Module {
 		}
 		return 1.0 / (double)(0x1 << val);
 	}
+	float getMultitimeValueWithCV() {
+		return params[DIVMULT_PARAM].getValue();
+	}
 
 	
 	TwinParadox() {
@@ -278,6 +287,7 @@ struct TwinParadox : Module {
 		configParam(TRAVEL_PARAM, 0.0f, 1.0f, 0.0f, "Travel");
 		configParam<DivMultParamQuantity>(DIVMULT_PARAM, -3.0f, 3.0f, 0.0f, "Div/Mult");
 		paramQuantities[DIVMULT_PARAM]->snapEnabled = true;
+		configParam(MULTITIME_PARAM, -2.0f, 2.0f, 0.0f, "Multitime");
 		
 		configInput(RESET_INPUT, "Reset");
 		configInput(RUN_INPUT, "Run");
@@ -294,6 +304,7 @@ struct TwinParadox : Module {
 		configOutput(RUN_OUTPUT, "Run");
 		configOutput(SYNC_OUTPUT, "Sync clock");
 		configOutput(MEET_OUTPUT, "Meet");
+		configOutput(MULTITIME_OUTPUT, "Multitime");
 		
 		configBypass(RESET_INPUT, RESET_OUTPUT);
 		configBypass(RUN_INPUT, RUN_OUTPUT);
@@ -367,6 +378,8 @@ struct TwinParadox : Module {
 		swap = false;
 		pendingTravelReq = false;
 		traveling = false;
+		multitimeSwitch = -1;// ref
+		multitimeGuardPulse.reset();
 	}	
 	
 	
@@ -661,6 +674,7 @@ struct TwinParadox : Module {
 				}
 				else {
 					durTrav = durRef;
+					ratioTrav = 1.0;
 					traveling = false;
 				}
 				
@@ -688,7 +702,39 @@ struct TwinParadox : Module {
 		
 		outputs[RESET_OUTPUT].setVoltage(resetPulse.process((float)sampleTime) ? 10.0f : 0.0f);
 		outputs[RUN_OUTPUT].setVoltage(runPulse.process((float)sampleTime) ? 10.0f : 0.0f);
+		
+		// multitime
+		/*
+		int trigMt1Value = multitime1Trigger.process(clk[0].isHigh() ? 10.0f : 0.0f);
+		int trigMt2Value = multitime2Trigger.process(clk[traveling ? 1 : 0].isHigh() ? 10.0f : 0.0f);
+		multitimeGuardPulse.process((float)sampleTime);
+		if (outputs[MULTITIME_OUTPUT].isConnected()) {
+			if (trigMt1Value == 1 || trigMt2Value == 1) {
+				
+			}
 			
+			if (trigMt1Value == 1 && !multitime2Trigger.state && multitimeGuardPulse.remaining <= 0.0f) {
+				multitimeSwitch = -1;
+			}
+			if (trigMt1Value == -1) {
+				multitimeGuardPulse.trigger(0.0011f);
+			}
+			if (trigMt2Value == 1 && !multitime1Trigger.state && multitimeGuardPulse.remaining <= 0.0f) {
+				multitimeSwitch = 1;
+			}
+			if (trigMt2Value == -1) {
+				multitimeGuardPulse.trigger(0.0011f);
+			}
+			
+			float mOut = 0.0f;
+			if (multitimeSwitch == -1) {
+				mOut = clk[0].isHigh() ? 10.0f : 0.0f;
+			}
+			if (multitimeSwitch == 1) {
+				mOut = clk[1].isHigh() ? 10.0f : 0.0f;
+			}
+			outputs[MULTITIME_OUTPUT].setVoltage(mOut);
+		}*/
 		
 		// lights
 		if (refresh.processLights()) {
@@ -903,6 +949,11 @@ struct TwinParadoxWidget : ModuleWidget {
 			addChild(createLightCentered<SmallLight<GeoBlueYellowWhiteLight>>(VecPx(200, 50 + 15 * i), module, TwinParadox::DURREF_LIGHTS + i * 3));
 			addChild(createLightCentered<SmallLight<GeoBlueYellowWhiteLight>>(VecPx(240, 50 + 15 * i), module, TwinParadox::DURTRAV_LIGHTS + i * 3));
 		}
+		
+		// Multitime
+		static const int colM = 220;
+		addOutput(createDynamicPort<GeoPort>(VecPx(colM, row4 - 30), false, module, TwinParadox::MULTITIME_OUTPUT, module ? &module->panelTheme : NULL));
+		addParam(createDynamicParam<GeoKnob>(VecPx(colM, row4), module, TwinParadox::MULTITIME_PARAM, module ? &module->panelTheme : NULL));
 
 	}
 	
