@@ -749,7 +749,7 @@ struct TwinParadox : Module {
 				multitimeSwitch = 0;
 			}
 			
-			if (trigMt1 == 1 && multitimeSwitch == 0 && multitimeGuardPulse.remaining <= 0.0f) {
+			if (trigMt1 == 1 && running && multitimeSwitch == 0 && multitimeGuardPulse.remaining <= 0.0f) {
 				int durThis = clk[0].getIterationsOrig();
 				int durOther = clk[1].getIterationsOrig();
 				int itThis = durThis - clk[0].getIterations();
@@ -770,7 +770,7 @@ struct TwinParadox : Module {
 				}
 			}
 
-			if (trigMt2 == 1 && multitimeSwitch == 0 && multitimeGuardPulse.remaining <= 0.0f) {
+			if (trigMt2 == 1 && running && multitimeSwitch == 0 && multitimeGuardPulse.remaining <= 0.0f) {
 				int durThis = clk[1].getIterationsOrig();
 				int durOther = clk[0].getIterationsOrig();
 				int itThis = durThis - clk[1].getIterations();
@@ -792,10 +792,10 @@ struct TwinParadox : Module {
 			}			
 			
 			float mOut = 0.0f;
-			if (multitimeSwitch == -1) {
+			if (multitimeSwitch == -1 && running) {
 				mOut = clk[0].isHigh() ? 10.0f : 0.0f;
 			}
-			if (multitimeSwitch == 1) {
+			if (multitimeSwitch == 1 && running) {
 				mOut = clk[1].isHigh() ? 10.0f : 0.0f;
 			}
 			outputs[MULTITIME_OUTPUT].setVoltage(mOut);
