@@ -142,6 +142,7 @@ struct TwinParadox : Module {
 		SWAPPROB_INPUT,
 		DURREF_INPUT,
 		DURTRAV_INPUT,
+		MULTITIME_INPUT,
 		NUM_INPUTS
 	};
 	enum OutputIds {
@@ -170,6 +171,7 @@ struct TwinParadox : Module {
 	static const int bpmMin = 30;
 	static constexpr float masterLengthMax = 60.0f / bpmMin;// a length is a period
 	static constexpr float masterLengthMin = 60.0f / bpmMax;// a length is a period
+	static constexpr float multitimeGuard = 1e-4;// 100us
 
 	static const unsigned int ON_STOP_INT_RST_MSK = 0x1;
 	static const unsigned int ON_START_INT_RST_MSK = 0x2;
@@ -203,7 +205,7 @@ struct TwinParadox : Module {
 	bool swap;// when false, twin1=ref & twin2=trav; when true, twin1=trav & twin2=ref
 	bool pendingTravelReq;
 	bool traveling;
-	int multitimeSwitch;// -1 means ref, 1 means trav, 0 means none
+	int multitimeSwitch;// -1 = ref, 1 = trav, 0 = none
 	dsp::PulseGenerator multitimeGuardPulse;
 	
 	// No need to save, no reset
@@ -267,7 +269,25 @@ struct TwinParadox : Module {
 		return 1.0 / (double)(0x1 << val);
 	}
 	float getMultitimeValueWithCV() {
-		return params[DIVMULT_PARAM].getValue();
+		float val = params[MULTITIME_PARAM].getValue();
+		val += inputs[MULTITIME_INPUT].getVoltage() / 5.0f;
+		return clamp(val, -2.0f, 2.0f);
+	}
+	float probMultitime(bool isRef) {
+		// knob is [-2.0, +2.0]
+		float knob = getMultitimeValueWithCV();
+		if (isRef) {
+			if (knob <= -1.0f) return knob + 2.0f;
+			if (knob <= 0.0f) return 1.0f;
+			if (knob <= 1.0f) return 1.0f - knob;
+			return 0.0f;
+		}
+		else {
+			if (knob <= -1.0f) return 0.0f;
+			if (knob <= 0.0f) return knob + 1.0f;
+			if (knob <= 1.0f) return 1.0f;
+			return 2.0f - knob;
+		}
 	}
 
 	
@@ -297,6 +317,7 @@ struct TwinParadox : Module {
 		configInput(SWAPPROB_INPUT, "Traveler selection probability CV");
 		configInput(DURREF_INPUT, "Reference time CV");
 		configInput(DURTRAV_INPUT, "Travel time CV");
+		configInput(MULTITIME_INPUT, "Multitime CV");
 
 		configOutput(TWIN1_OUTPUT, "Twin 1 clock");
 		configOutput(TWIN2_OUTPUT, "Twin 2 clock");
@@ -378,7 +399,7 @@ struct TwinParadox : Module {
 		swap = false;
 		pendingTravelReq = false;
 		traveling = false;
-		multitimeSwitch = -1;// ref
+		multitimeSwitch = 0;
 		multitimeGuardPulse.reset();
 	}	
 	
@@ -496,6 +517,26 @@ struct TwinParadox : Module {
 		}
 	}
 
+	
+	void multitimeSimultaneous() {
+		bool p1 = random::uniform() < probMultitime(true);// true = REF
+		bool p2 = random::uniform() < probMultitime(false);// false = TRAV
+		if (p1 && p2) {
+			// choose one random
+			multitimeSwitch = (random::u32() % 2 == 0) ? -1 : 1;
+		}
+		else if (p1) {
+			multitimeSwitch = -1;
+		}
+		else if (p2) {
+			multitimeSwitch = 1;
+		}
+		else {
+			multitimeSwitch = 0;
+			multitimeGuardPulse.trigger(multitimeGuard);
+		}		
+	}
+	
 	
 	void onSampleRateChange() override {
 		resetTwinParadox(false);
@@ -685,13 +726,9 @@ struct TwinParadox : Module {
 				clk[0].start();
 				clk[1].start();
 				clk[2].start();
-			}
+			}// if (clk[0].isReset())
 
-			// Step clocks and update clkOutputs[]
-			for (int i = 0; i < 3; i++) {
-				clkOutputs[i] = clk[i].isHigh() ? 10.0f : 0.0f;		
-				clk[i].stepClock();
-			}
+			// see further below for clk[i].stepClock();
 		}
 		
 		// outputs
@@ -704,27 +741,55 @@ struct TwinParadox : Module {
 		outputs[RUN_OUTPUT].setVoltage(runPulse.process((float)sampleTime) ? 10.0f : 0.0f);
 		
 		// multitime
-		/*
-		int trigMt1Value = multitime1Trigger.process(clk[0].isHigh() ? 10.0f : 0.0f);
-		int trigMt2Value = multitime2Trigger.process(clk[traveling ? 1 : 0].isHigh() ? 10.0f : 0.0f);
-		multitimeGuardPulse.process((float)sampleTime);
+		int trigMt1 = multitime1Trigger.process(clk[0].isHigh() ? 10.0f : 0.0f);
+		int trigMt2 = multitime2Trigger.process(clk[1].isHigh() ? 10.0f : 0.0f);
 		if (outputs[MULTITIME_OUTPUT].isConnected()) {
-			if (trigMt1Value == 1 || trigMt2Value == 1) {
-				
+			if ((trigMt1 == -1 && multitimeSwitch == -1) || (trigMt2 == -1 && multitimeSwitch == 1)) {
+				multitimeGuardPulse.trigger(multitimeGuard);
+				multitimeSwitch = 0;
 			}
 			
-			if (trigMt1Value == 1 && !multitime2Trigger.state && multitimeGuardPulse.remaining <= 0.0f) {
-				multitimeSwitch = -1;
+			if (trigMt1 == 1 && multitimeSwitch == 0 && multitimeGuardPulse.remaining <= 0.0f) {
+				int durThis = clk[0].getIterationsOrig();
+				int durOther = clk[1].getIterationsOrig();
+				int itThis = durThis - clk[0].getIterations();
+				
+				if (itThis * durOther % durThis == 0) {
+					multitimeSimultaneous();
+				}
+				else {
+					// not simultaneous
+					bool p1 = random::uniform() < probMultitime(true);// true = REF
+					if (p1) {
+						multitimeSwitch = -1;
+					}
+					else {
+						multitimeSwitch = 0;
+						multitimeGuardPulse.trigger(multitimeGuard);
+					}				
+				}
 			}
-			if (trigMt1Value == -1) {
-				multitimeGuardPulse.trigger(0.0011f);
-			}
-			if (trigMt2Value == 1 && !multitime1Trigger.state && multitimeGuardPulse.remaining <= 0.0f) {
-				multitimeSwitch = 1;
-			}
-			if (trigMt2Value == -1) {
-				multitimeGuardPulse.trigger(0.0011f);
-			}
+
+			if (trigMt2 == 1 && multitimeSwitch == 0 && multitimeGuardPulse.remaining <= 0.0f) {
+				int durThis = clk[1].getIterationsOrig();
+				int durOther = clk[0].getIterationsOrig();
+				int itThis = durThis - clk[1].getIterations();
+				
+				if (itThis * durOther % durThis == 0) {
+					multitimeSimultaneous();
+				}
+				else {
+					// not simultaneous
+					bool p2 = random::uniform() < probMultitime(false);// false = TRAV
+					if (p2) {
+						multitimeSwitch = 1;
+					}
+					else {
+						multitimeSwitch = 0;
+						multitimeGuardPulse.trigger(multitimeGuard);
+					}
+				}
+			}			
 			
 			float mOut = 0.0f;
 			if (multitimeSwitch == -1) {
@@ -734,7 +799,19 @@ struct TwinParadox : Module {
 				mOut = clk[1].isHigh() ? 10.0f : 0.0f;
 			}
 			outputs[MULTITIME_OUTPUT].setVoltage(mOut);
-		}*/
+		}
+		else {
+			outputs[MULTITIME_OUTPUT].setVoltage(0.0f);
+		}
+		
+		multitimeGuardPulse.process(args.sampleTime);
+		if (running) {
+			// Step clocks and update clkOutputs[]
+			for (int i = 0; i < 3; i++) {
+				clkOutputs[i] = clk[i].isHigh() ? 10.0f : 0.0f;		
+				clk[i].stepClock();
+			}
+		}
 		
 		// lights
 		if (refresh.processLights()) {
@@ -954,6 +1031,9 @@ struct TwinParadoxWidget : ModuleWidget {
 		static const int colM = 220;
 		addOutput(createDynamicPort<GeoPort>(VecPx(colM, row4 - 30), false, module, TwinParadox::MULTITIME_OUTPUT, module ? &module->panelTheme : NULL));
 		addParam(createDynamicParam<GeoKnob>(VecPx(colM, row4), module, TwinParadox::MULTITIME_PARAM, module ? &module->panelTheme : NULL));
+		addInput(createDynamicPort<GeoPort>(VecPx(colM, row4 + 28.0f), true, module, TwinParadox::MULTITIME_INPUT, module ? &module->panelTheme : NULL));
+		
+
 
 	}
 	
