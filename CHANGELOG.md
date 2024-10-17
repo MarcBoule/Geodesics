@@ -1,3 +1,8 @@
+### 2.x.x (in development)
+
+- Fix missing reset methods in Branes (issue #7)
+
+
 ### 2.3.2 (2024-04-01)
 
 - Follow global Rack panel theme choice, with per-instance manual theme selection

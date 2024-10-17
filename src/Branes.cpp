@@ -34,6 +34,16 @@ struct PinkNoise {
 	
 	float b0, b1, b2, b3, b4, b5, b6;
 
+	void reset() {
+		b0 = 0.0f;
+		b1 = 0.0f;
+		b2 = 0.0f;
+		b3 = 0.0f;
+		b4 = 0.0f;
+		b5 = 0.0f;
+		b6 = 0.0f;
+	}
+
 	float process() {
 		// noise source
 		const float white = random::uniform() * 1.2f - 0.6f;// values adjusted so that returned pink noise is in -5V to +5V range
@@ -70,6 +80,16 @@ struct NoiseEngine {
 	float cacheValBlue[2];
 	bool cacheHitPink[2];// no need to init; index is braneIndex
 	float cacheValPink[2];
+	
+	
+	void reset() {
+		for (int i = 0; i < 2; i++) {
+			pinkNoise[i].reset();
+			pinkForBlueNoise[i].reset();
+			redFilter[i].reset();
+			blueFilter[i].reset();
+		}
+	}
 	
 	
 	float whiteNoise() {
@@ -251,8 +271,10 @@ struct Branes : Module {
 		resetNonJson();
 	}
 	void resetNonJson() {
-		for (int i = 0; i < 14; i++)
+		for (int i = 0; i < 14; i++) {
 			heldOuts[i] = 0.0f;
+		}
+		noiseEngine.reset();
 	}
 
 	
