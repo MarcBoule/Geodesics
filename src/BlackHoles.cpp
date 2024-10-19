@@ -94,11 +94,11 @@ struct BlackHoles : Module {
 		for (int i = 0; i < 8; i++) {
 			configParam(LEVEL_PARAMS + i, -1.0f, 1.0f, 0.0f, string::f("VCA %i level", i + 1));
 		}
-		configParam(EXP_PARAMS + 0, 0.0f, 1.0f, 0.0f, "Top BH exponential");
-		configParam(EXP_PARAMS + 1, 0.0f, 1.0f, 0.0f, "Bottom BH exponential");
-		configParam(WORMHOLE_PARAM, 0.0f, 1.0f, 0.0f, "Wormhole");
-		configParam(CVLEVEL_PARAMS + 0, 0.0f, 1.0f, 0.0f, "Top BH gravity");
-		configParam(CVLEVEL_PARAMS + 1, 0.0f, 1.0f, 0.0f, "Bottom BH gravity");		
+		configButton(EXP_PARAMS + 0, "Top BH exponential");
+		configButton(EXP_PARAMS + 1, "Bottom BH exponential");
+		configButton(WORMHOLE_PARAM, "Wormhole");
+		configButton(CVLEVEL_PARAMS + 0, "Top BH gravity");
+		configButton(CVLEVEL_PARAMS + 1, "Bottom BH gravity");		
 		
 		for (int i = 0; i < 8; i++) {
 			configInput(IN_INPUTS + i, string::f("VCA %i", i + 1));

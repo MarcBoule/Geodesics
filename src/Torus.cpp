@@ -217,7 +217,7 @@ struct Torus : Module {
 	Torus() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		
-		configParam(Torus::MODE_PARAM, 0.0f, 1.0f, 0.0f, "Mode");
+		configButton(Torus::MODE_PARAM, "Mode");
 		configParam(Torus::GAIN_PARAM, 0.0f, 2.0f, 1.0f, "Gain");
 
 		for (int i = 0; i < 16; i++) {

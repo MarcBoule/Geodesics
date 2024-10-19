@@ -152,30 +152,30 @@ struct Entropia : Module {
 			configParam(PROB_PARAMS + i, 0.0f, 1.0f, 1.0f, strBuf);
 		}
 
-		configParam(LENGTH_PARAM, 0.0f, 1.0f, 0.0f, "Length");
-		configParam(CLKSRC_PARAM, 0.0f, 1.0f, 0.0f, "Clock sources");
+		configButton(LENGTH_PARAM, "Length");
+		configButton(CLKSRC_PARAM, "Clock sources");
 		
-		configParam(SWITCHADD_PARAM, 0.0f, 1.0f, 0.0f, "Macrostate mode");
-		configParam(STATESWITCH_PARAM, 0.0f, 1.0f, 0.0f, "Invert microstate");
-		configParam(QUANTIZE_PARAMS + 0, 0.0f, 1.0f, 0.0f, "Quantize (Planck) blue");
-		configParam(QUANTIZE_PARAMS + 1, 0.0f, 1.0f, 0.0f, "Quantize (Planck) yellow");
+		configButton(SWITCHADD_PARAM, "Macrostate mode");
+		configButton(STATESWITCH_PARAM, "Invert microstate");
+		configButton(QUANTIZE_PARAMS + 0, "Quantize (Planck) blue");
+		configButton(QUANTIZE_PARAMS + 1, "Quantize (Planck) yellow");
 		
-		configParam(OCT_PARAMS + 0, 0.0f, 1.0f, 0.0f, "Octaves blue");
-		configParam(OCT_PARAMS + 1, 0.0f, 1.0f, 0.0f, "Octaves yellow");
+		configButton(OCT_PARAMS + 0, "Octaves blue");
+		configButton(OCT_PARAMS + 1, "Octaves yellow");
 		configParam(GPROB_PARAM, -1.0f, 1.0f, 0.0f, "Global probability");
 		
-		configParam(EXTSIG_PARAMS + 0, 0.0f, 1.0f, 0.0f, "External signal blue");
-		configParam(RANDOM_PARAMS + 0, 0.0f, 1.0f, 0.0f, "Random blue");
-		configParam(FIXEDCV_PARAMS + 0, 0.0f, 1.0f, 0.0f, "Fixed CV blue");
-		configParam(EXTAUDIO_PARAMS + 0, 0.0f, 1.0f, 0.0f, "CV/audio blue");
-		configParam(EXTSIG_PARAMS + 1, 0.0f, 1.0f, 0.0f, "External signal yellow");
-		configParam(RANDOM_PARAMS + 1, 0.0f, 1.0f, 0.0f, "Random yellow");
-		configParam(FIXEDCV_PARAMS + 1, 0.0f, 1.0f, 0.0f, "Fixed CV yellow");
-		configParam(EXTAUDIO_PARAMS + 1, 0.0f, 1.0f, 0.0f, "CV/audio yellow");
-		configParam(RUN_PARAM, 0.0f, 1.0f, 0.0f, "Run");	
-		configParam(RESET_PARAM, 0.0f, 1.0f, 0.0f, "Reset");	
-		configParam(STEPCLOCK_PARAM, 0.0f, 1.0f, 0.0f, "Magnetic clock");			
-		configParam(RESETONRUN_PARAM, 0.0f, 1.0f, 0.0f, "Reset on run");				
+		configButton(EXTSIG_PARAMS + 0, "External signal blue");
+		configButton(RANDOM_PARAMS + 0, "Random blue");
+		configButton(FIXEDCV_PARAMS + 0, "Fixed CV blue");
+		configButton(EXTAUDIO_PARAMS + 0, "CV/audio blue");
+		configButton(EXTSIG_PARAMS + 1, "External signal yellow");
+		configButton(RANDOM_PARAMS + 1, "Random yellow");
+		configButton(FIXEDCV_PARAMS + 1, "Fixed CV yellow");
+		configButton(EXTAUDIO_PARAMS + 1, "CV/audio yellow");
+		configButton(RUN_PARAM, "Run");	
+		configButton(RESET_PARAM, "Reset");	
+		configButton(STEPCLOCK_PARAM, "Magnetic clock");			
+		configButton(RESETONRUN_PARAM, "Reset on run");				
 			
 		configInput(CERTAIN_CLK_INPUT, "Certain clock");
 		configInput(UNCERTAIN_CLK_INPUT, "Uncertain clock");

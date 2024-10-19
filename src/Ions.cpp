@@ -118,23 +118,23 @@ struct Ions : Module {
 			snprintf(strBuf, 32, "Step %i blue", i + 1);		
 			configParam(CV_PARAMS + i, 0.0f, 1.0f, 0.5f, strBuf);
 		}
-		for (int i = 8; i < 15; i++) {// Blue CV knobs
+		for (int i = 8; i < 15; i++) {// Yellow CV knobs
 			snprintf(strBuf, 32, "Step %i yellow", i - 6);		
 			configParam(CV_PARAMS + i, 0.0f, 1.0f, 0.5f, strBuf);
 		}
 		configParam(PROB_PARAM, 0.0f, 1.0f, 0.0f, "Probability");
-		configParam(PLANK_PARAM, 0.0f, 1.0f, 0.0f, "Quantize (Planck) blue");	
-		configParam(PLANK2_PARAM, 0.0f, 1.0f, 0.0f, "Quantize (Planck) yellow");	
-		configParam(OCT_PARAMS + 0, 0.0f, 1.0f, 0.0f, "Octaves (Energy) blue");	
-		configParam(OCT_PARAMS + 1, 0.0f, 1.0f, 0.0f, "Octaves (Energy) yellow");	
-		configParam(RUN_PARAM, 0.0f, 1.0f, 0.0f, "Run");	
-		configParam(RESET_PARAM, 0.0f, 1.0f, 0.0f, "Reset");	
-		configParam(STEPCLOCKS_PARAM, 0.0f, 1.0f, 0.0f, "Magnetic clock");			
-		configParam(RESETONRUN_PARAM, 0.0f, 1.0f, 0.0f, "Reset on run");	
-		configParam(STATE_PARAMS + 0, 0.0f, 1.0f, 0.0f, "State blue");	
-		configParam(STATE_PARAMS + 1, 0.0f, 1.0f, 0.0f, "State yellow");	
-		configParam(LEAP_PARAM, 0.0f, 1.0f, 0.0f, "Quantum leap");	
-		configParam(UNCERTANTY_PARAM, 0.0f, 1.0f, 0.0f, "Uncertainty");	
+		configButton(PLANK_PARAM, "Quantize (Planck) blue");	
+		configButton(PLANK2_PARAM, "Quantize (Planck) yellow");	
+		configButton(OCT_PARAMS + 0, "Octaves (Energy) blue");	
+		configButton(OCT_PARAMS + 1, "Octaves (Energy) yellow");	
+		configButton(RUN_PARAM, "Run");	
+		configButton(RESET_PARAM, "Reset");	
+		configButton(STEPCLOCKS_PARAM, "Magnetic clock");			
+		configButton(RESETONRUN_PARAM, "Reset on run");	
+		configButton(STATE_PARAMS + 0, "State blue");	
+		configButton(STATE_PARAMS + 1, "State yellow");	
+		configButton(LEAP_PARAM, "Quantum leap");	
+		configButton(UNCERTANTY_PARAM, "Uncertainty");	
 
 		configInput(CLK_INPUT, "Global clock");
 		configInput(CLK_INPUTS + 0, "Local clock blue");

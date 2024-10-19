@@ -7,6 +7,16 @@
 //See ./res/fonts/ for font licenses
 //***********************************************************************************************
 
+/*
+		{
+			"slug": "Twin-Paradox",
+			"name": "Twin Paradox",
+			"description": "Relativistic clock generator",
+			"manualUrl": "https://www.pyer.be/geodesics.html",
+			"tags": ["Clock generator"]
+		}
+*/
+
 
 #include "Geodesics.hpp"
 

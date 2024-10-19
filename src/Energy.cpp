@@ -81,16 +81,16 @@ struct Energy : Module {
 	Energy() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		
-		configParam(CROSS_PARAM, 0.0f, 1.0f, 0.0f, "Momentum crossing");		
+		configButton(CROSS_PARAM, "Momentum crossing");		
 		configParam(MOMENTUM_PARAMS + 0, 0.0f, 1.0f, 0.0f, "Momentum M");
 		configParam(MOMENTUM_PARAMS + 1, 0.0f, 1.0f, 0.0f, "Momentum C");
 		configParam(FREQ_PARAMS + 0, -3.0f, 3.0f, 0.0f, "Freq M");
 		configParam(FREQ_PARAMS + 1, -3.0f, 3.0f, 0.0f, "Freq C");
-		configParam(ROUTING_PARAM, 0.0f, 1.0f, 0.0f, "Routing");
-		configParam(PLANCK_PARAMS + 0, 0.0f, 1.0f, 0.0f, "Quantize (Planck) M");
-		configParam(PLANCK_PARAMS + 1, 0.0f, 1.0f, 0.0f, "Quantize (Planck) C");
-		configParam(MODTYPE_PARAMS + 0, 0.0f, 1.0f, 0.0f, "CV mod type M");
-		configParam(MODTYPE_PARAMS + 1, 0.0f, 1.0f, 0.0f, "CV mod type C");		
+		configButton(ROUTING_PARAM, "Routing");
+		configButton(PLANCK_PARAMS + 0, "Quantize (Planck) M");
+		configButton(PLANCK_PARAMS + 1, "Quantize (Planck) C");
+		configButton(MODTYPE_PARAMS + 0, "CV mod type M");
+		configButton(MODTYPE_PARAMS + 1, "CV mod type C");		
 		
 		configInput(FREQCV_INPUTS + 0, "Mass");
 		configInput(FREQCV_INPUTS + 1, "Speed of light");

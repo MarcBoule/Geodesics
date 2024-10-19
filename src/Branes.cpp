@@ -213,10 +213,10 @@ struct Branes : Module {
 	Branes() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		
-		configParam(TRIG_BYPASS_PARAMS + 0, 0.0f, 1.0f, 0.0f, "Top brane bypass");
-		configParam(TRIG_BYPASS_PARAMS + 1, 0.0f, 1.0f, 0.0f, "Bottom brane bypass");
-		configParam(NOISE_RANGE_PARAMS + 0, 0.0f, 1.0f, 0.0f, "Top brane noise range");
-		configParam(NOISE_RANGE_PARAMS + 1, 0.0f, 1.0f, 0.0f, "Bottom brane noise range");		
+		configButton(TRIG_BYPASS_PARAMS + 0, "Top brane bypass");
+		configButton(TRIG_BYPASS_PARAMS + 1, "Bottom brane bypass");
+		configButton(NOISE_RANGE_PARAMS + 0, "Top brane noise range");
+		configButton(NOISE_RANGE_PARAMS + 1, "Bottom brane noise range");		
 		
 		configInput(IN_INPUTS + 0, "Top left pink S&H");
 		configInput(IN_INPUTS + 1, "Top left red S&H");

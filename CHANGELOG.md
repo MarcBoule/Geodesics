@@ -1,6 +1,7 @@
-### 2.x.x (in development)
+### 2.3.3 (in development)
 
-- Fix missing reset methods in Branes (issue #7)
+- Fix occasional bad output values in Branes (issue #7)
+- Improve momentary buttons' tooltips on all modules (use configButton instead of configParam)
 
 
 ### 2.3.2 (2024-04-01)

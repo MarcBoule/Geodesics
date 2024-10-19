@@ -122,13 +122,13 @@ struct DarkEnergy : Module {
 		configParam(FREQ_PARAMS + 0, -3.0f, 3.0f, 0.0f, "Freq M");
 		configParam(FREQ_PARAMS + 1, -3.0f, 3.0f, 0.0f, "Freq C");
 		configParam(FREQ_PARAM, -3.0f, 3.0f, 0.0f, "Freq offset");
-		configParam(PLANCK_PARAMS + 0, 0.0f, 1.0f, 0.0f, "Freq mode M");
-		configParam(PLANCK_PARAMS + 1, 0.0f, 1.0f, 0.0f, "Freq mode C");
-		configParam(MODE_PARAM, 0.0f, 1.0f, 0.0f, "Cross mod and self mod CV mode");
-		configParam(MULTEN_PARAM, 0.0f, 1.0f, 0.0f, "Enable extra mod VCA");
+		configButton(PLANCK_PARAMS + 0, "Freq mode M");
+		configButton(PLANCK_PARAMS + 1, "Freq mode C");
+		configButton(MODE_PARAM, "Cross mod and self mod CV mode");
+		configButton(MULTEN_PARAM, "Enable extra mod VCA");
 		configParam(MULTDECAY_PARAM, DECAY_MIN, DECAY_MAX, DECAY_DEF, "Extra mod decay", " ms");
-		configParam(MULTDEST_PARAM, 0.0f, 1.0f, 0.0f, "Extra mod destination");
-		configParam(RESET_PARAM, 0.0f, 1.0f, 0.0f, "Reset");
+		configButton(MULTDEST_PARAM, "Extra mod destination");
+		configButton(RESET_PARAM, "Reset");
 		
 		configInput(FREQCV_INPUTS + 0, "M freq CV");
 		configInput(FREQCV_INPUTS + 1, "C freq CV");

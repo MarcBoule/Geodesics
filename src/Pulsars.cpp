@@ -172,14 +172,14 @@ struct Pulsars : Module {
 	Pulsars() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 
-		configParam(VOID_PARAMS + 0, 0.0f, 1.0f, 0.0f, "Top pulsar void");
-		configParam(REV_PARAMS + 0, 0.0f, 1.0f, 0.0f, "Top pulsar reverse");	
-		configParam(RND_PARAMS + 0, 0.0f, 1.0f, 0.0f, "Top pulsar random");
-		configParam(CVLEVEL_PARAMS + 0, 0.0f, 1.0f, 0.0f, "Top pulsar uni/bi-polar");	
-		configParam(VOID_PARAMS + 1, 0.0f, 1.0f, 0.0f, "Bottom pulsar void");
-		configParam(REV_PARAMS + 1, 0.0f, 1.0f, 0.0f, "Bottom pulsar reverse");	
-		configParam(RND_PARAMS + 1, 0.0f, 1.0f, 0.0f, "Bottom pulsar random");		
-		configParam(CVLEVEL_PARAMS + 1, 0.0f, 1.0f, 0.0f, "Bottom pulsar uni/bi-polar");
+		configButton(VOID_PARAMS + 0, "Top pulsar void");
+		configButton(REV_PARAMS + 0, "Top pulsar reverse");	
+		configButton(RND_PARAMS + 0, "Top pulsar random");
+		configButton(CVLEVEL_PARAMS + 0, "Top pulsar uni/bi-polar");	
+		configButton(VOID_PARAMS + 1, "Bottom pulsar void");
+		configButton(REV_PARAMS + 1, "Bottom pulsar reverse");	
+		configButton(RND_PARAMS + 1, "Bottom pulsar random");		
+		configButton(CVLEVEL_PARAMS + 1, "Bottom pulsar uni/bi-polar");
 
 		for (int i = 0; i < 8; i++) {
 			configInput(INA_INPUTS + i, string::f("Top pulsar, #%i", i + 1));
