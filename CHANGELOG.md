@@ -1,4 +1,4 @@
-### 2.3.3 (in development)
+### 2.3.3 (2024-10-19)
 
 - Fix occasional bad output values in Branes (issue #7)
 - Improve momentary buttons' tooltips on all modules (use configButton instead of configParam)
