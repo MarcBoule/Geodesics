@@ -102,6 +102,7 @@ class Clock {
 //*****************************************************************************
 
 
+
 struct TwinParadox : Module {
 	
 	enum ParamIds {
@@ -235,6 +236,9 @@ struct TwinParadox : Module {
 			return false;
 		return true;
 	}	
+	int clampBpm(int bpm) {
+		return clamp(bpm, bpmMin, bpmMax);
+	}
 	int getDurationRef() {
 		float durValue = params[DURREF_PARAM].getValue();
 		durValue += inputs[DURREF_INPUT].getVoltage() / 10.0f * (8.0f - 1.0f);
@@ -311,7 +315,7 @@ struct TwinParadox : Module {
 		configParam(TRAVPROB_PARAM, 0.0f, 1.0f, 0.0f, "Probability to travel");
 		configParam(SWAPPROB_PARAM, 0.0f, 1.0f, 0.0f, "Traveler selection probability");
 		configButton(TRAVEL_PARAM, "Travel");
-		configParam<DivMultParamQuantity>(DIVMULT_PARAM, -3.0f, 3.0f, 0.0f, "Div/Mult");
+		configParam<DivMultParamQuantity>(DIVMULT_PARAM, -2.0f, 2.0f, 0.0f, "Div/Mult");
 		paramQuantities[DIVMULT_PARAM]->snapEnabled = true;
 		configParam(MULTITIME_PARAM, -2.0f, 2.0f, 0.0f, "Multitime");
 		configButton(TAP_PARAM, "Tap tempo");
@@ -399,7 +403,7 @@ struct TwinParadox : Module {
 			}
 		}
 		else {
-			newMasterLength = 60.0f / (float)bpmManual;//params[BPM_PARAM].getValue();
+			newMasterLength = 60.0f / (float)clampBpm(bpmManual);//params[BPM_PARAM].getValue();
 			newMasterLength *= getDivMult();
 		}
 		newMasterLength = clamp(newMasterLength, masterLengthMin, masterLengthMax);
@@ -604,7 +608,7 @@ struct TwinParadox : Module {
 			int deltaBpmKnob = newBpmKnob - bpmKnob;
 			if (deltaBpmKnob != 0) {
 				if (abs(deltaBpmKnob) <= 3) {// avoid discontinuous 
-					bpmManual=clamp(bpmManual+deltaBpmKnob, bpmMin, bpmMax);
+					bpmManual=clampBpm(bpmManual+deltaBpmKnob);
 				}
 				bpmKnob = newBpmKnob;
 			}	
@@ -653,7 +657,7 @@ struct TwinParadox : Module {
 						else {
 							// all other syncInPpqnMultDiv pulses except the first one. now we have an interval upon which to plan a stretch 
 							double timeLeft = extIntervalTime * (double)(syncInPpqnMultDiv - extPulseNumber) / ((double)extPulseNumber);
-							newMasterLength = clamp(clk[0].getStep() + timeLeft, masterLengthMin / 1.5f, masterLengthMax * 1.5f);// extended range for better sync ability (20-450 BPM)
+							newMasterLength = clamp(clk[0].getStep() + timeLeft, masterLengthMin / 4.0f, masterLengthMax * 4.0f);// extended range for better sync ability (x-x BPM)
 							timeoutTime = extIntervalTime * ((double)(1 + extPulseNumber) / ((double)extPulseNumber)) + 0.1; // when a second or higher clock edge is received, 
 							//  the timeout is the predicted next edge (which is extIntervalTime + extIntervalTime / extPulseNumber) plus epsilon
 						}
@@ -708,7 +712,7 @@ struct TwinParadox : Module {
 			}
 		}
 		else {// BPM_INPUT not active
-			newMasterLength = clamp(60.0f / /*params[BPM_PARAM].getValue()*/(float)bpmManual, masterLengthMin, masterLengthMax);
+			newMasterLength = 60.0f / (float)clampBpm(bpmManual);
 			newMasterLength *= getDivMult();
 		}
 		if (newMasterLength != masterLength) {
@@ -871,6 +875,86 @@ struct TwinParadoxWidget : ModuleWidget {
 	int lastPanelTheme = -1;
 	std::shared_ptr<window::Svg> light_svg;
 	std::shared_ptr<window::Svg> dark_svg;	
+
+	// display code below adapted from VCVRack's Fundamental code
+	struct DigitalDisplay : Widget {
+		std::string fontPath;
+		std::string bgText;
+		std::string text;
+		float fontSize;
+		NVGcolor bgColor = nvgRGB(0x46,0x46, 0x46);
+		NVGcolor fgColor = SCHEME_YELLOW;
+		Vec textPos;
+
+		void prepareFont(const DrawArgs& args) {
+			// Get font
+			std::shared_ptr<Font> font = APP->window->loadFont(fontPath);
+			if (!font)
+				return;
+			nvgFontFaceId(args.vg, font->handle);
+			nvgFontSize(args.vg, fontSize);
+			nvgTextLetterSpacing(args.vg, 0.0);
+			nvgTextAlign(args.vg, NVG_ALIGN_RIGHT);
+		}
+
+		void draw(const DrawArgs& args) override {
+			// Background
+			nvgBeginPath(args.vg);
+			nvgRoundedRect(args.vg, 0, 0, box.size.x, box.size.y, 2);
+			nvgFillColor(args.vg, nvgRGB(0x19, 0x19, 0x19));
+			nvgFill(args.vg);
+
+			prepareFont(args);
+
+			// Background text
+			nvgFillColor(args.vg, bgColor);
+			nvgText(args.vg, textPos.x, textPos.y, bgText.c_str(), NULL);
+		}
+
+		void drawLayer(const DrawArgs& args, int layer) override {
+			if (layer == 1) {
+				prepareFont(args);
+
+				// Foreground text
+				nvgFillColor(args.vg, fgColor);
+				nvgText(args.vg, textPos.x, textPos.y, text.c_str(), NULL);
+			}
+			Widget::drawLayer(args, layer);
+		}
+	};
+
+	struct BpmDisplay : DigitalDisplay {
+		TwinParadox* module;
+		
+		BpmDisplay() {
+			fontPath = asset::system("res/fonts/DSEG7ClassicMini-BoldItalic.ttf");
+			textPos = Vec(42, 20);
+			bgText = "18";
+			fontSize = 16;
+		}
+		
+		void step() override {
+			int bpm = 120;
+			if (module) {
+				bpm = (unsigned)((60.0f / (module->masterLength / module->getDivMult())) + 0.5f);
+				bpm = module->clampBpm(bpm);
+			}
+			text = string::f("%d", bpm);
+		}	
+	};
+	
+	
+	struct BpmKnob : GeoKnob {
+		BpmKnob() {};		
+		void onDoubleClick(const event::DoubleClick &e) override {
+			ParamQuantity* paramQuantity = getParamQuantity();
+			if (paramQuantity) {
+				TwinParadox* module = static_cast<TwinParadox*>(paramQuantity->module);
+				module->bpmManual=120;
+			}
+			ParamWidget::onDoubleClick(e);
+		}
+	};
 	
 	void appendContextMenu(Menu *menu) override {
 		TwinParadox *module = static_cast<TwinParadox*>(this->module);
@@ -963,6 +1047,7 @@ struct TwinParadoxWidget : ModuleWidget {
 		static const int colC = 75;
 		static const int colR = 120;
 		static const int colR2 = 165;
+		static const int colM = 220;
 		
 		static const int row0 = 58;// reset, run, bpm inputs
 		static const int row1 = 95;// reset and run switches, bpm knob
@@ -992,7 +1077,7 @@ struct TwinParadoxWidget : ModuleWidget {
 		addParam(createParamCentered<LEDBezel>(VecPx(colC, row1), module, TwinParadox::RUN_PARAM));
 		addChild(createLightCentered<LEDBezelLight<GeoWhiteLight>>(VecPx(colC, row1), module, TwinParadox::RUN_LIGHT));
 		// Master BPM knob
-		addParam(createDynamicParam<GeoKnob>(VecPx(colR, row1), module, TwinParadox::BPM_PARAM, module ? &module->panelTheme : NULL));
+		addParam(createDynamicParam<BpmKnob>(VecPx(colR, row1), module, TwinParadox::BPM_PARAM, module ? &module->panelTheme : NULL));
 
 
 		// Row 2
@@ -1002,17 +1087,13 @@ struct TwinParadoxWidget : ModuleWidget {
 
 		// 	
 		// BPM display
-		/*BpmRatioDisplayWidget *bpmRatioDisplay = new BpmRatioDisplayWidget();
-		bpmRatioDisplay->box.size = VecPx(55, 30);// 3 characters
-		bpmRatioDisplay->box.pos = VecPx((colR + colC) / 2.0f + 9, row2).minus(bpmRatioDisplay->box.size.div(2));
-		bpmRatioDisplay->module = module;
-		addChild(bpmRatioDisplay);*/
-		
+		BpmDisplay* display = createWidget<BpmDisplay>(VecPx(colM, row0-30));
+		display->box.size = mm2px(Vec(2.0*8.197, 8.197));
+		display->box.pos = display->box.pos.minus(display->box.size.div(2));
+		display->module = module;
+		addChild(display);
 
-		// Row 3
-		// static const int bspaceX = 24;
-		// BPM mode buttons
-		// addParam(createDynamicParam<GeoPushButton>(VecPx(colR - bspaceX + 4, row3), module, TwinParadox::BPMMODE_DOWN_PARAM, module ? &module->panelTheme : NULL));
+
 		addParam(createDynamicParam<GeoPushButton>(VecPx(colC, row2), module, TwinParadox::TRAVEL_PARAM, module ? &module->panelTheme : NULL));
 		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(VecPx(colC, row2 - 18.0f), module, TwinParadox::TRAVEL_LIGHT));	
 		addInput(createDynamicPort<GeoPort>(VecPx(colC, row2 + 28.0f), true, module, TwinParadox::TRAVEL_INPUT, module ? &module->panelTheme : NULL));
@@ -1058,7 +1139,6 @@ struct TwinParadoxWidget : ModuleWidget {
 		}
 		
 		// Multitime
-		static const int colM = 220;
 		addOutput(createDynamicPort<GeoPort>(VecPx(colM, row4 - 30), false, module, TwinParadox::MULTITIME_OUTPUT, module ? &module->panelTheme : NULL));
 		addParam(createDynamicParam<GeoKnob>(VecPx(colM, row4), module, TwinParadox::MULTITIME_PARAM, module ? &module->panelTheme : NULL));
 		addInput(createDynamicPort<GeoPort>(VecPx(colM, row4 + 28.0f), true, module, TwinParadox::MULTITIME_INPUT, module ? &module->panelTheme : NULL));
