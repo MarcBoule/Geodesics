@@ -148,6 +148,7 @@ struct TwinParadox : Module {
 		ENUMS(DURREF_LIGHTS, 8 * 3),// room for GeoBlueYellowWhiteLight
 		ENUMS(DURTRAV_LIGHTS, 8 * 3),// room for GeoBlueYellowWhiteLight
 		TRAVEL_LIGHT,
+		ENUMS(TAP_LIGHT, 2),// room for 
 		NUM_LIGHTS
 	};
 	
@@ -201,6 +202,7 @@ struct TwinParadox : Module {
 	long cantRunWarning = 0l;// 0 when no warning, positive downward step counter timer when warning
 	RefreshCounter refresh;
 	float resetLight = 0.0f;
+	float tapLight = 0.0f;
 	int bpmKnob = 0;
 	int64_t lastTapFrame = 0;
 	float tapBpmHistory[numTapHistory] = {};// index 0 is newest, shift right
@@ -632,6 +634,7 @@ struct TwinParadox : Module {
 						}
 					}
 					lastTapFrame = newTapFrame;
+					tapLight = 1.0f;
 				}
 			}
 			
@@ -899,6 +902,17 @@ struct TwinParadox : Module {
 			lights[SYNCINMODE_LIGHT + 0].setBrightness((syncInPpqn != 0 && warningFlashState) ? 1.0f : 0.0f);
 			lights[SYNCINMODE_LIGHT + 1].setBrightness((syncInPpqn != 0 && warningFlashState) ? (float)((syncInPpqn - 2)*(syncInPpqn - 2))/440.0f : 0.0f);			
 			
+			// Tap light
+			if (inputs[BPM_INPUT].isConnected()) {
+				lights[TAP_LIGHT + 0].setBrightness(0.0f);
+				lights[TAP_LIGHT + 1].setBrightness(1.0f);
+			}
+			else {
+				lights[TAP_LIGHT + 0].setSmoothBrightness(tapLight, (float)sampleTime * (RefreshCounter::displayRefreshStepSkips >> 2));
+				lights[TAP_LIGHT + 1].setBrightness(0.0f);				
+			}
+			tapLight = 0.0f;
+			
 			if (cantRunWarning > 0l)
 				cantRunWarning--;
 			
@@ -919,7 +933,7 @@ struct TwinParadoxWidget : ModuleWidget {
 		std::string text;
 		float fontSize;
 		NVGcolor bgColor = nvgRGB(0x46,0x46, 0x46);
-		NVGcolor fgColor = nvgRGB(0xd6,0xd6, 0xd6);
+		NVGcolor fgColor = nvgRGB(0xda,0xda, 0xda);
 		Vec textPos;
 
 		void prepareFont(const DrawArgs& args) {
@@ -1114,9 +1128,9 @@ struct TwinParadoxWidget : ModuleWidget {
 		addChild(createLightCentered<LEDBezelLight<GeoWhiteLight>>(VecPx(colC, row1), module, TwinParadox::RUN_LIGHT));
 		// Master BPM knob
 		addParam(createDynamicParam<BpmKnob>(VecPx(colR, row1), module, TwinParadox::BPM_PARAM, module ? &module->panelTheme : NULL));
-		// Tap tempo
+		// Tap tempo + light
 		addParam(createDynamicParam<GeoPushButton>(VecPx(colR2, row1), module, TwinParadox::TAP_PARAM, module ? &module->panelTheme : NULL));
-
+		addChild(createLightCentered<SmallLight<GeoWhiteRedLight>>(VecPx(colR2, row1 - 15), module, TwinParadox::TAP_LIGHT));
 
 		// Row 2
 		// Clock master out
