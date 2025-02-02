@@ -78,6 +78,13 @@
 			"tags": ["Utility", "Random", "Clock modulator", "Dual", "Switch"]
 		},
 		{
+			"slug": "Twin-Paradox",
+			"name": "Twin Paradox",
+			"description": "Relativistic clock generator",
+			"manualUrl": "https://www.pyer.be/geodesics.html",
+			"tags": ["Clock generator"]
+		},
+		{
 			"slug": "Blank-PanelInfo",
 			"name": "Blank-Panel Info",
 			"description": "Blank panel with info",

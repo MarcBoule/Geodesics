@@ -7,18 +7,6 @@
 //See ./res/fonts/ for font licenses
 //***********************************************************************************************
 
-/*
-		{
-			"slug": "Twin-Paradox",
-			"name": "Twin Paradox",
-			"description": "Relativistic clock generator",
-			"manualUrl": "https://www.pyer.be/geodesics.html",
-			"tags": ["Clock generator"]
-		}
-*/
-
-
-// TODO!!!  use configButton instead of configParam!
 
 #include "Geodesics.hpp"
 
@@ -116,22 +104,6 @@ class Clock {
 
 struct TwinParadox : Module {
 	
-	struct BpmParamQuantity : ParamQuantity {
-		std::string getDisplayValueString() override {
-			return module->inputs[BPM_INPUT].isConnected() ? "Ext." : ParamQuantity::getDisplayValueString();
-		}
-	};
-	
-	struct DivMultParamQuantity : ParamQuantity {
-		std::string getDisplayValueString() override {
-			int val = std::round(getValue());
-			if (val < 0) {
-				return string::f( "÷%c", '0' + (0x1 << -val) );
-			}
-			return     string::f( "×%c", '0' + (0x1 <<  val) );
-		}
-	};
-
 	enum ParamIds {
 		DURREF_PARAM,
 		DURTRAV_PARAM,
@@ -143,6 +115,7 @@ struct TwinParadox : Module {
 		TRAVEL_PARAM,
 		DIVMULT_PARAM,
 		MULTITIME_PARAM,
+		TAP_PARAM,
 		NUM_PARAMS
 	};
 	enum InputIds {
@@ -197,6 +170,7 @@ struct TwinParadox : Module {
 	// Need to save, with reset
 	bool running;
 	unsigned int resetOnStartStop;// see bit masks ON_STOP_INT_RST_MSK, ON_START_EXT_RST_MSK, etc
+	int bpmManual;// master bpm from inf knob or tap tempo
 	int syncInPpqn;// 0 means output BPM CV instead
 	int syncOutPpqn;// 0 means output BPM CV instead
 	bool resetClockOutputsHigh;
@@ -225,6 +199,7 @@ struct TwinParadox : Module {
 	long cantRunWarning = 0l;// 0 when no warning, positive downward step counter timer when warning
 	RefreshCounter refresh;
 	float resetLight = 0.0f;
+	int bpmKnob = 0;
 	Trigger resetTrigger;
 	Trigger runButtonTrigger;
 	TriggerRiseFall runInputTrigger;
@@ -235,6 +210,24 @@ struct TwinParadox : Module {
 	dsp::PulseGenerator meetPulse;
 	TriggerRiseFall multitime1Trigger;
 	TriggerRiseFall multitime2Trigger;
+
+
+
+	struct BpmParamQuantity : ParamQuantity {
+		std::string getDisplayValueString() override {
+			return module->inputs[BPM_INPUT].isConnected() ? "Ext." : string::f("%d",((TwinParadox*)module)->bpmManual);
+		}
+	};
+	
+	struct DivMultParamQuantity : ParamQuantity {
+		std::string getDisplayValueString() override {
+			int val = std::round(getValue());
+			if (val < 0) {
+				return string::f( "÷%c", '0' + (0x1 << -val) );
+			}
+			return     string::f( "×%c", '0' + (0x1 <<  val) );
+		}
+	};
 
 
 	bool calcWarningFlash(long count, long countInit) {
@@ -310,16 +303,18 @@ struct TwinParadox : Module {
 		paramQuantities[DURREF_PARAM]->snapEnabled = true;
 		configParam(DURTRAV_PARAM, 1.0f, 8.0f, 1.0f, "Travel time");
 		paramQuantities[DURTRAV_PARAM]->snapEnabled = true;
-		configParam<BpmParamQuantity>(BPM_PARAM, (float)(bpmMin), (float)(bpmMax), 120.0f, "Tempo", " BPM");// must be a snap knob, code in step() assumes that a rounded value is read from the knob	(chaining considerations vs BPM detect)
-		paramQuantities[BPM_PARAM]->snapEnabled = true;
-		configParam(RESET_PARAM, 0.0f, 1.0f, 0.0f, "Reset");
-		configParam(RUN_PARAM, 0.0f, 1.0f, 0.0f, "Run");
+		//configParam<BpmParamQuantity>(BPM_PARAM, (float)(bpmMin), (float)(bpmMax), 120.0f, "Tempo", " BPM");// must be a snap knob, code in step() assumes that a rounded value is read from the knob	(chaining considerations vs BPM detect)
+		//paramQuantities[BPM_PARAM]->snapEnabled = true;
+		configParam<BpmParamQuantity>(BPM_PARAM, -INFINITY, INFINITY, 0.0f, "Tempo"," BPM");	
+		configButton(RESET_PARAM, "Reset");
+		configButton(RUN_PARAM, "Run");
 		configParam(TRAVPROB_PARAM, 0.0f, 1.0f, 0.0f, "Probability to travel");
 		configParam(SWAPPROB_PARAM, 0.0f, 1.0f, 0.0f, "Traveler selection probability");
-		configParam(TRAVEL_PARAM, 0.0f, 1.0f, 0.0f, "Travel");
+		configButton(TRAVEL_PARAM, "Travel");
 		configParam<DivMultParamQuantity>(DIVMULT_PARAM, -3.0f, 3.0f, 0.0f, "Div/Mult");
 		paramQuantities[DIVMULT_PARAM]->snapEnabled = true;
 		configParam(MULTITIME_PARAM, -2.0f, 2.0f, 0.0f, "Multitime");
+		configButton(TAP_PARAM, "Tap tempo");
 		
 		configInput(RESET_INPUT, "Reset");
 		configInput(RUN_INPUT, "Run");
@@ -357,6 +352,7 @@ struct TwinParadox : Module {
 	void onReset() override final {
 		running = true;
 		resetOnStartStop = 0;
+		bpmManual = 120;
 		syncInPpqn = 0;// must start in CV mode, or else users won't understand why run won't turn on (since it's automatic in ppqn!=0 mode)
 		syncOutPpqn = 48;
 		resetClockOutputsHigh = true;
@@ -403,7 +399,7 @@ struct TwinParadox : Module {
 			}
 		}
 		else {
-			newMasterLength = 60.0f / params[BPM_PARAM].getValue();
+			newMasterLength = 60.0f / (float)bpmManual;//params[BPM_PARAM].getValue();
 			newMasterLength *= getDivMult();
 		}
 		newMasterLength = clamp(newMasterLength, masterLengthMin, masterLengthMax);
@@ -427,6 +423,9 @@ struct TwinParadox : Module {
 		
 		// resetOnStartStop
 		json_object_set_new(rootJ, "resetOnStartStop", json_integer(resetOnStartStop));
+		
+		// bpmManual
+		json_object_set_new(rootJ, "bpmManual", json_integer(bpmManual));
 		
 		// syncInPpqn
 		json_object_set_new(rootJ, "syncInPpqn", json_integer(syncInPpqn));
@@ -466,6 +465,11 @@ struct TwinParadox : Module {
 		if (resetOnStartStopJ) {
 			resetOnStartStop = json_integer_value(resetOnStartStopJ);
 		}
+
+		// bpmManual
+		json_t *bpmManualJ = json_object_get(rootJ, "bpmManual");
+		if (bpmManualJ)
+			bpmManual = json_integer_value(bpmManualJ);
 
 		// syncInPpqn
 		json_t *syncInPpqnJ = json_object_get(rootJ, "syncInPpqn");
@@ -592,6 +596,20 @@ struct TwinParadox : Module {
 		}	
 
 		if (refresh.processInputs()) {
+			// bpm knob
+			float bpmParamValue = params[BPM_PARAM].getValue();
+			int newBpmKnob = (int)std::round(bpmParamValue * 30.0f);
+			if (bpmParamValue == 0.0f)// true when constructor or dataFromJson() occured
+				bpmKnob = newBpmKnob;
+			int deltaBpmKnob = newBpmKnob - bpmKnob;
+			if (deltaBpmKnob != 0) {
+				if (abs(deltaBpmKnob) <= 3) {// avoid discontinuous 
+					bpmManual=clamp(bpmManual+deltaBpmKnob, bpmMin, bpmMax);
+				}
+				bpmKnob = newBpmKnob;
+			}	
+			
+			// travel button
 			if (travelTrigger.process(inputs[TRAVEL_INPUT].getVoltage() + params[TRAVEL_PARAM].getValue())) {
 				pendingTravelReq = true;
 			}
@@ -690,7 +708,7 @@ struct TwinParadox : Module {
 			}
 		}
 		else {// BPM_INPUT not active
-			newMasterLength = clamp(60.0f / params[BPM_PARAM].getValue(), masterLengthMin, masterLengthMax);
+			newMasterLength = clamp(60.0f / /*params[BPM_PARAM].getValue()*/(float)bpmManual, masterLengthMin, masterLengthMax);
 			newMasterLength *= getDivMult();
 		}
 		if (newMasterLength != masterLength) {
