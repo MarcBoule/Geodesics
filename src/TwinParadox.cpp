@@ -158,6 +158,7 @@ struct TwinParadox : Module {
 	static constexpr float masterLengthMax = 60.0f / bpmMin;// a length is a period
 	static constexpr float masterLengthMin = 60.0f / bpmMax;// a length is a period
 	static constexpr float multitimeGuard = 1e-4;// 100us
+	static const int numTapHistory = 4;
 
 	static const unsigned int ON_STOP_INT_RST_MSK = 0x1;
 	static const unsigned int ON_START_INT_RST_MSK = 0x2;
@@ -201,11 +202,14 @@ struct TwinParadox : Module {
 	RefreshCounter refresh;
 	float resetLight = 0.0f;
 	int bpmKnob = 0;
+	int64_t lastTapFrame = 0;
+	float tapBpmHistory[numTapHistory] = {};// index 0 is newest, shift right
 	Trigger resetTrigger;
 	Trigger runButtonTrigger;
 	TriggerRiseFall runInputTrigger;
 	Trigger bpmDetectTrigger;
 	Trigger travelTrigger;
+	Trigger tapTrigger;
 	dsp::PulseGenerator resetPulse;
 	dsp::PulseGenerator runPulse;
 	dsp::PulseGenerator meetPulse;
@@ -600,6 +604,38 @@ struct TwinParadox : Module {
 		}	
 
 		if (refresh.processInputs()) {
+			// tap tempo
+			if (tapTrigger.process(params[TAP_PARAM].getValue())) {
+				if (!inputs[BPM_INPUT].isConnected()) {
+					int64_t newTapFrame = args.frame;
+					int64_t tapPeriodFrames = std::max((int64_t)1, newTapFrame - lastTapFrame);
+					float tapBpm = 60.0f / ((float)tapPeriodFrames * args.sampleTime);
+					if (tapBpm >= bpmMin && tapBpm <= bpmMax) {
+						for (int i = numTapHistory - 1; i > 0; i--) {
+							tapBpmHistory[i] = tapBpmHistory[i-1];
+						}
+						tapBpmHistory[0] = tapBpm;
+						
+						float bpmSum = 0.0f;
+						float bpmN = 0.0f;
+						for (int i = 0; i < numTapHistory; i++) {
+							bpmSum += tapBpmHistory[i] * (float)(numTapHistory - i + 1);
+							if (tapBpmHistory[i] != 0) {
+								bpmN += numTapHistory - i + 1;// decayed weighting
+							}
+						}
+						bpmManual = clampBpm(std::round(bpmSum / bpmN));// clamp should not be needed here
+					}
+					else {
+						for (int i = 0; i < numTapHistory; i++) {
+							tapBpmHistory[i] = 0.0f;
+						}
+					}
+					lastTapFrame = newTapFrame;
+				}
+			}
+			
+			
 			// bpm knob
 			float bpmParamValue = params[BPM_PARAM].getValue();
 			int newBpmKnob = (int)std::round(bpmParamValue * 30.0f);
@@ -883,7 +919,7 @@ struct TwinParadoxWidget : ModuleWidget {
 		std::string text;
 		float fontSize;
 		NVGcolor bgColor = nvgRGB(0x46,0x46, 0x46);
-		NVGcolor fgColor = SCHEME_YELLOW;
+		NVGcolor fgColor = nvgRGB(0xd6,0xd6, 0xd6);
 		Vec textPos;
 
 		void prepareFont(const DrawArgs& args) {
@@ -907,8 +943,8 @@ struct TwinParadoxWidget : ModuleWidget {
 			prepareFont(args);
 
 			// Background text
-			nvgFillColor(args.vg, bgColor);
-			nvgText(args.vg, textPos.x, textPos.y, bgText.c_str(), NULL);
+			//nvgFillColor(args.vg, bgColor);
+			//nvgText(args.vg, textPos.x, textPos.y, bgText.c_str(), NULL);
 		}
 
 		void drawLayer(const DrawArgs& args, int layer) override {
@@ -927,10 +963,10 @@ struct TwinParadoxWidget : ModuleWidget {
 		TwinParadox* module;
 		
 		BpmDisplay() {
-			fontPath = asset::system("res/fonts/DSEG7ClassicMini-BoldItalic.ttf");
-			textPos = Vec(42, 20);
-			bgText = "18";
-			fontSize = 16;
+			fontPath = asset::system("res/fonts/Nunito-Bold.ttf");
+			textPos = Vec(41, 19);
+			//bgText = "888";
+			fontSize = 24;
 		}
 		
 		void step() override {
@@ -1078,6 +1114,8 @@ struct TwinParadoxWidget : ModuleWidget {
 		addChild(createLightCentered<LEDBezelLight<GeoWhiteLight>>(VecPx(colC, row1), module, TwinParadox::RUN_LIGHT));
 		// Master BPM knob
 		addParam(createDynamicParam<BpmKnob>(VecPx(colR, row1), module, TwinParadox::BPM_PARAM, module ? &module->panelTheme : NULL));
+		// Tap tempo
+		addParam(createDynamicParam<GeoPushButton>(VecPx(colR2, row1), module, TwinParadox::TAP_PARAM, module ? &module->panelTheme : NULL));
 
 
 		// Row 2
