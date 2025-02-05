@@ -102,6 +102,25 @@ struct GeoKnob : DynamicSVGKnob {
 	}
 };
 
+struct GeoKnobInf : DynamicSVGKnob {
+	GeoKnobInf() {
+		minAngle = -0.73 * float(M_PI);
+		maxAngle = 0.73 * float(M_PI);
+		//shadow->box.pos = Vec(0.0, box.size.y * 0.15); may need this if knob is small (taken from IMSmallKnob)
+		addFrameAll(APP->window->loadSvg(asset::plugin(pluginInstance, "res/WhiteLight/KnobInf-WL.svg")));
+		addFrameAlt(asset::plugin(pluginInstance, "res/DarkMatter/KnobInf-DM.svg"));
+		
+		addFrameBgAll(APP->window->loadSvg(asset::plugin(pluginInstance, "res/WhiteLight/Knob-WL_bg.svg")));
+		addFrameBgAlt(asset::plugin(pluginInstance, "res/DarkMatter/Knob-DM_bg.svg"));
+		
+		addFrameFgAll(APP->window->loadSvg(asset::plugin(pluginInstance, "res/WhiteLight/Knob-WL_fg.svg")));
+		addFrameFgAlt(asset::plugin(pluginInstance, "res/DarkMatter/Knob-DM_fg.svg"));
+		
+		shadow->blurRadius = box.size.y * blurRadiusRatio;
+	}
+};
+
+
 struct GeoKnobTopRight : GeoKnob {
 	GeoKnobTopRight() {setOrientation(float(M_PI) / 4.0f);}
 };

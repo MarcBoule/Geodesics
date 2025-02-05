@@ -994,7 +994,7 @@ struct TwinParadoxWidget : ModuleWidget {
 	};
 	
 	
-	struct BpmKnob : GeoKnob {
+	struct BpmKnob : GeoKnobInf {
 		BpmKnob() {};		
 		void onDoubleClick(const event::DoubleClick &e) override {
 			ParamQuantity* paramQuantity = getParamQuantity();
