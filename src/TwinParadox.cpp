@@ -117,6 +117,8 @@ struct TwinParadox : Module {
 		DIVMULT_PARAM,
 		MULTITIME_PARAM,
 		TAP_PARAM,
+		SYNCINMODE_PARAM,
+		SYNCOUTMODE_PARAM,
 		NUM_PARAMS
 	};
 	enum InputIds {
@@ -145,11 +147,12 @@ struct TwinParadox : Module {
 		RESET_LIGHT,
 		RUN_LIGHT,
 		SYNCINMODE_LIGHT,
+		SYNCOUTMODE_LIGHT,
 		ENUMS(DURREF_LIGHTS, 8 * 3),// room for GeoBlueYellowWhiteLight
 		ENUMS(DURTRAV_LIGHTS, 8 * 3),// room for GeoBlueYellowWhiteLight
 		TRAVEL_LIGHT,
 		ENUMS(TAP_LIGHT, 2),// room for GeoWhiteRedLight
-		ENUMS(DIVMULT_LIGHTS, 2 * 2),// room for GeoVioletGreen2Light, two lights
+		ENUMS(DIVMULT_LIGHTS, 2 * 2),// room for GeoVioletGreen2Light, 1st pair /*2, 2nd pair /*4
 		BPMBEAT_LIGHT,
 		NUM_LIGHTS
 	};
@@ -216,6 +219,8 @@ struct TwinParadox : Module {
 	Trigger bpmDetectTrigger;
 	Trigger travelTrigger;
 	Trigger tapTrigger;
+	Trigger syncInModeTrigger;
+	Trigger syncOutModeTrigger;
 	Trigger divMultTrigger;
 	dsp::PulseGenerator resetPulse;
 	dsp::PulseGenerator runPulse;
@@ -231,16 +236,6 @@ struct TwinParadox : Module {
 		}
 	};
 	
-	/*struct DivMultParamQuantity : ParamQuantity {
-		std::string getDisplayValueString() override {
-			int val = std::round(getValue());
-			if (val < 0) {
-				return string::f( "÷%c", '0' + (0x1 << -val) );
-			}
-			return     string::f( "×%c", '0' + (0x1 <<  val) );
-		}
-	};*/
-
 
 	bool calcWarningFlash(long count, long countInit) {
 		if ( (count > (countInit * 2l / 4l) && count < (countInit * 3l / 4l)) || (count < (countInit * 1l / 4l)) )
@@ -313,8 +308,6 @@ struct TwinParadox : Module {
 		paramQuantities[DURREF_PARAM]->snapEnabled = true;
 		configParam(DURTRAV_PARAM, 1.0f, 8.0f, 1.0f, "Travel time");
 		paramQuantities[DURTRAV_PARAM]->snapEnabled = true;
-		//configParam<BpmParamQuantity>(BPM_PARAM, (float)(bpmMin), (float)(bpmMax), 120.0f, "Tempo", " BPM");// must be a snap knob, code in step() assumes that a rounded value is read from the knob	(chaining considerations vs BPM detect)
-		//paramQuantities[BPM_PARAM]->snapEnabled = true;
 		configParam<BpmParamQuantity>(BPM_PARAM, -INFINITY, INFINITY, 0.0f, "Tempo"," BPM");	
 		configButton(RESET_PARAM, "Reset");
 		configButton(RUN_PARAM, "Run");
@@ -324,6 +317,8 @@ struct TwinParadox : Module {
 		configButton(DIVMULT_PARAM, "Div/Mult");
 		configParam(MULTITIME_PARAM, -2.0f, 2.0f, 0.0f, "Multitime");
 		configButton(TAP_PARAM, "Tap tempo");
+		configButton(SYNCINMODE_PARAM, "Sync input mode");
+		configButton(SYNCOUTMODE_PARAM, "Sync output mode");
 		
 		configInput(RESET_INPUT, "Reset");
 		configInput(RUN_INPUT, "Run");
@@ -666,13 +661,46 @@ struct TwinParadox : Module {
 			
 			// divMult button
 			if (divMultTrigger.process(params[DIVMULT_PARAM].getValue())) {
-				if (divMultInt > -2) {
+				// sequence should be 0, -1, -2, 1, 2
+				if (divMultInt == 0 || divMultInt == -1) {
 					divMultInt--;
 				}
+				else if (divMultInt == -2) {
+					divMultInt = 1;		
+				}
+				else if (divMultInt == 1) {
+					divMultInt++;
+				}
 				else {
-					divMultInt = 2;		
+					divMultInt = 0;
 				}
 			}
+			
+			// syncInMode (values: 0, 24, 48)
+			if (syncInModeTrigger.process(params[SYNCINMODE_PARAM].getValue())) {
+				if (syncInPpqn == 0) {
+					syncInPpqn = 24;
+				}
+				else if (syncInPpqn == 24) {
+					syncInPpqn = 48;
+				}
+				else {
+					syncInPpqn = 0;
+				}
+			}
+			// syncOutMode (values: 1, 24, 48)
+			if (syncOutModeTrigger.process(params[SYNCOUTMODE_PARAM].getValue())) {
+				if (syncOutPpqn == 1) {
+					syncOutPpqn = 24;
+				}
+				else if (syncOutPpqn == 24) {
+					syncOutPpqn = 48;
+				}
+				else {
+					syncOutPpqn = 1;
+				}
+			}
+			
 		}// userInputs refresh
 	
 		// BPM input and knob
@@ -914,15 +942,24 @@ struct TwinParadox : Module {
 			// Run light
 			lights[RUN_LIGHT].setBrightness(running ? 1.0f : 0.0f);
 			
-			// BPM light
+			// BPM mode light (sync in mode)
 			bool warningFlashState = true;
 			if (cantRunWarning > 0l) 
 				warningFlashState = calcWarningFlash(cantRunWarning, (long) (0.7 * sampleRate / RefreshCounter::displayRefreshStepSkips));
-			lights[SYNCINMODE_LIGHT].setBrightness((syncInPpqn != 0 && warningFlashState) ? 1.0f : 0.0f);	
+			float blight = ((float)syncInPpqn) / 48.0f;
+			if (syncInPpqn != 0 && !warningFlashState) {
+				blight = 0.0f;
+			}
+			lights[SYNCINMODE_LIGHT].setBrightness(blight);	
 
 			// BPM Beat light
 			lights[BPMBEAT_LIGHT].setSmoothBrightness(bpmBeatLight, (float)sampleTime * (RefreshCounter::displayRefreshStepSkips >> 2));	
 			bpmBeatLight = 0.0f;
+			
+			// Sync out mode
+			int soint = (syncOutPpqn == 1 ? 0 : syncOutPpqn);
+			float solight = ((float)soint) / 48.0f;
+			lights[SYNCOUTMODE_LIGHT].setBrightness(solight);	
 			
 			// Tap light
 			if (inputs[BPM_INPUT].isConnected()) {
@@ -935,7 +972,12 @@ struct TwinParadox : Module {
 			}
 			tapLight = 0.0f;
 			
-			// DIVMULT_LIGHTS
+			// DIVMULT_LIGHTS, violet/green2, 1st pair is /*2, 2nd pair is /*4
+			lights[DIVMULT_LIGHTS + 0].setBrightness(divMultInt ==  1 ? 1.0f : 0.0f);
+			lights[DIVMULT_LIGHTS + 1].setBrightness(divMultInt == -1 ? 1.0f : 0.0f);
+			lights[DIVMULT_LIGHTS + 2].setBrightness(divMultInt ==  2 ? 1.0f : 0.0f);
+			lights[DIVMULT_LIGHTS + 3].setBrightness(divMultInt == -2 ? 1.0f : 0.0f);
+			
 			
 			if (cantRunWarning > 0l)
 				cantRunWarning--;
@@ -1069,12 +1111,12 @@ struct TwinParadoxWidget : ModuleWidget {
 				   module->resetTwinParadox(true);}
 		));
 		
-		menu->addChild(createBoolMenuItem("Play CV input is level sensitive", "",
+		menu->addChild(createBoolMenuItem("Run CV input is level sensitive", "",
 			[=]() {return !module->momentaryRunInput;},
 			[=](bool loop) {module->momentaryRunInput = !module->momentaryRunInput;}
 		));
 		
-		menu->addChild(createSubmenuItem("Sync input mode", "", [=](Menu* menu) {
+		/*menu->addChild(createSubmenuItem("Sync input mode", "", [=](Menu* menu) {
 			const int numPpqns = 3;
 			const int ppqns[numPpqns] = {0, 24, 48};
 			for (int i = 0; i < numPpqns; i++) {
@@ -1085,9 +1127,9 @@ struct TwinParadoxWidget : ModuleWidget {
 							module->extIntervalTime = 0.0;}// this is for auto mode change to P24
 				));
 			}
-		}));
+		}));*/
 
-		menu->addChild(createSubmenuItem("Sync output multiplier", "", [=](Menu* menu) {
+		/*menu->addChild(createSubmenuItem("Sync output multiplier", "", [=](Menu* menu) {
 			const int numMults = 3;
 			const int mults[numMults] = {1, 24, 48};
 			for (int i = 0; i < numMults; i++) {
@@ -1097,7 +1139,7 @@ struct TwinParadoxWidget : ModuleWidget {
 					[=]() {module->syncOutPpqn = mults[i];}
 				));
 			}
-		}));
+		}));*/
 
 		//createBPMCVInputMenu(menu, &module->bpmInputScale, &module->bpmInputOffset);
 	}
@@ -1122,6 +1164,7 @@ struct TwinParadoxWidget : ModuleWidget {
 		static const int colR = 120;
 		static const int colR2 = 165;
 		static const int colM = 220;
+		static const int colX = 300;
 		
 		static const int row0 = 58;// reset, run, bpm inputs
 		static const int row1 = 95;// reset and run switches, bpm knob
@@ -1137,10 +1180,6 @@ struct TwinParadoxWidget : ModuleWidget {
 		addInput(createDynamicPort<GeoPort>(VecPx(colL, row0), true, module, TwinParadox::RESET_INPUT, module ? &module->panelTheme : NULL));
 		// Run input
 		addInput(createDynamicPort<GeoPort>(VecPx(colC, row0), true, module, TwinParadox::RUN_INPUT, module ? &module->panelTheme : NULL));
-		// Bpm input
-		addInput(createDynamicPort<GeoPort>(VecPx(colR, row0), true, module, TwinParadox::BPM_INPUT, module ? &module->panelTheme : NULL));
-		// BPM mode light
-		addChild(createLightCentered<SmallLight<WhiteLight>>(VecPx(colR, row0 - 18.0f), module, TwinParadox::SYNCINMODE_LIGHT));		
 		
 
 		// Row 1
@@ -1170,7 +1209,7 @@ struct TwinParadoxWidget : ModuleWidget {
 		display->box.pos = display->box.pos.minus(display->box.size.div(2));
 		display->module = module;
 		addChild(display);
-		addChild(createLightCentered<SmallLight<WhiteLight>>(VecPx(colM, row0-40), module, TwinParadox::BPMBEAT_LIGHT));
+		addChild(createLightCentered<SmallLight<WhiteLight>>(VecPx(colM, row0-45), module, TwinParadox::BPMBEAT_LIGHT));
 
 
 		addParam(createDynamicParam<GeoPushButton>(VecPx(colC, row2), module, TwinParadox::TRAVEL_PARAM, module ? &module->panelTheme : NULL));
@@ -1178,9 +1217,24 @@ struct TwinParadoxWidget : ModuleWidget {
 		addInput(createDynamicPort<GeoPort>(VecPx(colC, row2 + 28.0f), true, module, TwinParadox::TRAVEL_INPUT, module ? &module->panelTheme : NULL));
 		
 		addParam(createDynamicParam<GeoPushButton>(VecPx(colR, row2), module, TwinParadox::DIVMULT_PARAM, module ? &module->panelTheme : NULL));
-		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(VecPx(colR - 5.0f, row2 - 18.0f), module, TwinParadox::DIVMULT_LIGHTS + 0));	
-		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(VecPx(colR + 5.0f, row2 - 18.0f), module, TwinParadox::DIVMULT_LIGHTS + 2));	
+		addChild(createLightCentered<SmallLight<GeoVioletGreen2Light>>(VecPx(colR - 5.0f, row2 - 18.0f), module, TwinParadox::DIVMULT_LIGHTS + 0));	// /*2
+		addChild(createLightCentered<SmallLight<GeoVioletGreen2Light>>(VecPx(colR + 5.0f, row2 - 18.0f), module, TwinParadox::DIVMULT_LIGHTS + 2));	// /*4
 		
+		
+		
+		// sync in mode (button and light)
+		addParam(createDynamicParam<GeoPushButton>(VecPx(colR2, row2), module, TwinParadox::SYNCINMODE_PARAM, module ? &module->panelTheme : NULL));
+		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(VecPx(colR2, row2 - 15.0f), module, TwinParadox::SYNCINMODE_LIGHT));
+		// Bpm/sync input jack
+		addInput(createDynamicPort<GeoPort>(VecPx(colR2, row2 + 28.0f), true, module, TwinParadox::BPM_INPUT, module ? &module->panelTheme : NULL));
+
+		
+		// sync out mode (button and light)
+		addParam(createDynamicParam<GeoPushButton>(VecPx(colX, row2), module, TwinParadox::SYNCOUTMODE_PARAM, module ? &module->panelTheme : NULL));
+		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(VecPx(colX, row2 - 15.0f), module, TwinParadox::SYNCOUTMODE_LIGHT));
+		// Sync out jack
+		addOutput(createDynamicPort<GeoPort>(VecPx(colX, row2 + 28.0f), false, module, TwinParadox::SYNC_OUTPUT, module ? &module->panelTheme : NULL));
+
 		
 		
 		
@@ -1208,8 +1262,6 @@ struct TwinParadoxWidget : ModuleWidget {
 		addOutput(createDynamicPort<GeoPort>(VecPx(colL, row6), false, module, TwinParadox::RESET_OUTPUT, module ? &module->panelTheme : NULL));
 		// Run out
 		addOutput(createDynamicPort<GeoPort>(VecPx(colC, row6), false, module, TwinParadox::RUN_OUTPUT, module ? &module->panelTheme : NULL));
-		// Sync out
-		addOutput(createDynamicPort<GeoPort>(VecPx(colR, row6), false, module, TwinParadox::SYNC_OUTPUT, module ? &module->panelTheme : NULL));
 		// Meet out
 		addOutput(createDynamicPort<GeoPort>(VecPx(colR2, row6), false, module, TwinParadox::MEET_OUTPUT, module ? &module->panelTheme : NULL));
 		
@@ -1220,9 +1272,9 @@ struct TwinParadoxWidget : ModuleWidget {
 		}
 		
 		// Multitime
-		addOutput(createDynamicPort<GeoPort>(VecPx(colM, row4 - 30), false, module, TwinParadox::MULTITIME_OUTPUT, module ? &module->panelTheme : NULL));
-		addParam(createDynamicParam<GeoKnob>(VecPx(colM, row4), module, TwinParadox::MULTITIME_PARAM, module ? &module->panelTheme : NULL));
-		addInput(createDynamicPort<GeoPort>(VecPx(colM, row4 + 28.0f), true, module, TwinParadox::MULTITIME_INPUT, module ? &module->panelTheme : NULL));
+		addOutput(createDynamicPort<GeoPort>(VecPx(colX, row4 - 30), false, module, TwinParadox::MULTITIME_OUTPUT, module ? &module->panelTheme : NULL));
+		addParam(createDynamicParam<GeoKnob>(VecPx(colX, row4), module, TwinParadox::MULTITIME_PARAM, module ? &module->panelTheme : NULL));
+		addInput(createDynamicPort<GeoPort>(VecPx(colX, row4 + 28.0f), true, module, TwinParadox::MULTITIME_INPUT, module ? &module->panelTheme : NULL));
 		
 
 
