@@ -148,7 +148,8 @@ struct TwinParadox : Module {
 		ENUMS(DURREF_LIGHTS, 8 * 3),// room for GeoBlueYellowWhiteLight
 		ENUMS(DURTRAV_LIGHTS, 8 * 3),// room for GeoBlueYellowWhiteLight
 		TRAVEL_LIGHT,
-		ENUMS(TAP_LIGHT, 2),// room for 
+		ENUMS(TAP_LIGHT, 2),// room for GeoWhiteRedLight
+		ENUMS(DIVMULT_LIGHTS, 2 * 2),// room for GeoVioletGreen2Light, two lights
 		BPMBEAT_LIGHT,
 		NUM_LIGHTS
 	};
@@ -177,6 +178,7 @@ struct TwinParadox : Module {
 	int bpmManual;// master bpm from inf knob or tap tempo
 	int syncInPpqn;// 0 means output BPM CV instead
 	int syncOutPpqn;// 0 means output BPM CV instead
+	int divMultInt;// <0 div, >0 mult
 	bool resetClockOutputsHigh;
 	bool momentaryRunInput;// true = trigger (original rising edge only version), false = level sensitive (emulated with rising and falling detection)
 	float bpmInputScale;// -1.0f to 1.0f
@@ -214,6 +216,7 @@ struct TwinParadox : Module {
 	Trigger bpmDetectTrigger;
 	Trigger travelTrigger;
 	Trigger tapTrigger;
+	Trigger divMultTrigger;
 	dsp::PulseGenerator resetPulse;
 	dsp::PulseGenerator runPulse;
 	dsp::PulseGenerator meetPulse;
@@ -228,7 +231,7 @@ struct TwinParadox : Module {
 		}
 	};
 	
-	struct DivMultParamQuantity : ParamQuantity {
+	/*struct DivMultParamQuantity : ParamQuantity {
 		std::string getDisplayValueString() override {
 			int val = std::round(getValue());
 			if (val < 0) {
@@ -236,7 +239,7 @@ struct TwinParadox : Module {
 			}
 			return     string::f( "×%c", '0' + (0x1 <<  val) );
 		}
-	};
+	};*/
 
 
 	bool calcWarningFlash(long count, long countInit) {
@@ -273,17 +276,12 @@ struct TwinParadox : Module {
 		swapValue += inputs[SWAPPROB_INPUT].getVoltage() / 10.0f;
 		return (random::uniform() < swapValue); // random::uniform is [0.0, 1.0), see include/util/common.hpp
 	}
-	int getDivMultKnob() {
-		// this is inverted ratio, so that the period time can be multiplied with return value
-		return (int)std::round(params[DIVMULT_PARAM].getValue());
-	}	
 	double getDivMult() {
 		// this is inverted ratio, so that the period time can be multiplied with return value
-		int val = getDivMultKnob();
-		if (val < 0) {
-			return (double)(0x1 << -val);
+		if (divMultInt < 0) {
+			return (double)(0x1 << -divMultInt);
 		}
-		return 1.0 / (double)(0x1 << val);
+		return 1.0 / (double)(0x1 << divMultInt);
 	}
 	float getMultitimeValueWithCV() {
 		float val = params[MULTITIME_PARAM].getValue();
@@ -323,8 +321,7 @@ struct TwinParadox : Module {
 		configParam(TRAVPROB_PARAM, 0.0f, 1.0f, 0.0f, "Probability to travel");
 		configParam(SWAPPROB_PARAM, 0.0f, 1.0f, 0.0f, "Traveler selection probability");
 		configButton(TRAVEL_PARAM, "Travel");
-		configParam<DivMultParamQuantity>(DIVMULT_PARAM, -2.0f, 2.0f, 0.0f, "Div/Mult");
-		paramQuantities[DIVMULT_PARAM]->snapEnabled = true;
+		configButton(DIVMULT_PARAM, "Div/Mult");
 		configParam(MULTITIME_PARAM, -2.0f, 2.0f, 0.0f, "Multitime");
 		configButton(TAP_PARAM, "Tap tempo");
 		
@@ -367,6 +364,7 @@ struct TwinParadox : Module {
 		bpmManual = 120;
 		syncInPpqn = 0;// must start in CV mode, or else users won't understand why run won't turn on (since it's automatic in ppqn!=0 mode)
 		syncOutPpqn = 48;
+		divMultInt = 0;// -2=div4, -1=div2, 0=mult1, 1=mult2, 2=mult4
 		resetClockOutputsHigh = true;
 		momentaryRunInput = true;
 		bpmInputScale = 1.0f;
@@ -445,6 +443,9 @@ struct TwinParadox : Module {
 		// syncOutPpqn
 		json_object_set_new(rootJ, "syncOutPpqn", json_integer(syncOutPpqn));
 		
+		// divMultInt
+		json_object_set_new(rootJ, "divMultInt", json_integer(divMultInt));
+		
 		// resetClockOutputsHigh
 		json_object_set_new(rootJ, "resetClockOutputsHigh", json_boolean(resetClockOutputsHigh));
 		
@@ -492,6 +493,11 @@ struct TwinParadox : Module {
 		json_t *syncOutPpqnJ = json_object_get(rootJ, "syncOutPpqn");
 		if (syncOutPpqnJ)
 			syncOutPpqn = json_integer_value(syncOutPpqnJ);
+
+		// divMultInt
+		json_t *divMultIntJ = json_object_get(rootJ, "divMultInt");
+		if (divMultIntJ)
+			divMultInt = json_integer_value(divMultIntJ);
 
 		// resetClockOutputsHigh
 		json_t *resetClockOutputsHighJ = json_object_get(rootJ, "resetClockOutputsHigh");
@@ -639,8 +645,7 @@ struct TwinParadox : Module {
 					tapLight = 1.0f;
 				}
 			}
-			
-			
+						
 			// bpm knob
 			float bpmParamValue = params[BPM_PARAM].getValue();
 			int newBpmKnob = (int)std::round(bpmParamValue * 30.0f);
@@ -657,6 +662,16 @@ struct TwinParadox : Module {
 			// travel button
 			if (travelTrigger.process(inputs[TRAVEL_INPUT].getVoltage() + params[TRAVEL_PARAM].getValue())) {
 				pendingTravelReq = true;
+			}
+			
+			// divMult button
+			if (divMultTrigger.process(params[DIVMULT_PARAM].getValue())) {
+				if (divMultInt > -2) {
+					divMultInt--;
+				}
+				else {
+					divMultInt = 2;		
+				}
 			}
 		}// userInputs refresh
 	
@@ -684,8 +699,6 @@ struct TwinParadox : Module {
 						}
 					}
 					if (running) {
-						int divMultInt = getDivMultKnob();
-						
 						int syncInPpqnMultDiv = divMultInt >= 0 ? 
 													syncInPpqn / (0x1 << divMultInt) :
 													syncInPpqn * (0x1 << -divMultInt);
@@ -921,6 +934,8 @@ struct TwinParadox : Module {
 				lights[TAP_LIGHT + 1].setBrightness(0.0f);				
 			}
 			tapLight = 0.0f;
+			
+			// DIVMULT_LIGHTS
 			
 			if (cantRunWarning > 0l)
 				cantRunWarning--;
@@ -1162,7 +1177,9 @@ struct TwinParadoxWidget : ModuleWidget {
 		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(VecPx(colC, row2 - 18.0f), module, TwinParadox::TRAVEL_LIGHT));	
 		addInput(createDynamicPort<GeoPort>(VecPx(colC, row2 + 28.0f), true, module, TwinParadox::TRAVEL_INPUT, module ? &module->panelTheme : NULL));
 		
-		addParam(createDynamicParam<GeoKnob>(VecPx(colR, row2), module, TwinParadox::DIVMULT_PARAM, module ? &module->panelTheme : NULL));
+		addParam(createDynamicParam<GeoPushButton>(VecPx(colR, row2), module, TwinParadox::DIVMULT_PARAM, module ? &module->panelTheme : NULL));
+		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(VecPx(colR - 5.0f, row2 - 18.0f), module, TwinParadox::DIVMULT_LIGHTS + 0));	
+		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(VecPx(colR + 5.0f, row2 - 18.0f), module, TwinParadox::DIVMULT_LIGHTS + 2));	
 		
 		
 		

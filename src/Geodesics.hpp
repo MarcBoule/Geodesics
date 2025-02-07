@@ -43,6 +43,9 @@ static constexpr float clockIgnoreOnResetDuration = 0.001f;// disable clock on p
 
 static const float blurRadiusRatio = 0.06f;
 
+static const NVGcolor GEO_GREEN2 = nvgRGB(0x3d, 0xff, 0xaf);
+static const NVGcolor GEO_VIOLET = nvgRGB(0xb1, 0xa4, 0xff);
+
 
 // Variations on existing knobs, lights, etc
 
@@ -228,6 +231,12 @@ struct GeoBlueYellowLight : GeoGrayModuleLight {
 	GeoBlueYellowLight() {
 		addBaseColor(SCHEME_BLUE);
 		addBaseColor(SCHEME_YELLOW);
+	}
+};
+struct GeoVioletGreen2Light : GeoGrayModuleLight {
+	GeoVioletGreen2Light() {
+		addBaseColor(GEO_VIOLET);
+		addBaseColor(GEO_GREEN2);
 	}
 };
 
