@@ -144,11 +144,12 @@ struct TwinParadox : Module {
 	enum LightIds {
 		RESET_LIGHT,
 		RUN_LIGHT,
-		ENUMS(SYNCINMODE_LIGHT, 2),// room for GreenRed
+		SYNCINMODE_LIGHT,
 		ENUMS(DURREF_LIGHTS, 8 * 3),// room for GeoBlueYellowWhiteLight
 		ENUMS(DURTRAV_LIGHTS, 8 * 3),// room for GeoBlueYellowWhiteLight
 		TRAVEL_LIGHT,
 		ENUMS(TAP_LIGHT, 2),// room for 
+		BPMBEAT_LIGHT,
 		NUM_LIGHTS
 	};
 	
@@ -203,6 +204,7 @@ struct TwinParadox : Module {
 	RefreshCounter refresh;
 	float resetLight = 0.0f;
 	float tapLight = 0.0f;
+	float bpmBeatLight = 0.0f;
 	int bpmKnob = 0;
 	int64_t lastTapFrame = 0;
 	float tapBpmHistory[numTapHistory] = {};// index 0 is newest, shift right
@@ -877,6 +879,10 @@ struct TwinParadox : Module {
 			outputs[MULTITIME_OUTPUT].setVoltage(0.0f);
 		}
 		
+		if (trigMt1 == 1) {
+			bpmBeatLight = 1.0f;			
+		}
+		
 		multitimeGuardPulse.process(args.sampleTime);
 		if (running) {
 			// Step clocks and update clkOutputs[]
@@ -899,13 +905,16 @@ struct TwinParadox : Module {
 			bool warningFlashState = true;
 			if (cantRunWarning > 0l) 
 				warningFlashState = calcWarningFlash(cantRunWarning, (long) (0.7 * sampleRate / RefreshCounter::displayRefreshStepSkips));
-			lights[SYNCINMODE_LIGHT + 0].setBrightness((syncInPpqn != 0 && warningFlashState) ? 1.0f : 0.0f);
-			lights[SYNCINMODE_LIGHT + 1].setBrightness((syncInPpqn != 0 && warningFlashState) ? (float)((syncInPpqn - 2)*(syncInPpqn - 2))/440.0f : 0.0f);			
+			lights[SYNCINMODE_LIGHT].setBrightness((syncInPpqn != 0 && warningFlashState) ? 1.0f : 0.0f);	
+
+			// BPM Beat light
+			lights[BPMBEAT_LIGHT].setSmoothBrightness(bpmBeatLight, (float)sampleTime * (RefreshCounter::displayRefreshStepSkips >> 2));	
+			bpmBeatLight = 0.0f;
 			
 			// Tap light
 			if (inputs[BPM_INPUT].isConnected()) {
 				lights[TAP_LIGHT + 0].setBrightness(0.0f);
-				lights[TAP_LIGHT + 1].setBrightness(1.0f);
+				lights[TAP_LIGHT + 1].setBrightness(params[TAP_PARAM].getValue());
 			}
 			else {
 				lights[TAP_LIGHT + 0].setSmoothBrightness(tapLight, (float)sampleTime * (RefreshCounter::displayRefreshStepSkips >> 2));
@@ -1116,21 +1125,23 @@ struct TwinParadoxWidget : ModuleWidget {
 		// Bpm input
 		addInput(createDynamicPort<GeoPort>(VecPx(colR, row0), true, module, TwinParadox::BPM_INPUT, module ? &module->panelTheme : NULL));
 		// BPM mode light
-		addChild(createLightCentered<SmallLight<GreenRedLight>>(VecPx(colR, row0 - 18.0f), module, TwinParadox::SYNCINMODE_LIGHT));		
+		addChild(createLightCentered<SmallLight<WhiteLight>>(VecPx(colR, row0 - 18.0f), module, TwinParadox::SYNCINMODE_LIGHT));		
 		
 
 		// Row 1
-		// Reset LED bezel and light
-		addParam(createParamCentered<LEDBezel>(VecPx(colL, row1), module, TwinParadox::RESET_PARAM));
-		addChild(createLightCentered<LEDBezelLight<GeoWhiteLight>>(VecPx(colL, row1), module, TwinParadox::RESET_LIGHT));
-		// Run LED bezel and light
-		addParam(createParamCentered<LEDBezel>(VecPx(colC, row1), module, TwinParadox::RUN_PARAM));
-		addChild(createLightCentered<LEDBezelLight<GeoWhiteLight>>(VecPx(colC, row1), module, TwinParadox::RUN_LIGHT));
+		// Reset button and light
+		addParam(createParamCentered<GeoPushButton>(VecPx(colL, row1), module, TwinParadox::RESET_PARAM));
+		addChild(createLightCentered<SmallLight<WhiteLight>>(VecPx(colL, row1 - 15.0f), module, TwinParadox::RESET_LIGHT));
+		
+		
+		// Run button and light
+		addParam(createParamCentered<GeoPushButton>(VecPx(colC, row1), module, TwinParadox::RUN_PARAM));
+		addChild(createLightCentered<SmallLight<WhiteLight>>(VecPx(colC, row1 - 15.0f), module, TwinParadox::RUN_LIGHT));
 		// Master BPM knob
 		addParam(createDynamicParam<BpmKnob>(VecPx(colR, row1), module, TwinParadox::BPM_PARAM, module ? &module->panelTheme : NULL));
 		// Tap tempo + light
 		addParam(createDynamicParam<GeoPushButton>(VecPx(colR2, row1), module, TwinParadox::TAP_PARAM, module ? &module->panelTheme : NULL));
-		addChild(createLightCentered<SmallLight<GeoWhiteRedLight>>(VecPx(colR2, row1 - 15), module, TwinParadox::TAP_LIGHT));
+		addChild(createLightCentered<SmallLight<GeoWhiteRedLight>>(VecPx(colR2, row1 - 15.0f), module, TwinParadox::TAP_LIGHT));
 
 		// Row 2
 		// Clock master out
@@ -1138,12 +1149,13 @@ struct TwinParadoxWidget : ModuleWidget {
 		addOutput(createDynamicPort<GeoPort>(VecPx(colL, row2 + 28.0f), false, module, TwinParadox::TWIN2_OUTPUT, module ? &module->panelTheme : NULL));	
 
 		// 	
-		// BPM display
+		// BPM display and beat light
 		BpmDisplay* display = createWidget<BpmDisplay>(VecPx(colM, row0-30));
 		display->box.size = mm2px(Vec(2.0*8.197, 8.197));
 		display->box.pos = display->box.pos.minus(display->box.size.div(2));
 		display->module = module;
 		addChild(display);
+		addChild(createLightCentered<SmallLight<WhiteLight>>(VecPx(colM, row0-40), module, TwinParadox::BPMBEAT_LIGHT));
 
 
 		addParam(createDynamicParam<GeoPushButton>(VecPx(colC, row2), module, TwinParadox::TRAVEL_PARAM, module ? &module->panelTheme : NULL));
