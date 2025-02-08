@@ -171,6 +171,8 @@ struct TwinParadox : Module {
 	static const unsigned int ON_STOP_EXT_RST_MSK = 0x4;
 	static const unsigned int ON_START_EXT_RST_MSK = 0x8;
 	
+	enum NotifyTypeIds {NOTIFY_SYNCIN, NOTIFY_SYNCOUT, NOTIFY_DIVMULT};
+	
 	
 	// Need to save, no reset
 	int panelTheme;
@@ -202,6 +204,8 @@ struct TwinParadox : Module {
 	bool traveling;
 	int multitimeSwitch;// -1 = ref, 1 = trav, 0 = none
 	dsp::PulseGenerator multitimeGuardPulse;
+	long notifyCounter;// 0 when nothing to notify, downward step counter otherwise
+	int notifyType; // see NotifyTypeIds enum
 	
 	// No need to save, no reset
 	bool scheduledReset = false;
@@ -367,6 +371,8 @@ struct TwinParadox : Module {
 		resetNonJson(false);
 	}
 	void resetNonJson(bool delayed) {// delay thread sensitive parts (i.e. schedule them so that process() will do them)
+		notifyCounter = 0l;
+		notifyType = NOTIFY_SYNCIN;
 		if (delayed) {
 			scheduledReset = true;// will be a soft reset
 		}
@@ -674,6 +680,8 @@ struct TwinParadox : Module {
 				else {
 					divMultInt = 0;
 				}
+				notifyCounter = (long) (3.0 * sampleRate / RefreshCounter::displayRefreshStepSkips);
+				notifyType = NOTIFY_DIVMULT;
 			}
 			
 			// syncInMode (values: 0, 24, 48)
@@ -687,6 +695,8 @@ struct TwinParadox : Module {
 				else {
 					syncInPpqn = 0;
 				}
+				notifyCounter = (long) (3.0 * sampleRate / RefreshCounter::displayRefreshStepSkips);
+				notifyType = NOTIFY_SYNCIN;
 			}
 			// syncOutMode (values: 1, 24, 48)
 			if (syncOutModeTrigger.process(params[SYNCOUTMODE_PARAM].getValue())) {
@@ -699,6 +709,8 @@ struct TwinParadox : Module {
 				else {
 					syncOutPpqn = 1;
 				}
+				notifyCounter = (long) (3.0 * sampleRate / RefreshCounter::displayRefreshStepSkips);
+				notifyType = NOTIFY_SYNCOUT;
 			}
 			
 		}// userInputs refresh
@@ -982,6 +994,10 @@ struct TwinParadox : Module {
 			if (cantRunWarning > 0l)
 				cantRunWarning--;
 			
+			notifyCounter--;
+			if (notifyCounter < 0l)
+				notifyCounter = 0l;
+			
 		}// lightRefreshCounter
 	}// process()
 };
@@ -1050,12 +1066,35 @@ struct TwinParadoxWidget : ModuleWidget {
 		}
 		
 		void step() override {
-			int bpm = 120;
-			if (module) {
-				bpm = (unsigned)((60.0f / (module->masterLength / module->getDivMult())) + 0.5f);
-				bpm = module->clampBpm(bpm);
+			if (!module) {
+				text = "120";
 			}
-			text = string::f("%d", bpm);
+			else {
+				if (module->notifyCounter == 0l) {
+					int bpm = (unsigned)((60.0f / (module->masterLength / module->getDivMult())) + 0.5f);
+					bpm = module->clampBpm(bpm);
+					text = string::f("%d", bpm);
+				}
+				else if (module->notifyType == TwinParadox::NOTIFY_SYNCIN) {
+					if (module->syncInPpqn == 0) {
+						text = " CV";
+					}
+					else {
+						text = string::f("P%d", module->syncInPpqn);
+					}
+				}
+				else if (module->notifyType == TwinParadox::NOTIFY_SYNCOUT) {
+					text = string::f("×%d", module->syncOutPpqn);
+				}
+				else {// if (module->notifyType == TwinParadox::NOTIFY_DIVMULT) {
+					if (module->divMultInt < 0) {
+						text = string::f( "÷%d", 0x1<<(-module->divMultInt) );
+					}
+					else {
+						text = string::f( "×%d", 0x1<<(module->divMultInt) );
+					}
+				}
+			}
 		}	
 	};
 	
@@ -1164,7 +1203,7 @@ struct TwinParadoxWidget : ModuleWidget {
 		static const int colR = 120;
 		static const int colR2 = 165;
 		static const int colM = 220;
-		static const int colX = 300;
+		static const int colX = 290;
 		
 		static const int row0 = 58;// reset, run, bpm inputs
 		static const int row1 = 95;// reset and run switches, bpm knob
