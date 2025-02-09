@@ -1251,6 +1251,16 @@ struct TwinParadoxWidget : ModuleWidget {
 		}));*/
 
 		//createBPMCVInputMenu(menu, &module->bpmInputScale, &module->bpmInputOffset);
+
+		menu->addChild(new MenuSeparator());
+		menu->addChild(createMenuLabel("Actions"));
+		
+		InstantiateExpanderItem *expItem = createMenuItem<InstantiateExpanderItem>("Add expander (4HP right side)", "");
+		expItem->module = module;
+		expItem->model = modelTwinParadoxExpander;
+		expItem->posit = box.pos.plus(math::Vec(box.size.x,0));
+		menu->addChild(expItem);	
+
 	}
 	
 

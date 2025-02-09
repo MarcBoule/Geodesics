@@ -58,3 +58,21 @@ int getWeighted1to8random() {
 	return 8;
 }
 
+void InstantiateExpanderItem::onAction(const event::Action &e) {
+	// Create Module and ModuleWidget
+	module = model->createModule();
+	APP->engine->addModule(module);
+
+	ModuleWidget* mw = model->createModuleWidget(module);
+	// APP->scene->rack->addModuleAtMouse(mw);
+	
+	// ModuleWidget *mw = model->createModuleWidget();
+	if (mw) {
+		APP->scene->rack->setModulePosNearest(mw, posit);
+		APP->scene->rack->addModule(mw);
+		history::ModuleAdd *h = new history::ModuleAdd;
+		h->name = "create expander module";
+		h->setModule(mw);
+		APP->history->push(h);
+	}
+}

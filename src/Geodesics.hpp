@@ -379,3 +379,9 @@ struct HoldDetect {
 
 int getWeighted1to8random();
 
+struct InstantiateExpanderItem : MenuItem {
+	Module* module;
+	Model* model;
+	Vec posit;
+	void onAction(const event::Action &e) override;
+};

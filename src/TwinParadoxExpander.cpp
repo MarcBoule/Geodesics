@@ -57,7 +57,7 @@ struct TwinParadoxExpander : Module {
 		configButton(SYNCOUTMODE_PARAM, "Sync output mode");
 
 		configInput(MULTITIME_INPUT, "Multitime CV");
-		configInput(PWCV_INPUT, "Master clock pulse width");
+		configInput(PWCV_INPUT, "Pulse width CV");
 		
 		configOutput(MULTITIME_OUTPUT, "Multitime");
 		configOutput(SYNC_OUTPUT, "Sync clock");
@@ -71,23 +71,30 @@ struct TwinParadoxExpander : Module {
 		if (motherPresent) {
 			// To Mother
 			TmFxInterface *messagesToMother = static_cast<TmFxInterface*>(leftExpander.module->rightExpander.producerMessage);
+			// sync out mode button
 			messagesToMother->syncOutModeButton = params[SYNCOUTMODE_PARAM].getValue();
-			messagesToMother->pulseWidth = params[PW_PARAM].getValue();
-			
-		float knob = params[MULTITIME_PARAM].getValue();
-		knob += inputs[MULTITIME_INPUT].getVoltage() / 5.0f;
-		knob = clamp(knob, -2.0f, 2.0f);
-			
+			// pulse width with CV
+			float pw = params[PW_PARAM].getValue();
+			pw += inputs[PWCV_INPUT].getVoltage() / 10.0f;
+			pw = clamp(pw, 0.0f, 1.0f);
+			messagesToMother->pulseWidth = pw;
+			// multitime knob with CV
+			float knob = params[MULTITIME_PARAM].getValue();
+			knob += inputs[MULTITIME_INPUT].getVoltage() / 5.0f;
+			knob = clamp(knob, -2.0f, 2.0f);
 			messagesToMother->multitimeParam = knob;
+			
 			leftExpander.module->rightExpander.messageFlipRequested = true;
+			
 			
 			// From Mother
 			TxFmInterface *messagesFromMother = static_cast<TxFmInterface*>(leftExpander.consumerMessage);			
 			outputs[SYNC_OUTPUT].setVoltage(messagesFromMother->syncOutClk);
 			lights[SYNCOUTMODE_LIGHT].setBrightness(messagesFromMother->syncOutModeLight);
 			outputs[MULTITIME_OUTPUT].setVoltage(messagesFromMother->kimeOut);
-			lights[KIME1_LIGHT].setSmoothBrightness(messagesFromMother->k1Light, args.sampleTime / 4.0f);//* (RefreshCounter::displayRefreshStepSkips >> 2));	
-			lights[KIME2_LIGHT].setSmoothBrightness(messagesFromMother->k2Light, args.sampleTime / 4.0f);//* (RefreshCounter::displayRefreshStepSkips >> 2));	
+			float smoothDeltaTime = args.sampleTime / 4.0f;// args.sampleTime * (RefreshCounter::displayRefreshStepSkips >> 2));
+			lights[KIME1_LIGHT].setSmoothBrightness(messagesFromMother->k1Light, smoothDeltaTime);
+			lights[KIME2_LIGHT].setSmoothBrightness(messagesFromMother->k2Light, smoothDeltaTime);	
 			panelTheme = messagesFromMother->panelTheme;
 		}		
 	}// process()
@@ -114,7 +121,7 @@ struct TwinParadoxExpanderWidget : ModuleWidget {
 
 		static const int colX = 290;
 		
-		//static const int row0 = 58;// reset, run, bpm inputs
+		static const int row0 = 58;// reset, run, bpm inputs
 		static const int row1 = 95;// reset and run switches, bpm knob
 		static const int row2 = 148;// bpm display, display index lights, master clk out
 		// static const int row3 = 198;// display and mode buttons
@@ -140,6 +147,7 @@ struct TwinParadoxExpanderWidget : ModuleWidget {
 
 		// Pulse width
 		addParam(createDynamicParam<GeoKnob>(VecPx(colX, row1), module, TwinParadoxExpander::PW_PARAM, module ? &module->panelTheme : NULL));
+		addInput(createDynamicPort<GeoPort>(VecPx(colX, row0), true, module, TwinParadoxExpander::PWCV_INPUT, module ? &module->panelTheme : NULL));
 		
 
 	}
