@@ -85,6 +85,13 @@
 			"tags": ["Clock generator"]
 		},
 		{
+			"slug": "Twin-Paradox-Expander-Kime",
+			"name": "Kime",
+			"description": "Expander for Twin-Paradox clock",
+			"manualUrl": "https://www.pyer.be/geodesics.html",
+			"tags": ["Clock generator", "Expander"]
+		},
+		{
 			"slug": "Blank-PanelInfo",
 			"name": "Blank-Panel Info",
 			"description": "Blank panel with info",

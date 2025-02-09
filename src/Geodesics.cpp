@@ -30,6 +30,7 @@ void init(Plugin *p) {
 	p->addModel(modelTorus);
 	p->addModel(modelFate);
 	p->addModel(modelTwinParadox);
+	p->addModel(modelTwinParadoxExpander);
 	p->addModel(modelBlankLogo);
 	p->addModel(modelBlankInfo);
 }

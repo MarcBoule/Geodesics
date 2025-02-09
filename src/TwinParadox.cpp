@@ -8,7 +8,7 @@
 //***********************************************************************************************
 
 
-#include "Geodesics.hpp"
+#include "TwinParadoxCommon.hpp"
 
 
 class Clock {
@@ -158,16 +158,13 @@ struct TwinParadox : Module {
 		TWIN2_OUTPUT,
 		RESET_OUTPUT,
 		RUN_OUTPUT,
-		SYNC_OUTPUT,
 		MEET_OUTPUT,
-		MULTITIME_OUTPUT,
 		NUM_OUTPUTS
 	};
 	enum LightIds {
 		RESET_LIGHT,
 		RUN_LIGHT,
 		SYNCINMODE_LIGHT,
-		SYNCOUTMODE_LIGHT,
 		ENUMS(DURREF_LIGHTS, 8 * 3),// room for GeoBlueYellowWhiteLight
 		ENUMS(DURTRAV_LIGHTS, 8 * 3),// room for GeoBlueYellowWhiteLight
 		TRAVELMAN_LIGHT,
@@ -179,8 +176,6 @@ struct TwinParadox : Module {
 		TWIN2OUT_LIGHT,
 		TWIN1TRAVELING_LIGHT,
 		TWIN2TRAVELING_LIGHT,
-		KIME1_LIGHT,
-		KIME2_LIGHT,
 		MEET_LIGHT,
 		NUM_LIGHTS
 	};
@@ -387,14 +382,11 @@ struct TwinParadox : Module {
 		configOutput(TWIN1_OUTPUT, "Twin 1 clock");
 		configOutput(TWIN2_OUTPUT, "Twin 2 clock");
 		configOutput(RESET_OUTPUT, "Reset");
-		configOutput(RUN_OUTPUT, "Run");
-		configOutput(SYNC_OUTPUT, "Sync clock");
+		configOutput(RUN_OUTPUT, "Run");	
 		configOutput(MEET_OUTPUT, "Meet");
-		configOutput(MULTITIME_OUTPUT, "Multitime");
 		
 		configBypass(RESET_INPUT, RESET_OUTPUT);
 		configBypass(RUN_INPUT, RUN_OUTPUT);
-		configBypass(BPM_INPUT, SYNC_OUTPUT);
 
 		clk.reserve(3);
 		clk.push_back(Clock(nullptr, &resetClockOutputsHigh, &pulseWidth));// Ref clock
@@ -631,6 +623,8 @@ struct TwinParadox : Module {
 	
 
 	void process(const ProcessArgs &args) override {
+		bool expanderPresent = (rightExpander.module && rightExpander.module->model == modelTwinParadoxExpander);
+
 		// Scheduled reset
 		if (scheduledReset) {
 			resetTwinParadox(false);		
@@ -926,7 +920,6 @@ struct TwinParadox : Module {
 		int twin2clk = swap ? 0 : 1;
 		outputs[TWIN1_OUTPUT].setVoltage(clkOutputs[twin1clk]);
 		outputs[TWIN2_OUTPUT].setVoltage(clkOutputs[twin2clk]);
-		outputs[SYNC_OUTPUT].setVoltage(clkOutputs[2]);
 		outputs[MEET_OUTPUT].setVoltage(meetPulse.process((float)sampleTime) ? 10.0f : 0.0f);
 		
 		outputs[RESET_OUTPUT].setVoltage(resetPulse.process((float)sampleTime) ? 10.0f : 0.0f);
@@ -935,7 +928,8 @@ struct TwinParadox : Module {
 		// multitime
 		int trigMt1 = multitime1Trigger.process(clk[twin1clk].isHigh() ? 10.0f : 0.0f);
 		int trigMt2 = multitime2Trigger.process(clk[twin2clk].isHigh() ? 10.0f : 0.0f);
-		if (outputs[MULTITIME_OUTPUT].isConnected()) {
+		float mOut = 0.0f;
+		if (expanderPresent) {
 			if ((trigMt1 == -1 && multitimeSwitch == -1) || (trigMt2 == -1 && multitimeSwitch == 1)) {
 				multitimeGuardPulse.trigger(multitimeGuard);
 				multitimeSwitch = 0;
@@ -995,17 +989,12 @@ struct TwinParadox : Module {
 				}
 			}			
 			
-			float mOut = 0.0f;
 			if (multitimeSwitch == -1 && running) {
 				mOut = clk[twin1clk].isHigh() ? 10.0f : 0.0f;
 			}
 			if (multitimeSwitch == 1 && running) {
 				mOut = clk[twin2clk].isHigh() ? 10.0f : 0.0f;
 			}
-			outputs[MULTITIME_OUTPUT].setVoltage(mOut);
-		}
-		else {
-			outputs[MULTITIME_OUTPUT].setVoltage(0.0f);
 		}
 		
 		if ((!swap && trigMt1 == 1) || (swap && trigMt2 == 1)) {
@@ -1053,13 +1042,7 @@ struct TwinParadox : Module {
 			// Meet light
 			lights[MEET_LIGHT].setSmoothBrightness(meetLight, (float)sampleTime * (RefreshCounter::displayRefreshStepSkips >> 2));	
 			meetLight = 0.0f;
-			
-			// Kime1&2 lights
-			lights[KIME1_LIGHT].setSmoothBrightness(k1Light, (float)sampleTime * (RefreshCounter::displayRefreshStepSkips >> 2));	
-			k1Light = 0.0f;
-			lights[KIME2_LIGHT].setSmoothBrightness(k2Light, (float)sampleTime * (RefreshCounter::displayRefreshStepSkips >> 2));	
-			k2Light = 0.0f;
-			
+						
 			// Tap light
 			if (inputs[BPM_INPUT].isConnected()) {
 				lights[TAP_LIGHT + 0].setBrightness(0.0f);
@@ -1086,6 +1069,30 @@ struct TwinParadox : Module {
 				notifyCounter = 0l;
 			
 		}// lightRefreshCounter
+		
+
+
+		//********** Expander **********
+				
+		// To expander
+		if (expanderPresent) {
+			TxFmInterface *messageToExpander = static_cast<TxFmInterface*>(rightExpander.module->leftExpander.producerMessage);
+			
+			messageToExpander->syncOutClk = clkOutputs[2];
+			int soint = (syncOutPpqn == 1 ? 0 : syncOutPpqn);
+			messageToExpander->syncOutModeLight = ((float)soint) / 48.0f;
+			messageToExpander->kimeOut = mOut;
+			messageToExpander->k1Light = k1Light;
+			if (k1Light != 0.0f) DEBUG("K1");
+			k1Light = 0.0f;
+			messageToExpander->k2Light = k2Light;
+			if (k2Light != 0.0f) DEBUG("K2");
+			k2Light = 0.0f;
+			messageToExpander->panelTheme = panelTheme;
+
+			rightExpander.module->leftExpander.messageFlipRequested = true;
+		}// if (auxExpanderPresent)
+			
 	}// process()
 };
 
@@ -1277,7 +1284,7 @@ struct TwinParadoxWidget : ModuleWidget {
 
 		// Main panels from Inkscape
 		light_svg = APP->window->loadSvg(asset::plugin(pluginInstance, "res/WhiteLight/TwinParadox-WL.svg"));
-		dark_svg = APP->window->loadSvg(asset::plugin(pluginInstance, "res/WhiteLight/TwinParadox-WL.svg"));
+		dark_svg = APP->window->loadSvg(asset::plugin(pluginInstance, "res/DarkMatter/TwinParadox-DM.svg"));
 		int panelTheme = isDark(module ? (&((static_cast<TwinParadox*>(module))->panelTheme)) : NULL) ? 1 : 0;// need this here since step() not called for module browser
 		setPanel(panelTheme == 0 ? light_svg : dark_svg);		
 		
@@ -1364,11 +1371,8 @@ struct TwinParadoxWidget : ModuleWidget {
 		addInput(createDynamicPort<GeoPort>(VecPx(colR2, row2 + 28.0f), true, module, TwinParadox::BPM_INPUT, module ? &module->panelTheme : NULL));
 
 
-		// sync out mode (button and light)
+		// sync out mode (button)
 		addParam(createDynamicParam<GeoPushButton>(VecPx(colX, row2), module, TwinParadox::SYNCOUTMODE_PARAM, module ? &module->panelTheme : NULL));
-		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(VecPx(colX, row2 - 15.0f), module, TwinParadox::SYNCOUTMODE_LIGHT));
-		// Sync out jack
-		addOutput(createDynamicPort<GeoPort>(VecPx(colX, row2 + 28.0f), false, module, TwinParadox::SYNC_OUTPUT, module ? &module->panelTheme : NULL));
 
 		
 		
@@ -1405,13 +1409,9 @@ struct TwinParadoxWidget : ModuleWidget {
 			addChild(createLightCentered<SmallLight<GeoBlueYellowWhiteLight>>(VecPx(240, 50 + 15 * i), module, TwinParadox::DURTRAV_LIGHTS + i * 3));
 		}
 		
-		// Multitime output, knob and CV input
-		addOutput(createDynamicPort<GeoPort>(VecPx(colX, row4 - 30), false, module, TwinParadox::MULTITIME_OUTPUT, module ? &module->panelTheme : NULL));
+		// Multitime knob and CV input
 		addParam(createDynamicParam<GeoKnob>(VecPx(colX, row4), module, TwinParadox::MULTITIME_PARAM, module ? &module->panelTheme : NULL));
 		addInput(createDynamicPort<GeoPort>(VecPx(colX, row4 + 28.0f), true, module, TwinParadox::MULTITIME_INPUT, module ? &module->panelTheme : NULL));
-		// Multitime lights (2x)
-		addChild(createLightCentered<SmallLight<BlueLight>>(VecPx(colX-15, row4 +15), module, TwinParadox::KIME1_LIGHT));		
-		addChild(createLightCentered<SmallLight<YellowLight>>(VecPx(colX+15, row4 +15), module, TwinParadox::KIME2_LIGHT));
 		
 		
 		addParam(createDynamicParam<GeoKnob>(VecPx(colX, row1), module, TwinParadox::PW_PARAM, module ? &module->panelTheme : NULL));
@@ -1447,13 +1447,7 @@ struct TwinParadoxWidget : ModuleWidget {
 			// Separate twin traveling lights
 			m->lights[TwinParadox::TWIN1TRAVELING_LIGHT].setBrightness((m->traveling && !m->swap) ? 1.0f : 0.0f);
 			m->lights[TwinParadox::TWIN2TRAVELING_LIGHT].setBrightness((m->traveling && m->swap) ? 1.0f : 0.0f);
-			
-			
-			// Sync out mode
-			int soint = (m->syncOutPpqn == 1 ? 0 : m->syncOutPpqn);
-			float solight = ((float)soint) / 48.0f;
-			m->lights[TwinParadox::SYNCOUTMODE_LIGHT].setBrightness(solight);	
-			
+						
 			// Run light
 			m->lights[TwinParadox::RUN_LIGHT].setBrightness(m->running ? 1.0f : 0.0f);
 			
