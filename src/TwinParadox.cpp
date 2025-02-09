@@ -159,6 +159,9 @@ struct TwinParadox : Module {
 		TWIN2OUT_LIGHT,
 		TWIN1TRAVELING_LIGHT,
 		TWIN2TRAVELING_LIGHT,
+		KIME1_LIGHT,
+		KIME2_LIGHT,
+		MEET_LIGHT,
 		NUM_LIGHTS
 	};
 	
@@ -220,6 +223,9 @@ struct TwinParadox : Module {
 	float resetLight = 0.0f;
 	float tapLight = 0.0f;
 	float bpmBeatLight = 0.0f;
+	float meetLight = 0.0f;
+	float k1Light = 0.0f;
+	float k2Light = 0.0f;
 	float twin1OutLight = 0.0f;
 	float twin2OutLight = 0.0f;
 	int bpmKnob = 0;
@@ -295,10 +301,10 @@ struct TwinParadox : Module {
 		val += inputs[MULTITIME_INPUT].getVoltage() / 5.0f;
 		return clamp(val, -2.0f, 2.0f);
 	}
-	float probMultitime(bool isRef) {
+	float probMultitime(bool isTwin1) {
 		// knob is [-2.0, +2.0]
 		float knob = getMultitimeValueWithCV();
-		if (isRef) {
+		if (isTwin1) {
 			if (knob <= -1.0f) return knob + 2.0f;
 			if (knob <= 0.0f) return 1.0f;
 			if (knob <= 1.0f) return 1.0f - knob;
@@ -563,8 +569,8 @@ struct TwinParadox : Module {
 
 	
 	void multitimeSimultaneous() {
-		bool p1 = random::uniform() < probMultitime(true);// true = REF
-		bool p2 = random::uniform() < probMultitime(false);// false = TRAV
+		bool p1 = random::uniform() < probMultitime(true);// true = twin1
+		bool p2 = random::uniform() < probMultitime(false);// false = twin2
 		if (p1 && p2) {
 			// choose one random
 			multitimeSwitch = (random::u32() % 2 == 0) ? -1 : 1;
@@ -578,7 +584,7 @@ struct TwinParadox : Module {
 		else {
 			multitimeSwitch = 0;
 			multitimeGuardPulse.trigger(multitimeGuard);
-		}		
+		}
 	}
 	
 	
@@ -841,6 +847,7 @@ struct TwinParadox : Module {
 				clk[2].reset();// force reset (thus refresh) of that sub-clock
 				if (traveling) {
 					meetPulse.trigger(0.001f);
+					meetLight = 1.0f;
 				}
 				
 				swap = evalSwap();
@@ -905,7 +912,7 @@ struct TwinParadox : Module {
 				}
 				else {
 					// not simultaneous
-					bool p1 = random::uniform() < probMultitime(true);// true = REF
+					bool p1 = random::uniform() < probMultitime(true);// true = twin1
 					if (p1) {
 						multitimeSwitch = -1;
 					}
@@ -913,6 +920,12 @@ struct TwinParadox : Module {
 						multitimeSwitch = 0;
 						multitimeGuardPulse.trigger(multitimeGuard);
 					}				
+				}
+				if (multitimeSwitch == -1) {
+					k1Light = 1.0f;
+				}
+				else if (multitimeSwitch == 1) {
+					k2Light = 1.0f;
 				}
 			}
 
@@ -926,7 +939,7 @@ struct TwinParadox : Module {
 				}
 				else {
 					// not simultaneous
-					bool p2 = random::uniform() < probMultitime(false);// false = TRAV
+					bool p2 = random::uniform() < probMultitime(false);// false = twin2
 					if (p2) {
 						multitimeSwitch = 1;
 					}
@@ -934,6 +947,12 @@ struct TwinParadox : Module {
 						multitimeSwitch = 0;
 						multitimeGuardPulse.trigger(multitimeGuard);
 					}
+				}
+				if (multitimeSwitch == -1) {
+					k1Light = 1.0f;
+				}
+				else if (multitimeSwitch == 1) {
+					k2Light = 1.0f;
 				}
 			}			
 			
@@ -991,6 +1010,16 @@ struct TwinParadox : Module {
 			// BPM Beat light
 			lights[BPMBEAT_LIGHT].setSmoothBrightness(bpmBeatLight, (float)sampleTime * (RefreshCounter::displayRefreshStepSkips >> 2));	
 			bpmBeatLight = 0.0f;
+
+			// Meet light
+			lights[MEET_LIGHT].setSmoothBrightness(meetLight, (float)sampleTime * (RefreshCounter::displayRefreshStepSkips >> 2));	
+			meetLight = 0.0f;
+			
+			// Kime1&2 lights
+			lights[KIME1_LIGHT].setSmoothBrightness(k1Light, (float)sampleTime * (RefreshCounter::displayRefreshStepSkips >> 2));	
+			k1Light = 0.0f;
+			lights[KIME2_LIGHT].setSmoothBrightness(k2Light, (float)sampleTime * (RefreshCounter::displayRefreshStepSkips >> 2));	
+			k2Light = 0.0f;
 			
 			// Tap light
 			if (inputs[BPM_INPUT].isConnected()) {
@@ -1326,8 +1355,10 @@ struct TwinParadoxWidget : ModuleWidget {
 		addOutput(createDynamicPort<GeoPort>(VecPx(colL, row6), false, module, TwinParadox::RESET_OUTPUT, module ? &module->panelTheme : NULL));
 		// Run out
 		addOutput(createDynamicPort<GeoPort>(VecPx(colC, row6), false, module, TwinParadox::RUN_OUTPUT, module ? &module->panelTheme : NULL));
-		// Meet out
+		
+		// Meet output and light
 		addOutput(createDynamicPort<GeoPort>(VecPx(colR2, row6), false, module, TwinParadox::MEET_OUTPUT, module ? &module->panelTheme : NULL));
+		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(VecPx(colR2, row6 - 15.0f), module, TwinParadox::MEET_LIGHT));
 		
 		
 		for (int i = 0; i < 8; i++) {
@@ -1335,12 +1366,13 @@ struct TwinParadoxWidget : ModuleWidget {
 			addChild(createLightCentered<SmallLight<GeoBlueYellowWhiteLight>>(VecPx(240, 50 + 15 * i), module, TwinParadox::DURTRAV_LIGHTS + i * 3));
 		}
 		
-		// Multitime
+		// Multitime output, knob and CV input
 		addOutput(createDynamicPort<GeoPort>(VecPx(colX, row4 - 30), false, module, TwinParadox::MULTITIME_OUTPUT, module ? &module->panelTheme : NULL));
 		addParam(createDynamicParam<GeoKnob>(VecPx(colX, row4), module, TwinParadox::MULTITIME_PARAM, module ? &module->panelTheme : NULL));
 		addInput(createDynamicPort<GeoPort>(VecPx(colX, row4 + 28.0f), true, module, TwinParadox::MULTITIME_INPUT, module ? &module->panelTheme : NULL));
-		
-
+		// Multitime lights (2x)
+		addChild(createLightCentered<SmallLight<BlueLight>>(VecPx(colX-15, row4 +15), module, TwinParadox::KIME1_LIGHT));		
+		addChild(createLightCentered<SmallLight<YellowLight>>(VecPx(colX+15, row4 +15), module, TwinParadox::KIME2_LIGHT));
 
 	}
 	
