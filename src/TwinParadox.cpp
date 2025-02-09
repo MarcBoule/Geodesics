@@ -27,12 +27,14 @@ class Clock {
 	Clock* syncSrc = nullptr; // only subclocks will have this set to master clock
 	static constexpr double guard = 0.0005;// in seconds, region for sync to occur right before end of length of last iteration; sub clocks must be low during this period
 	bool *resetClockOutputsHigh = nullptr;
+	float *pulseWidth = nullptr;
 	
 	public:
 	
-	Clock(Clock* clkGiven, bool *resetClockOutputsHighPtr) {
+	Clock(Clock* clkGiven, bool *resetClockOutputsHighPtr, float* pulseWidthPtr) {
 		syncSrc = clkGiven;
 		resetClockOutputsHigh = resetClockOutputsHighPtr;
+		pulseWidth = pulseWidthPtr;
 		reset();
 	}
 	
@@ -91,10 +93,27 @@ class Clock {
 	}
 	
 	int isHigh() {
+		int high = 0;
 		if (step >= 0.0) {
-			return (step < (length * 0.5)) ? 1 : 0;
+			// all following values are in seconds
+			float onems = 0.001f;
+			float period = (float)length;
+			float p2min = onems;
+			float p2max = period - onems;
+			if (p2max < p2min) {
+				p2max = p2min;
+			}
+			
+			//double p1 = 0.0;// implicit, no need 
+			float pw = ( (pulseWidth != nullptr) ? (*pulseWidth) : 0.5f );
+			double p2 = (double)((p2max - p2min) * pw + p2min);// pulseWidth is [0 : 1]
+
+			if (step <= p2)
+				high = 1;
 		}
-		return (*resetClockOutputsHigh) ? 1 : 0;
+		else if (*resetClockOutputsHigh)
+			high = 1;
+		return high;	
 	}	
 };
 
@@ -119,6 +138,7 @@ struct TwinParadox : Module {
 		TAP_PARAM,
 		SYNCINMODE_PARAM,
 		SYNCOUTMODE_PARAM,
+		PW_PARAM,
 		NUM_PARAMS
 	};
 	enum InputIds {
@@ -215,6 +235,7 @@ struct TwinParadox : Module {
 	dsp::PulseGenerator multitimeGuardPulse;
 	long notifyCounter;// 0 when nothing to notify, downward step counter otherwise
 	int notifyType; // see NotifyTypeIds enum
+	float pulseWidth;
 	
 	// No need to save, no reset
 	bool scheduledReset = false;
@@ -248,6 +269,20 @@ struct TwinParadox : Module {
 
 
 
+	void updatePulseWidth() {
+		bool expanderPresent = false;// (rightExpander.module && rightExpander.module->model == modelClockedExpander);
+		// const float *messagesFromExpander = static_cast<float*>(rightExpander.consumerMessage);// could be invalid pointer when !expanderPresent, so read it only when expanderPresent
+
+		// Pulse Width
+		if (expanderPresent) {
+			pulseWidth= 0.5f;//(messagesFromExpander[i] / 10.0f);
+			pulseWidth = clamp(pulseWidth, 0.0f, 1.0f);
+		}
+		else {
+			pulseWidth = params[PW_PARAM].getValue();// will be 0.5f when expand absent
+		}
+	}
+	
 	struct BpmParamQuantity : ParamQuantity {
 		std::string getDisplayValueString() override {
 			return module->inputs[BPM_INPUT].isConnected() ? "Ext." : string::f("%d",((TwinParadox*)module)->bpmManual);
@@ -337,6 +372,7 @@ struct TwinParadox : Module {
 		configButton(TAP_PARAM, "Tap tempo");
 		configButton(SYNCINMODE_PARAM, "Sync input mode");
 		configButton(SYNCOUTMODE_PARAM, "Sync output mode");
+		configParam(PW_PARAM, 0.0f, 1.0f, 0.5f, "Pulse width");
 		
 		configInput(RESET_INPUT, "Reset");
 		configInput(RUN_INPUT, "Run");
@@ -361,9 +397,9 @@ struct TwinParadox : Module {
 		configBypass(BPM_INPUT, SYNC_OUTPUT);
 
 		clk.reserve(3);
-		clk.push_back(Clock(nullptr, &resetClockOutputsHigh));// Ref clock
-		clk.push_back(Clock(&clk[0], &resetClockOutputsHigh));// Traveler clock	
-		clk.push_back(Clock(&clk[0], &resetClockOutputsHigh));// Sync out clock		
+		clk.push_back(Clock(nullptr, &resetClockOutputsHigh, &pulseWidth));// Ref clock
+		clk.push_back(Clock(&clk[0], &resetClockOutputsHigh, &pulseWidth));// Traveler clock	
+		clk.push_back(Clock(&clk[0], &resetClockOutputsHigh, nullptr));// Sync out clock		
 
 		onReset();
 		
@@ -435,6 +471,7 @@ struct TwinParadox : Module {
 		travelingSrc = 0;
 		multitimeSwitch = 0;
 		multitimeGuardPulse.reset();
+		updatePulseWidth();
 	}	
 	
 	
@@ -630,6 +667,8 @@ struct TwinParadox : Module {
 		}	
 
 		if (refresh.processInputs()) {
+			updatePulseWidth();
+			
 			// tap tempo
 			if (tapTrigger.process(params[TAP_PARAM].getValue())) {
 				if (!inputs[BPM_INPUT].isConnected()) {
@@ -1373,6 +1412,10 @@ struct TwinParadoxWidget : ModuleWidget {
 		// Multitime lights (2x)
 		addChild(createLightCentered<SmallLight<BlueLight>>(VecPx(colX-15, row4 +15), module, TwinParadox::KIME1_LIGHT));		
 		addChild(createLightCentered<SmallLight<YellowLight>>(VecPx(colX+15, row4 +15), module, TwinParadox::KIME2_LIGHT));
+		
+		
+		addParam(createDynamicParam<GeoKnob>(VecPx(colX, row1), module, TwinParadox::PW_PARAM, module ? &module->panelTheme : NULL));
+
 
 	}
 	
