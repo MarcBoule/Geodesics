@@ -12,7 +12,15 @@
 
 
 struct TwinParadoxExpander : Module {
+	enum ParamIds {
+		MULTITIME_PARAM,
+		PW_PARAM,
+		SYNCOUTMODE_PARAM,
+		NUM_PARAMS
+	};
+
 	enum InputIds {
+		MULTITIME_INPUT,
 		PWCV_INPUT,
 		NUM_INPUTS
 	};
@@ -31,7 +39,7 @@ struct TwinParadoxExpander : Module {
 	};
 	
 	// Expander
-	TxFmInterface leftMessages[2];// messages from mother (panelTheme and panelContrast)
+	TxFmInterface leftMessages[2];// messages from mother
 
 
 	// No need to save, no reset
@@ -39,11 +47,16 @@ struct TwinParadoxExpander : Module {
 
 
 	TwinParadoxExpander() {
-		config(0, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
+		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		
 		leftExpander.producerMessage = &leftMessages[0];
 		leftExpander.consumerMessage = &leftMessages[1];
 		
+		configParam(MULTITIME_PARAM, -2.0f, 2.0f, 0.0f, "Multitime");
+		configParam(PW_PARAM, 0.0f, 1.0f, 0.5f, "Pulse width");
+		configButton(SYNCOUTMODE_PARAM, "Sync output mode");
+
+		configInput(MULTITIME_INPUT, "Multitime CV");
 		configInput(PWCV_INPUT, "Master clock pulse width");
 		
 		configOutput(MULTITIME_OUTPUT, "Multitime");
@@ -57,15 +70,19 @@ struct TwinParadoxExpander : Module {
 		bool motherPresent = (leftExpander.module && leftExpander.module->model == modelTwinParadox);
 		if (motherPresent) {
 			// To Mother
-			/*float *messagesToMother = static_cast<float*>(leftExpander.module->rightExpander.producerMessage);
-			for (int i = 0; i < 8; i++) {
-				messagesToMother[i] = inputs[i].getVoltage();
-			}
-			leftExpander.module->rightExpander.messageFlipRequested = true;*/
+			TmFxInterface *messagesToMother = static_cast<TmFxInterface*>(leftExpander.module->rightExpander.producerMessage);
+			messagesToMother->syncOutModeButton = params[SYNCOUTMODE_PARAM].getValue();
+			messagesToMother->pulseWidth = params[PW_PARAM].getValue();
+			
+		float knob = params[MULTITIME_PARAM].getValue();
+		knob += inputs[MULTITIME_INPUT].getVoltage() / 5.0f;
+		knob = clamp(knob, -2.0f, 2.0f);
+			
+			messagesToMother->multitimeParam = knob;
+			leftExpander.module->rightExpander.messageFlipRequested = true;
 			
 			// From Mother
-			TxFmInterface *messagesFromMother = static_cast<TxFmInterface*>(leftExpander.consumerMessage);
-			
+			TxFmInterface *messagesFromMother = static_cast<TxFmInterface*>(leftExpander.consumerMessage);			
 			outputs[SYNC_OUTPUT].setVoltage(messagesFromMother->syncOutClk);
 			lights[SYNCOUTMODE_LIGHT].setBrightness(messagesFromMother->syncOutModeLight);
 			outputs[MULTITIME_OUTPUT].setVoltage(messagesFromMother->kimeOut);
@@ -95,31 +112,35 @@ struct TwinParadoxExpanderWidget : ModuleWidget {
 		// part of svg panel, no code required
 
 
-		static const int colL = 30;
-		static const int colC = 75;
-		static const int colR = 120;
-		static const int colR2 = 165;
-		static const int colM = 220;
 		static const int colX = 290;
 		
-		static const int row0 = 58;// reset, run, bpm inputs
+		//static const int row0 = 58;// reset, run, bpm inputs
 		static const int row1 = 95;// reset and run switches, bpm knob
 		static const int row2 = 148;// bpm display, display index lights, master clk out
 		// static const int row3 = 198;// display and mode buttons
 		static const int row4 = 227;// sub clock ratio knobs
 		// static const int row5 = 281;// sub clock outs
-		static const int row6 = 328;// reset, run, bpm outputs
+		//static const int row6 = 328;// reset, run, bpm outputs
 
 		// Multitime output (Kime out)
 		addOutput(createDynamicPort<GeoPort>(VecPx(colX, row4 - 30), false, module, TwinParadoxExpander::MULTITIME_OUTPUT, module ? &module->panelTheme : NULL));
+		// Multitime knob and CV input
+		addParam(createDynamicParam<GeoKnob>(VecPx(colX, row4), module, TwinParadoxExpander::MULTITIME_PARAM, module ? &module->panelTheme : NULL));
+		addInput(createDynamicPort<GeoPort>(VecPx(colX, row4 + 28.0f), true, module, TwinParadoxExpander::MULTITIME_INPUT, module ? &module->panelTheme : NULL));
 
 		// Sync out jack and mode light
 		addOutput(createDynamicPort<GeoPort>(VecPx(colX, row2 + 28.0f), false, module, TwinParadoxExpander::SYNC_OUTPUT, module ? &module->panelTheme : NULL));
 		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(VecPx(colX, row2 - 15.0f), module, TwinParadoxExpander::SYNCOUTMODE_LIGHT));
+		// sync out mode (button)
+		addParam(createDynamicParam<GeoPushButton>(VecPx(colX, row2), module, TwinParadoxExpander::SYNCOUTMODE_PARAM, module ? &module->panelTheme : NULL));
 
 		// Multitime lights (2x)
 		addChild(createLightCentered<SmallLight<BlueLight>>(VecPx(colX-15, row4 +15), module, TwinParadoxExpander::KIME1_LIGHT));		
 		addChild(createLightCentered<SmallLight<YellowLight>>(VecPx(colX+15, row4 +15), module, TwinParadoxExpander::KIME2_LIGHT));
+
+		// Pulse width
+		addParam(createDynamicParam<GeoKnob>(VecPx(colX, row1), module, TwinParadoxExpander::PW_PARAM, module ? &module->panelTheme : NULL));
+		
 
 	}
 	

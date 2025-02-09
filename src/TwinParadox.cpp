@@ -134,11 +134,8 @@ struct TwinParadox : Module {
 		SWAPPROB_PARAM,
 		TRAVEL_PARAM,
 		DIVMULT_PARAM,
-		MULTITIME_PARAM,
 		TAP_PARAM,
 		SYNCINMODE_PARAM,
-		SYNCOUTMODE_PARAM,
-		PW_PARAM,
 		NUM_PARAMS
 	};
 	enum InputIds {
@@ -150,7 +147,6 @@ struct TwinParadox : Module {
 		SWAPPROB_INPUT,
 		DURREF_INPUT,
 		DURTRAV_INPUT,
-		MULTITIME_INPUT,
 		NUM_INPUTS
 	};
 	enum OutputIds {
@@ -180,6 +176,8 @@ struct TwinParadox : Module {
 		NUM_LIGHTS
 	};
 	
+	// Expander
+	TmFxInterface rightMessages[2];// messages from expander
 	
 	// Constants
 	static const int bpmMax = 300;
@@ -263,20 +261,6 @@ struct TwinParadox : Module {
 	TriggerRiseFall multitime2Trigger;
 
 
-
-	void updatePulseWidth() {
-		bool expanderPresent = false;// (rightExpander.module && rightExpander.module->model == modelClockedExpander);
-		// const float *messagesFromExpander = static_cast<float*>(rightExpander.consumerMessage);// could be invalid pointer when !expanderPresent, so read it only when expanderPresent
-
-		// Pulse Width
-		if (expanderPresent) {
-			pulseWidth= 0.5f;//(messagesFromExpander[i] / 10.0f);
-			pulseWidth = clamp(pulseWidth, 0.0f, 1.0f);
-		}
-		else {
-			pulseWidth = params[PW_PARAM].getValue();// will be 0.5f when expand absent
-		}
-	}
 	
 	struct BpmParamQuantity : ParamQuantity {
 		std::string getDisplayValueString() override {
@@ -326,14 +310,8 @@ struct TwinParadox : Module {
 		}
 		return 1.0 / (double)(0x1 << divMultInt);
 	}
-	float getMultitimeValueWithCV() {
-		float val = params[MULTITIME_PARAM].getValue();
-		val += inputs[MULTITIME_INPUT].getVoltage() / 5.0f;
-		return clamp(val, -2.0f, 2.0f);
-	}
-	float probMultitime(bool isTwin1) {
-		// knob is [-2.0, +2.0]
-		float knob = getMultitimeValueWithCV();
+	float probMultitime(bool isTwin1, float knob) {
+		// knob is [-2.0, +2.0], and has CV included
 		if (isTwin1) {
 			if (knob <= -1.0f) return knob + 2.0f;
 			if (knob <= 0.0f) return 1.0f;
@@ -352,6 +330,9 @@ struct TwinParadox : Module {
 	TwinParadox() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 
+		rightExpander.producerMessage = &rightMessages[0];
+		rightExpander.consumerMessage = &rightMessages[1];
+
 		configParam(DURREF_PARAM, 1.0f, 8.0f, 1.0f, "Reference time");
 		paramQuantities[DURREF_PARAM]->snapEnabled = true;
 		configParam(DURTRAV_PARAM, 1.0f, 8.0f, 1.0f, "Travel time");
@@ -363,11 +344,8 @@ struct TwinParadox : Module {
 		configParam(SWAPPROB_PARAM, 0.0f, 1.0f, 0.0f, "Traveler selection probability");
 		configButton(TRAVEL_PARAM, "Travel");
 		configButton(DIVMULT_PARAM, "Div/Mult");
-		configParam(MULTITIME_PARAM, -2.0f, 2.0f, 0.0f, "Multitime");
 		configButton(TAP_PARAM, "Tap tempo");
 		configButton(SYNCINMODE_PARAM, "Sync input mode");
-		configButton(SYNCOUTMODE_PARAM, "Sync output mode");
-		configParam(PW_PARAM, 0.0f, 1.0f, 0.5f, "Pulse width");
 		
 		configInput(RESET_INPUT, "Reset");
 		configInput(RUN_INPUT, "Run");
@@ -377,7 +355,6 @@ struct TwinParadox : Module {
 		configInput(SWAPPROB_INPUT, "Traveler selection probability CV");
 		configInput(DURREF_INPUT, "Reference time CV");
 		configInput(DURTRAV_INPUT, "Travel time CV");
-		configInput(MULTITIME_INPUT, "Multitime CV");
 
 		configOutput(TWIN1_OUTPUT, "Twin 1 clock");
 		configOutput(TWIN2_OUTPUT, "Twin 2 clock");
@@ -463,7 +440,7 @@ struct TwinParadox : Module {
 		travelingSrc = 0;
 		multitimeSwitch = 0;
 		multitimeGuardPulse.reset();
-		updatePulseWidth();
+		pulseWidth= 0.5f;
 	}	
 	
 	
@@ -597,9 +574,9 @@ struct TwinParadox : Module {
 	}
 
 	
-	void multitimeSimultaneous() {
-		bool p1 = random::uniform() < probMultitime(true);// true = twin1
-		bool p2 = random::uniform() < probMultitime(false);// false = twin2
+	void multitimeSimultaneous(float knob) {
+		bool p1 = random::uniform() < probMultitime(true, knob);// true = twin1
+		bool p2 = random::uniform() < probMultitime(false, knob);// false = twin2
 		if (p1 && p2) {
 			// choose one random
 			multitimeSwitch = (random::u32() % 2 == 0) ? -1 : 1;
@@ -624,6 +601,10 @@ struct TwinParadox : Module {
 
 	void process(const ProcessArgs &args) override {
 		bool expanderPresent = (rightExpander.module && rightExpander.module->model == modelTwinParadoxExpander);
+		TmFxInterface *messagesFromExpander = static_cast<TmFxInterface*>(rightExpander.consumerMessage);// could be invalid pointer when !expanderPresent, so read it only when expanderPresent
+		
+		pulseWidth = expanderPresent ? messagesFromExpander->pulseWidth : 0.5f; 
+
 
 		// Scheduled reset
 		if (scheduledReset) {
@@ -661,8 +642,6 @@ struct TwinParadox : Module {
 		}	
 
 		if (refresh.processInputs()) {
-			updatePulseWidth();
-			
 			// tap tempo
 			if (tapTrigger.process(params[TAP_PARAM].getValue())) {
 				if (!inputs[BPM_INPUT].isConnected()) {
@@ -749,7 +728,7 @@ struct TwinParadox : Module {
 				notifyType = NOTIFY_SYNCIN;
 			}
 			// syncOutMode (values: 1, 24, 48)
-			if (syncOutModeTrigger.process(params[SYNCOUTMODE_PARAM].getValue())) {
+			if (expanderPresent && syncOutModeTrigger.process(messagesFromExpander->syncOutModeButton)) {
 				if (syncOutPpqn == 1) {
 					syncOutPpqn = 24;
 				}
@@ -930,6 +909,7 @@ struct TwinParadox : Module {
 		int trigMt2 = multitime2Trigger.process(clk[twin2clk].isHigh() ? 10.0f : 0.0f);
 		float mOut = 0.0f;
 		if (expanderPresent) {
+			float knob = messagesFromExpander->multitimeParam;
 			if ((trigMt1 == -1 && multitimeSwitch == -1) || (trigMt2 == -1 && multitimeSwitch == 1)) {
 				multitimeGuardPulse.trigger(multitimeGuard);
 				multitimeSwitch = 0;
@@ -941,11 +921,11 @@ struct TwinParadox : Module {
 				int itThis = durThis - clk[twin1clk].getIterations();
 				
 				if (itThis * durOther % durThis == 0) {
-					multitimeSimultaneous();
+					multitimeSimultaneous(knob);
 				}
 				else {
 					// not simultaneous
-					bool p1 = random::uniform() < probMultitime(true);// true = twin1
+					bool p1 = random::uniform() < probMultitime(true, knob);// true = twin1
 					if (p1) {
 						multitimeSwitch = -1;
 					}
@@ -968,11 +948,11 @@ struct TwinParadox : Module {
 				int itThis = durThis - clk[twin2clk].getIterations();
 				
 				if (itThis * durOther % durThis == 0) {
-					multitimeSimultaneous();
+					multitimeSimultaneous(knob);
 				}
 				else {
 					// not simultaneous
-					bool p2 = random::uniform() < probMultitime(false);// false = twin2
+					bool p2 = random::uniform() < probMultitime(false, knob);// false = twin2
 					if (p2) {
 						multitimeSwitch = 1;
 					}
@@ -1072,8 +1052,6 @@ struct TwinParadox : Module {
 		
 
 
-		//********** Expander **********
-				
 		// To expander
 		if (expanderPresent) {
 			TxFmInterface *messageToExpander = static_cast<TxFmInterface*>(rightExpander.module->leftExpander.producerMessage);
@@ -1083,10 +1061,8 @@ struct TwinParadox : Module {
 			messageToExpander->syncOutModeLight = ((float)soint) / 48.0f;
 			messageToExpander->kimeOut = mOut;
 			messageToExpander->k1Light = k1Light;
-			if (k1Light != 0.0f) DEBUG("K1");
 			k1Light = 0.0f;
 			messageToExpander->k2Light = k2Light;
-			if (k2Light != 0.0f) DEBUG("K2");
 			k2Light = 0.0f;
 			messageToExpander->panelTheme = panelTheme;
 
@@ -1297,7 +1273,6 @@ struct TwinParadoxWidget : ModuleWidget {
 		static const int colR = 120;
 		static const int colR2 = 165;
 		static const int colM = 220;
-		static const int colX = 290;
 		
 		static const int row0 = 58;// reset, run, bpm inputs
 		static const int row1 = 95;// reset and run switches, bpm knob
@@ -1369,11 +1344,6 @@ struct TwinParadoxWidget : ModuleWidget {
 		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(VecPx(colR2, row2 - 15.0f), module, TwinParadox::SYNCINMODE_LIGHT));
 		// Bpm/sync input jack
 		addInput(createDynamicPort<GeoPort>(VecPx(colR2, row2 + 28.0f), true, module, TwinParadox::BPM_INPUT, module ? &module->panelTheme : NULL));
-
-
-		// sync out mode (button)
-		addParam(createDynamicParam<GeoPushButton>(VecPx(colX, row2), module, TwinParadox::SYNCOUTMODE_PARAM, module ? &module->panelTheme : NULL));
-
 		
 		
 		
@@ -1409,13 +1379,6 @@ struct TwinParadoxWidget : ModuleWidget {
 			addChild(createLightCentered<SmallLight<GeoBlueYellowWhiteLight>>(VecPx(240, 50 + 15 * i), module, TwinParadox::DURTRAV_LIGHTS + i * 3));
 		}
 		
-		// Multitime knob and CV input
-		addParam(createDynamicParam<GeoKnob>(VecPx(colX, row4), module, TwinParadox::MULTITIME_PARAM, module ? &module->panelTheme : NULL));
-		addInput(createDynamicPort<GeoPort>(VecPx(colX, row4 + 28.0f), true, module, TwinParadox::MULTITIME_INPUT, module ? &module->panelTheme : NULL));
-		
-		
-		addParam(createDynamicParam<GeoKnob>(VecPx(colX, row1), module, TwinParadox::PW_PARAM, module ? &module->panelTheme : NULL));
-
 
 	}
 	
