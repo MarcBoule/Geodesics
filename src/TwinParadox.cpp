@@ -381,7 +381,7 @@ struct TwinParadox : Module {
 		resetOnStartStop = 0;
 		bpmManual = 120;
 		syncInPpqn = 0;// must start in CV mode, or else users won't understand why run won't turn on (since it's automatic in ppqn!=0 mode)
-		syncOutPpqn = 48;
+		syncOutPpqn = 1;
 		divMultInt = 0;// -2=div4, -1=div2, 0=mult1, 1=mult2, 2=mult4
 		resetClockOutputsHigh = true;
 		momentaryRunInput = true;
@@ -735,7 +735,10 @@ struct TwinParadox : Module {
 				else if (syncOutPpqn == 24) {
 					syncOutPpqn = 48;
 				}
-				else {
+				else if (syncOutPpqn == 48) {
+					syncOutPpqn = 0;
+				}
+				else {// if syncOutPpqn == 0
 					syncOutPpqn = 1;
 				}
 				notifyCounter = (long) (3.0 * sampleRate / RefreshCounter::displayRefreshStepSkips);
@@ -1056,9 +1059,8 @@ struct TwinParadox : Module {
 		if (expanderPresent) {
 			TxFmInterface *messageToExpander = static_cast<TxFmInterface*>(rightExpander.module->leftExpander.producerMessage);
 			
-			messageToExpander->syncOutClk = clkOutputs[2];
-			int soint = (syncOutPpqn == 1 ? 0 : syncOutPpqn);
-			messageToExpander->syncOutModeLight = ((float)soint) / 48.0f;
+			messageToExpander->syncOutClk = (syncOutPpqn == 0 ? log2f(0.5f / masterLength) : clkOutputs[2]);
+			messageToExpander->syncOutModeLight = (syncOutPpqn == 0 ? 0.0f : 1.0f);
 			messageToExpander->kimeOut = mOut;
 			messageToExpander->k1Light = k1Light;
 			k1Light = 0.0f;
@@ -1154,7 +1156,12 @@ struct TwinParadoxWidget : ModuleWidget {
 					}
 				}
 				else if (module->notifyType == TwinParadox::NOTIFY_SYNCOUT) {
-					text = string::f("×%d", module->syncOutPpqn);
+					if (module->syncOutPpqn == 0) {
+						text = string::f("CV");
+					}
+					else {
+						text = string::f("×%d", module->syncOutPpqn);
+					}
 				}
 				else {// if (module->notifyType == TwinParadox::NOTIFY_DIVMULT) {
 					if (module->divMultInt < 0) {

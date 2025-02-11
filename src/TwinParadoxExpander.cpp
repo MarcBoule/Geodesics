@@ -119,7 +119,7 @@ struct TwinParadoxExpanderWidget : ModuleWidget {
 		// part of svg panel, no code required
 
 
-		static const int colX = 290;
+		static const int colX = 30;
 		
 		static const int row0 = 58;// reset, run, bpm inputs
 		static const int row1 = 95;// reset and run switches, bpm knob
