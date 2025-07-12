@@ -136,6 +136,7 @@ struct TwinParadox : Module {
 		DIVMULT_PARAM,
 		TAP_PARAM,
 		SYNCINMODE_PARAM,
+		SYNCOUTMODE_PARAM,
 		NUM_PARAMS
 	};
 	enum InputIds {
@@ -155,6 +156,7 @@ struct TwinParadox : Module {
 		RESET_OUTPUT,
 		RUN_OUTPUT,
 		MEET_OUTPUT,
+		SYNC_OUTPUT,
 		NUM_OUTPUTS
 	};
 	enum LightIds {
@@ -173,6 +175,7 @@ struct TwinParadox : Module {
 		TWIN1TRAVELING_LIGHT,
 		TWIN2TRAVELING_LIGHT,
 		MEET_LIGHT,
+		SYNCOUTMODE_LIGHT,
 		NUM_LIGHTS
 	};
 	
@@ -346,7 +349,8 @@ struct TwinParadox : Module {
 		configButton(DIVMULT_PARAM, "Div/Mult");
 		configButton(TAP_PARAM, "Tap tempo");
 		configButton(SYNCINMODE_PARAM, "Sync input mode");
-		
+		configButton(SYNCOUTMODE_PARAM, "Sync output mode");
+
 		configInput(RESET_INPUT, "Reset");
 		configInput(RUN_INPUT, "Run");
 		configInput(BPM_INPUT, "BPM CV / Ext clock");
@@ -361,6 +365,7 @@ struct TwinParadox : Module {
 		configOutput(RESET_OUTPUT, "Reset");
 		configOutput(RUN_OUTPUT, "Run");	
 		configOutput(MEET_OUTPUT, "Meet");
+		configOutput(SYNC_OUTPUT, "Sync clock");
 		
 		configBypass(RESET_INPUT, RESET_OUTPUT);
 		configBypass(RUN_INPUT, RUN_OUTPUT);
@@ -728,7 +733,7 @@ struct TwinParadox : Module {
 				notifyType = NOTIFY_SYNCIN;
 			}
 			// syncOutMode (values: 1, 24, 48)
-			if (expanderPresent && syncOutModeTrigger.process(messagesFromExpander->syncOutModeButton)) {
+			if (syncOutModeTrigger.process(params[SYNCOUTMODE_PARAM].getValue())) {
 				if (syncOutPpqn == 1) {
 					syncOutPpqn = 24;
 				}
@@ -903,6 +908,7 @@ struct TwinParadox : Module {
 		outputs[TWIN1_OUTPUT].setVoltage(clkOutputs[twin1clk]);
 		outputs[TWIN2_OUTPUT].setVoltage(clkOutputs[twin2clk]);
 		outputs[MEET_OUTPUT].setVoltage(meetPulse.process((float)sampleTime) ? 10.0f : 0.0f);
+		outputs[SYNC_OUTPUT].setVoltage(syncOutPpqn == 0 ? log2f(0.5f / masterLength) : clkOutputs[2]);
 		
 		outputs[RESET_OUTPUT].setVoltage(resetPulse.process((float)sampleTime) ? 10.0f : 0.0f);
 		outputs[RUN_OUTPUT].setVoltage(runPulse.process((float)sampleTime) ? 10.0f : 0.0f);
@@ -1025,7 +1031,10 @@ struct TwinParadox : Module {
 			// Meet light
 			lights[MEET_LIGHT].setSmoothBrightness(meetLight, (float)sampleTime * (RefreshCounter::displayRefreshStepSkips >> 2));	
 			meetLight = 0.0f;
-						
+			
+			// Sync out mode light
+			lights[SYNCOUTMODE_LIGHT].setBrightness(syncOutPpqn == 0 ? 0.0f : 1.0f);
+			
 			// Tap light
 			if (inputs[BPM_INPUT].isConnected()) {
 				lights[TAP_LIGHT + 0].setBrightness(0.0f);
@@ -1058,9 +1067,6 @@ struct TwinParadox : Module {
 		// To expander
 		if (expanderPresent) {
 			TxFmInterface *messageToExpander = static_cast<TxFmInterface*>(rightExpander.module->leftExpander.producerMessage);
-			
-			messageToExpander->syncOutClk = (syncOutPpqn == 0 ? log2f(0.5f / masterLength) : clkOutputs[2]);
-			messageToExpander->syncOutModeLight = (syncOutPpqn == 0 ? 0.0f : 1.0f);
 			messageToExpander->kimeOut = mOut;
 			messageToExpander->k1Light = k1Light;
 			k1Light = 0.0f;
@@ -1083,11 +1089,9 @@ struct TwinParadoxWidget : ModuleWidget {
 	// display code below adapted from VCVRack's Fundamental code
 	struct DigitalDisplay : Widget {
 		std::string fontPath;
-		std::string bgText;
 		std::string text;
 		float fontSize;
-		NVGcolor bgColor = nvgRGB(0x46,0x46, 0x46);
-		NVGcolor fgColor = nvgRGB(0xda,0xda, 0xda);
+		NVGcolor fgColor = nvgRGB(0xea,0xea, 0xea);
 		Vec textPos;
 
 		void prepareFont(const DrawArgs& args) {
@@ -1098,21 +1102,10 @@ struct TwinParadoxWidget : ModuleWidget {
 			nvgFontFaceId(args.vg, font->handle);
 			nvgFontSize(args.vg, fontSize);
 			nvgTextLetterSpacing(args.vg, 0.0);
-			nvgTextAlign(args.vg, NVG_ALIGN_RIGHT);
+			nvgTextAlign(args.vg, NVG_ALIGN_CENTER);
 		}
 
 		void draw(const DrawArgs& args) override {
-			// Background
-			nvgBeginPath(args.vg);
-			nvgRoundedRect(args.vg, 0, 0, box.size.x, box.size.y, 2);
-			nvgFillColor(args.vg, nvgRGB(0x19, 0x19, 0x19));
-			nvgFill(args.vg);
-
-			prepareFont(args);
-
-			// Background text
-			//nvgFillColor(args.vg, bgColor);
-			//nvgText(args.vg, textPos.x, textPos.y, bgText.c_str(), NULL);
 		}
 
 		void drawLayer(const DrawArgs& args, int layer) override {
@@ -1131,10 +1124,11 @@ struct TwinParadoxWidget : ModuleWidget {
 		TwinParadox* module;
 		
 		BpmDisplay() {
-			fontPath = asset::system("res/fonts/Nunito-Bold.ttf");
-			textPos = Vec(41, 19);
+			fontPath = asset::plugin(pluginInstance, "res/adventpro-bold.ttf");
+			// fontPath = asset::system("res/fonts/Nunito-Bold.ttf");
+			textPos = Vec(24.4f, 16.4f);
 			//bgText = "888";
-			fontSize = 24;
+			fontSize = 15;
 		}
 		
 		void step() override {
@@ -1284,119 +1278,125 @@ struct TwinParadoxWidget : ModuleWidget {
 		// Screws 
 		// part of svg panel, no code required
 
-
-		static const int colL = 30;
-		static const int colC = 75;
-		static const int colR = 120;
-		static const int colR2 = 165;
-		static const int colM = 220;
+		static const float colC = 27.89f;
+		static const float colL1 = 12.8865f;
+		static const float colL2 = 20.2895f;
+		static const float colL3 = 5.41300f;
+		static const float colR1 = 42.948f;
+		static const float colR2 = 35.50650f;
 		
-		static const int row0 = 58;// reset, run, bpm inputs
-		static const int row1 = 95;// reset and run switches, bpm knob
-		static const int row2 = 148;// bpm display, display index lights, master clk out
-		// static const int row3 = 198;// display and mode buttons
-		static const int row4 = 227;// sub clock ratio knobs
-		// static const int row5 = 281;// sub clock outs
-		static const int row6 = 328;// reset, run, bpm outputs
-
-
-		// Reset button, light and input
-		addParam(createParamCentered<GeoPushButton>(VecPx(colL, row1), module, TwinParadox::RESET_PARAM));
-		addChild(createLightCentered<SmallLight<WhiteLight>>(VecPx(colL, row1 - 15.0f), module, TwinParadox::RESET_LIGHT));
-		addInput(createDynamicPort<GeoPort>(VecPx(colL, row0), true, module, TwinParadox::RESET_INPUT, module ? &module->panelTheme : NULL));
+		static const float row0 = 16.739f;
+		static const float row1 = 22.995f;
+		static const float row2 = 30.4345f;
+		static const float row3 = 38.0425f;
+		static const float row4 = 53.091f;
+		static const float row5 = 68.139f;
+		static const float row6 = 102.9695f;
+		static const float row7 = 110.408f;
+		static const float row8 = 117.8485f;
 		
 		
-		// Run button, light and input
-		addParam(createParamCentered<GeoPushButton>(VecPx(colC, row1), module, TwinParadox::RUN_PARAM));
-		addChild(createLightCentered<SmallLight<WhiteLight>>(VecPx(colC, row1 - 15.0f), module, TwinParadox::RUN_LIGHT));
-		addInput(createDynamicPort<GeoPort>(VecPx(colC, row0), true, module, TwinParadox::RUN_INPUT, module ? &module->panelTheme : NULL));
-
-		
-		// Master BPM knob
-		addParam(createDynamicParam<BpmKnob>(VecPx(colR, row1), module, TwinParadox::BPM_PARAM, module ? &module->panelTheme : NULL));
-		
-		// Tap tempo + light
-		addParam(createDynamicParam<GeoPushButton>(VecPx(colR2, row1), module, TwinParadox::TAP_PARAM, module ? &module->panelTheme : NULL));
-		addChild(createLightCentered<SmallLight<GeoWhiteRedLight>>(VecPx(colR2, row1 - 15.0f), module, TwinParadox::TAP_LIGHT));
-
 		// Twin1 clock outputs and lights
-		addOutput(createDynamicPort<GeoPort>(VecPx(colL, row2), false, module, TwinParadox::TWIN1_OUTPUT, module ? &module->panelTheme : NULL));
-		addChild(createLightCentered<SmallLight<BlueLight>>(VecPx(colL-15, row2 -5), module, TwinParadox::TWIN1OUT_LIGHT));		
-		addChild(createLightCentered<SmallLight<BlueLight>>(VecPx(colL-15, row2 +5), module, TwinParadox::TWIN1TRAVELING_LIGHT));
+		addOutput(createDynamicPort<GeoPort>(mm2px(Vec(colC, row0)), false, module, TwinParadox::TWIN1_OUTPUT, module ? &module->panelTheme : NULL));
+		addChild(createLightCentered<SmallLight<BlueLight>>(mm2px(Vec(colC, 27.3905f)), module, TwinParadox::TWIN1OUT_LIGHT));		
+		addChild(createLightCentered<SmallLight<BlueLight>>(mm2px(Vec(colL2, row2)), module, TwinParadox::TWIN1TRAVELING_LIGHT));
+		
 		// Twin2 clock outputs and lights
-		addOutput(createDynamicPort<GeoPort>(VecPx(colL, row2 + 28.0f), false, module, TwinParadox::TWIN2_OUTPUT, module ? &module->panelTheme : NULL));	
-		addChild(createLightCentered<SmallLight<YellowLight>>(VecPx(colL-15, row2 + 28.0f -5), module, TwinParadox::TWIN2OUT_LIGHT));
-		addChild(createLightCentered<SmallLight<YellowLight>>(VecPx(colL-15, row2 + 28.0f +5), module, TwinParadox::TWIN2TRAVELING_LIGHT));
+		addOutput(createDynamicPort<GeoPort>(mm2px(Vec(49.249f, 38.151f)), false, module, TwinParadox::TWIN2_OUTPUT, module ? &module->panelTheme : NULL));	
+		addChild(createLightCentered<SmallLight<YellowLight>>(mm2px(Vec(38.55f, row3)), module, TwinParadox::TWIN2OUT_LIGHT));
+		addChild(createLightCentered<SmallLight<YellowLight>>(mm2px(Vec(colR2, 45.6595f)), module, TwinParadox::TWIN2TRAVELING_LIGHT));
+		
+		// Auto Travel knob, light and input
+		addParam(createDynamicParam<GeoKnob>(mm2px(Vec(colL1, row1)), module, TwinParadox::TRAVPROB_PARAM, module ? &module->panelTheme : NULL));
+		addInput(createDynamicPort<GeoPort>(mm2px(Vec(7.275f, 32.46f)), true, module, TwinParadox::TRAVPROB_INPUT, module ? &module->panelTheme : NULL));
+		addChild(createLightCentered<SmallLight<GeoRedLight>>(mm2px(Vec(6.6145f, 39.1765f)), module, TwinParadox::TRAVELAUTO_LIGHT));	
+		
+		// Meet output and light
+		addOutput(createDynamicPort<GeoPort>(mm2px(Vec(colR1, row1)), false, module, TwinParadox::MEET_OUTPUT, module ? &module->panelTheme : NULL));
+		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(mm2px(Vec(colR2, row2)), module, TwinParadox::MEET_LIGHT));
+		
+		// Center prob knob and traveler input
+		addParam(createDynamicParam<GeoKnobTopRight>(mm2px(Vec(colC, row3)), module, TwinParadox::SWAPPROB_PARAM, module ? &module->panelTheme : NULL));
+		addInput(createDynamicPort<GeoPort>(mm2px(Vec(colL2, 45.595f)), true, module, TwinParadox::SWAPPROB_INPUT, module ? &module->panelTheme : NULL));
 
+		// Manual Travel button, light and input
+		addParam(createDynamicParam<GeoPushButton>(mm2px(Vec(6.932f, 44.468f)), module, TwinParadox::TRAVEL_PARAM, module ? &module->panelTheme : NULL));
+		addChild(createLightCentered<SmallLight<GeoRedLight>>(mm2px(Vec(7.9465f, 49.7855f)), module, TwinParadox::TRAVELMAN_LIGHT));	
+		addInput(createDynamicPort<GeoPort>(mm2px(Vec(9.809f, 55.965f)), true, module, TwinParadox::TRAVEL_INPUT, module ? &module->panelTheme : NULL));
 
-
+		// Master BPM knob
+		addParam(createDynamicParam<BpmKnob>(mm2px(Vec(colR1, row4)), module, TwinParadox::BPM_PARAM, module ? &module->panelTheme : NULL));
+	
 		// BPM display and beat light
-		BpmDisplay* display = createWidget<BpmDisplay>(VecPx(colM, row0-30));
+		BpmDisplay* display = createWidget<BpmDisplay>(mm2px(Vec(colC, row4)));
 		display->box.size = mm2px(Vec(2.0*8.197, 8.197));
 		display->box.pos = display->box.pos.minus(display->box.size.div(2));
 		display->module = module;
 		addChild(display);
-		addChild(createLightCentered<SmallLight<WhiteLight>>(VecPx(colM, row0-45), module, TwinParadox::BPMBEAT_LIGHT));
+		addChild(createLightCentered<SmallLight<WhiteLight>>(mm2px(Vec(21.6155f, 59.4195f)), module, TwinParadox::BPMBEAT_LIGHT));
 
+		// Traveler time and input
+		addParam(createDynamicParam<GeoKnob>(mm2px(Vec(colC, row5)), module, TwinParadox::DURTRAV_PARAM, module ? &module->panelTheme : NULL));
+		addInput(createDynamicPort<GeoPort>(mm2px(Vec(colR1, row5)), true, module, TwinParadox::DURTRAV_INPUT, module ? &module->panelTheme : NULL));
 
-		// Manual Travel button, light and input
-		addParam(createDynamicParam<GeoPushButton>(VecPx(colC, row2), module, TwinParadox::TRAVEL_PARAM, module ? &module->panelTheme : NULL));
-		addChild(createLightCentered<SmallLight<GeoRedLight>>(VecPx(colC, row2 - 18.0f), module, TwinParadox::TRAVELMAN_LIGHT));	
-		addInput(createDynamicPort<GeoPort>(VecPx(colC, row2 + 28.0f), true, module, TwinParadox::TRAVEL_INPUT, module ? &module->panelTheme : NULL));
-		
-		// Auto Travel knob, light and input
-		addParam(createDynamicParam<GeoKnob>(VecPx(colR, row4), module, TwinParadox::TRAVPROB_PARAM, module ? &module->panelTheme : NULL));
-		addInput(createDynamicPort<GeoPort>(VecPx(colR, row4 + 28.0f), true, module, TwinParadox::TRAVPROB_INPUT, module ? &module->panelTheme : NULL));
-		addChild(createLightCentered<SmallLight<GeoRedLight>>(VecPx(colR, row4 - 18.0f), module, TwinParadox::TRAVELAUTO_LIGHT));	
+		// Still time and input
+		addParam(createDynamicParam<GeoKnob>(mm2px(Vec(14.202f, 81.834f)), module, TwinParadox::DURREF_PARAM, module ? &module->panelTheme : NULL));
+		addInput(createDynamicPort<GeoPort>(mm2px(Vec(5.431f, 90.626f)), true, module, TwinParadox::DURREF_INPUT, module ? &module->panelTheme : NULL));
 
-		
 		// Div/Mult button and lights
-		addParam(createDynamicParam<GeoPushButton>(VecPx(colR, row2), module, TwinParadox::DIVMULT_PARAM, module ? &module->panelTheme : NULL));
-		addChild(createLightCentered<SmallLight<GeoVioletGreen2Light>>(VecPx(colR - 5.0f, row2 - 18.0f), module, TwinParadox::DIVMULT_LIGHTS + 0));	// /*2
-		addChild(createLightCentered<SmallLight<GeoVioletGreen2Light>>(VecPx(colR + 5.0f, row2 - 18.0f), module, TwinParadox::DIVMULT_LIGHTS + 2));	// /*4
-		
+		addParam(createDynamicParam<GeoPushButton>(mm2px(Vec(6.932f, row5)), module, TwinParadox::DIVMULT_PARAM, module ? &module->panelTheme : NULL));
+		addChild(createLightCentered<SmallLight<GeoVioletGreen2Light>>(mm2px(Vec(8.4535f, 63.5735f)), module, TwinParadox::DIVMULT_LIGHTS + 0));	// /*2
+		addChild(createLightCentered<SmallLight<GeoVioletGreen2Light>>(mm2px(Vec(11.6665f, 66.7865f)), module, TwinParadox::DIVMULT_LIGHTS + 2));	// /*4
+
+		// Traveler octo lights
+		addChild(createLightCentered<SmallLight<GeoBlueYellowWhiteLight>>(mm2px(Vec(24.1495f, 76.7105f)), module, TwinParadox::DURTRAV_LIGHTS + 0 * 3));
+		addChild(createLightCentered<SmallLight<GeoBlueYellowWhiteLight>>(mm2px(Vec(colC, 79.2355f)), module, TwinParadox::DURTRAV_LIGHTS + 1 * 3));
+		addChild(createLightCentered<SmallLight<GeoBlueYellowWhiteLight>>(mm2px(Vec(31.6465f, 81.0805f)), module, TwinParadox::DURTRAV_LIGHTS + 2 * 3));
+		addChild(createLightCentered<SmallLight<GeoBlueYellowWhiteLight>>(mm2px(Vec(colR2, 82.3285f)), module, TwinParadox::DURTRAV_LIGHTS + 3 * 3));
+		addChild(createLightCentered<SmallLight<GeoBlueYellowWhiteLight>>(mm2px(Vec(39.1425f, 82.9675f)), module, TwinParadox::DURTRAV_LIGHTS + 4 * 3));
+		addChild(createLightCentered<SmallLight<GeoBlueYellowWhiteLight>>(mm2px(Vec(colR1, 83.3005f)), module, TwinParadox::DURTRAV_LIGHTS + 5 * 3));
+		addChild(createLightCentered<SmallLight<GeoBlueYellowWhiteLight>>(mm2px(Vec(46.6395f, 82.8645f)), module, TwinParadox::DURTRAV_LIGHTS + 6 * 3));
+		addChild(createLightCentered<SmallLight<GeoBlueYellowWhiteLight>>(mm2px(Vec(50.3875f, 81.3355f)), module, TwinParadox::DURTRAV_LIGHTS + 7 * 3));
+
+		// Still octo lights
+		addChild(createLightCentered<SmallLight<GeoBlueYellowWhiteLight>>(mm2px(Vec(24.1495f, 79.2885f)), module, TwinParadox::DURREF_LIGHTS + 0 * 3));
+		addChild(createLightCentered<SmallLight<GeoBlueYellowWhiteLight>>(mm2px(Vec(colC, 83.0365f)), module, TwinParadox::DURREF_LIGHTS + 1 * 3));
+		addChild(createLightCentered<SmallLight<GeoBlueYellowWhiteLight>>(mm2px(Vec(31.6465f, 86.7845f)), module, TwinParadox::DURREF_LIGHTS + 2 * 3));
+		addChild(createLightCentered<SmallLight<GeoBlueYellowWhiteLight>>(mm2px(Vec(colR2, 90.5325f)), module, TwinParadox::DURREF_LIGHTS + 3 * 3));
+		addChild(createLightCentered<SmallLight<GeoBlueYellowWhiteLight>>(mm2px(Vec(39.1425f, 94.2815f)), module, TwinParadox::DURREF_LIGHTS + 4 * 3));
+		addChild(createLightCentered<SmallLight<GeoBlueYellowWhiteLight>>(mm2px(Vec(colR1, 98.0295f)), module, TwinParadox::DURREF_LIGHTS + 5 * 3));
+		addChild(createLightCentered<SmallLight<GeoBlueYellowWhiteLight>>(mm2px(Vec(46.6395f, 101.7775f)), module, TwinParadox::DURREF_LIGHTS + 6 * 3));
+		addChild(createLightCentered<SmallLight<GeoBlueYellowWhiteLight>>(mm2px(Vec(50.3875f, 105.5255f)), module, TwinParadox::DURREF_LIGHTS + 7 * 3));
+
+		// Sync out jack and mode light
+		addOutput(createDynamicPort<GeoPort>(mm2px(Vec(colC, 95.529f)), false, module, TwinParadox::SYNC_OUTPUT, module ? &module->panelTheme : NULL));
+		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(mm2px(Vec(30.4345f, row6)), module, TwinParadox::SYNCOUTMODE_LIGHT));
+		// sync out mode (button)
+		addParam(createDynamicParam<GeoPushButton>(mm2px(Vec(colR2, row6)), module, TwinParadox::SYNCOUTMODE_PARAM, module ? &module->panelTheme : NULL));
 		
 		// sync in mode (button and light)
-		addParam(createDynamicParam<GeoPushButton>(VecPx(colR2, row2), module, TwinParadox::SYNCINMODE_PARAM, module ? &module->panelTheme : NULL));
-		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(VecPx(colR2, row2 - 15.0f), module, TwinParadox::SYNCINMODE_LIGHT));
+		addParam(createDynamicParam<GeoPushButton>(mm2px(Vec(colL2, row6)), module, TwinParadox::SYNCINMODE_PARAM, module ? &module->panelTheme : NULL));
+		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(mm2px(Vec(2*colC-30.4345f, row6)), module, TwinParadox::SYNCINMODE_LIGHT));
 		// Bpm/sync input jack
-		addInput(createDynamicPort<GeoPort>(VecPx(colR2, row2 + 28.0f), true, module, TwinParadox::BPM_INPUT, module ? &module->panelTheme : NULL));
-		
-		
-		
-		// Row 4 		
-		// Ratio knobs
-		addParam(createDynamicParam<GeoKnob>(VecPx(colL, row4), module, TwinParadox::DURREF_PARAM, module ? &module->panelTheme : NULL));
-		addInput(createDynamicPort<GeoPort>(VecPx(colL, row4 + 28.0f), true, module, TwinParadox::DURREF_INPUT, module ? &module->panelTheme : NULL));
-		
-		addParam(createDynamicParam<GeoKnob>(VecPx(colC, row4), module, TwinParadox::DURTRAV_PARAM, module ? &module->panelTheme : NULL));
-		addInput(createDynamicPort<GeoPort>(VecPx(colC, row4 + 28.0f), true, module, TwinParadox::DURTRAV_INPUT, module ? &module->panelTheme : NULL));
-				
-		addParam(createDynamicParam<GeoKnob>(VecPx(colR2, row4), module, TwinParadox::SWAPPROB_PARAM, module ? &module->panelTheme : NULL));
-		addInput(createDynamicPort<GeoPort>(VecPx(colR2, row4 + 28.0f), true, module, TwinParadox::SWAPPROB_INPUT, module ? &module->panelTheme : NULL));
+		addInput(createDynamicPort<GeoPort>(mm2px(Vec(colC, row7)), true, module, TwinParadox::BPM_INPUT, module ? &module->panelTheme : NULL));
 
+		// Tap tempo + light
+		addParam(createDynamicParam<GeoPushButton>(mm2px(Vec(colL3, row6)), module, TwinParadox::TAP_PARAM, module ? &module->panelTheme : NULL));
+		addChild(createLightCentered<SmallLight<GeoWhiteRedLight>>(mm2px(Vec(10.3135f, row6)), module, TwinParadox::TAP_LIGHT));
 
-		// Row 5
-		// Sub-clock outputs
+		// Run button, light and input
+		addParam(createParamCentered<GeoPushButton>(mm2px(Vec(colL2, row8)), module, TwinParadox::RUN_PARAM));
+		addChild(createLightCentered<SmallLight<WhiteLight>>(mm2px(Vec(15.3865f, row8)), module, TwinParadox::RUN_LIGHT));
+		addInput(createDynamicPort<GeoPort>(mm2px(Vec(colL3, row8)), true, module, TwinParadox::RUN_INPUT, module ? &module->panelTheme : NULL));
 
-
-		// Row 6 (last row)
-		// Reset out
-		addOutput(createDynamicPort<GeoPort>(VecPx(colL, row6), false, module, TwinParadox::RESET_OUTPUT, module ? &module->panelTheme : NULL));
-		// Run out
-		addOutput(createDynamicPort<GeoPort>(VecPx(colC, row6), false, module, TwinParadox::RUN_OUTPUT, module ? &module->panelTheme : NULL));
+		// Reset button, light and input
+		addParam(createParamCentered<GeoPushButton>(mm2px(Vec(colR2, row8)), module, TwinParadox::RESET_PARAM));
+		addChild(createLightCentered<SmallLight<WhiteLight>>(mm2px(Vec(40.4095f, row8)), module, TwinParadox::RESET_LIGHT));
+		addInput(createDynamicPort<GeoPort>(mm2px(Vec(50.388f, row8)), true, module, TwinParadox::RESET_INPUT, module ? &module->panelTheme : NULL));
 		
-		// Meet output and light
-		addOutput(createDynamicPort<GeoPort>(VecPx(colR2, row6), false, module, TwinParadox::MEET_OUTPUT, module ? &module->panelTheme : NULL));
-		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(VecPx(colR2, row6 - 15.0f), module, TwinParadox::MEET_LIGHT));
-		
-		
-		for (int i = 0; i < 8; i++) {
-			addChild(createLightCentered<SmallLight<GeoBlueYellowWhiteLight>>(VecPx(200, 50 + 15 * i), module, TwinParadox::DURREF_LIGHTS + i * 3));
-			addChild(createLightCentered<SmallLight<GeoBlueYellowWhiteLight>>(VecPx(240, 50 + 15 * i), module, TwinParadox::DURTRAV_LIGHTS + i * 3));
-		}
-		
-
+		// Run and reset outputs
+		addOutput(createDynamicPort<GeoPort>(mm2px(Vec(colL1, row7)), false, module, TwinParadox::RUN_OUTPUT, module ? &module->panelTheme : NULL));
+		addOutput(createDynamicPort<GeoPort>(mm2px(Vec(colR1, row7)), false, module, TwinParadox::RESET_OUTPUT, module ? &module->panelTheme : NULL));
 	}
 	
 	

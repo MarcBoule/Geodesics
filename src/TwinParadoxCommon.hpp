@@ -12,8 +12,6 @@
 // Communications between clock and expander
 
 struct TxFmInterface {// messages to expander from mother (data is in expander, mother writes into expander)
-	float syncOutClk;
-	float syncOutModeLight;
 	float kimeOut;
 	float k1Light;
 	float k2Light;
@@ -22,7 +20,6 @@ struct TxFmInterface {// messages to expander from mother (data is in expander, 
 
 
 struct TmFxInterface {// messages to mother from expander (data is in mother, expander writes into mother)
-	float syncOutModeButton;
 	float pulseWidth;// includes its CV that is local to expander only
 	float multitimeParam;// includes its CV that is local to expander only
 };

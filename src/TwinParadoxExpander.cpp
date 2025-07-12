@@ -15,7 +15,6 @@ struct TwinParadoxExpander : Module {
 	enum ParamIds {
 		MULTITIME_PARAM,
 		PW_PARAM,
-		SYNCOUTMODE_PARAM,
 		NUM_PARAMS
 	};
 
@@ -27,12 +26,10 @@ struct TwinParadoxExpander : Module {
 	
 	enum OutputIds {
 		MULTITIME_OUTPUT,
-		SYNC_OUTPUT,
 		NUM_OUTPUTS
 	};
 
 	enum LightIds {
-		SYNCOUTMODE_LIGHT,
 		KIME1_LIGHT,
 		KIME2_LIGHT,
 		NUM_LIGHTS
@@ -54,13 +51,12 @@ struct TwinParadoxExpander : Module {
 		
 		configParam(MULTITIME_PARAM, -2.0f, 2.0f, 0.0f, "Multitime");
 		configParam(PW_PARAM, 0.0f, 1.0f, 0.5f, "Pulse width");
-		configButton(SYNCOUTMODE_PARAM, "Sync output mode");
 
 		configInput(MULTITIME_INPUT, "Multitime CV");
 		configInput(PWCV_INPUT, "Pulse width CV");
 		
 		configOutput(MULTITIME_OUTPUT, "Multitime");
-		configOutput(SYNC_OUTPUT, "Sync clock");
+		
 		
 		panelTheme = loadDarkAsDefault();
 	}
@@ -71,8 +67,6 @@ struct TwinParadoxExpander : Module {
 		if (motherPresent) {
 			// To Mother
 			TmFxInterface *messagesToMother = static_cast<TmFxInterface*>(leftExpander.module->rightExpander.producerMessage);
-			// sync out mode button
-			messagesToMother->syncOutModeButton = params[SYNCOUTMODE_PARAM].getValue();
 			// pulse width with CV
 			float pw = params[PW_PARAM].getValue();
 			pw += inputs[PWCV_INPUT].getVoltage() / 10.0f;
@@ -89,8 +83,6 @@ struct TwinParadoxExpander : Module {
 			
 			// From Mother
 			TxFmInterface *messagesFromMother = static_cast<TxFmInterface*>(leftExpander.consumerMessage);			
-			outputs[SYNC_OUTPUT].setVoltage(messagesFromMother->syncOutClk);
-			lights[SYNCOUTMODE_LIGHT].setBrightness(messagesFromMother->syncOutModeLight);
 			outputs[MULTITIME_OUTPUT].setVoltage(messagesFromMother->kimeOut);
 			float smoothDeltaTime = args.sampleTime / 4.0f;// args.sampleTime * (RefreshCounter::displayRefreshStepSkips >> 2));
 			lights[KIME1_LIGHT].setSmoothBrightness(messagesFromMother->k1Light, smoothDeltaTime);
@@ -110,7 +102,7 @@ struct TwinParadoxExpanderWidget : ModuleWidget {
 		setModule(module);
 
 		// Main panels from Inkscape
-		light_svg = APP->window->loadSvg(asset::plugin(pluginInstance, "res/WhiteLight/TwinParadox-WL.svg"));
+		light_svg = APP->window->loadSvg(asset::plugin(pluginInstance, "res/WhiteLight/Kime-WL.svg"));
 		dark_svg = APP->window->loadSvg(asset::plugin(pluginInstance, "res/DarkMatter/TwinParadox-DM.svg"));
 		int panelTheme = isDark(module ? (&((static_cast<TwinParadoxExpander*>(module))->panelTheme)) : NULL) ? 1 : 0;// need this here since step() not called for module browser
 		setPanel(panelTheme == 0 ? light_svg : dark_svg);		
@@ -123,7 +115,7 @@ struct TwinParadoxExpanderWidget : ModuleWidget {
 		
 		static const int row0 = 58;// reset, run, bpm inputs
 		static const int row1 = 95;// reset and run switches, bpm knob
-		static const int row2 = 148;// bpm display, display index lights, master clk out
+		// static const int row2 = 148;// bpm display, display index lights, master clk out
 		// static const int row3 = 198;// display and mode buttons
 		static const int row4 = 227;// sub clock ratio knobs
 		// static const int row5 = 281;// sub clock outs
@@ -134,12 +126,6 @@ struct TwinParadoxExpanderWidget : ModuleWidget {
 		// Multitime knob and CV input
 		addParam(createDynamicParam<GeoKnob>(VecPx(colX, row4), module, TwinParadoxExpander::MULTITIME_PARAM, module ? &module->panelTheme : NULL));
 		addInput(createDynamicPort<GeoPort>(VecPx(colX, row4 + 28.0f), true, module, TwinParadoxExpander::MULTITIME_INPUT, module ? &module->panelTheme : NULL));
-
-		// Sync out jack and mode light
-		addOutput(createDynamicPort<GeoPort>(VecPx(colX, row2 + 28.0f), false, module, TwinParadoxExpander::SYNC_OUTPUT, module ? &module->panelTheme : NULL));
-		addChild(createLightCentered<SmallLight<GeoWhiteLight>>(VecPx(colX, row2 - 15.0f), module, TwinParadoxExpander::SYNCOUTMODE_LIGHT));
-		// sync out mode (button)
-		addParam(createDynamicParam<GeoPushButton>(VecPx(colX, row2), module, TwinParadoxExpander::SYNCOUTMODE_PARAM, module ? &module->panelTheme : NULL));
 
 		// Multitime lights (2x)
 		addChild(createLightCentered<SmallLight<BlueLight>>(VecPx(colX-15, row4 +15), module, TwinParadoxExpander::KIME1_LIGHT));		
