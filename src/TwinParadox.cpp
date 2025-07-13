@@ -231,7 +231,7 @@ struct TwinParadox : Module {
 	dsp::PulseGenerator multitimeGuardPulse;
 	long notifyCounter;// 0 when nothing to notify, downward step counter otherwise
 	int notifyType; // see NotifyTypeIds enum
-	float pulseWidth;
+	//float pulseWidth;
 	
 	// No need to save, no reset
 	bool scheduledReset = false;
@@ -371,8 +371,8 @@ struct TwinParadox : Module {
 		configBypass(RUN_INPUT, RUN_OUTPUT);
 
 		clk.reserve(3);
-		clk.push_back(Clock(nullptr, &resetClockOutputsHigh, &pulseWidth));// Ref clock
-		clk.push_back(Clock(&clk[0], &resetClockOutputsHigh, &pulseWidth));// Traveler clock	
+		clk.push_back(Clock(nullptr, &resetClockOutputsHigh, nullptr));//&pulseWidth));// Ref clock
+		clk.push_back(Clock(&clk[0], &resetClockOutputsHigh, nullptr));//&pulseWidth));// Traveler clock	
 		clk.push_back(Clock(&clk[0], &resetClockOutputsHigh, nullptr));// Sync out clock		
 
 		onReset();
@@ -445,7 +445,7 @@ struct TwinParadox : Module {
 		travelingSrc = 0;
 		multitimeSwitch = 0;
 		multitimeGuardPulse.reset();
-		pulseWidth= 0.5f;
+		//pulseWidth= 0.5f;
 	}	
 	
 	
@@ -608,7 +608,7 @@ struct TwinParadox : Module {
 		bool expanderPresent = (rightExpander.module && rightExpander.module->model == modelTwinParadoxExpander);
 		TmFxInterface *messagesFromExpander = static_cast<TmFxInterface*>(rightExpander.consumerMessage);// could be invalid pointer when !expanderPresent, so read it only when expanderPresent
 		
-		pulseWidth = expanderPresent ? messagesFromExpander->pulseWidth : 0.5f; 
+		//pulseWidth = expanderPresent ? messagesFromExpander->pulseWidth : 0.5f; 
 
 
 		// Scheduled reset
@@ -1271,7 +1271,8 @@ struct TwinParadoxWidget : ModuleWidget {
 
 		// Main panels from Inkscape
 		light_svg = APP->window->loadSvg(asset::plugin(pluginInstance, "res/WhiteLight/TwinParadox-WL.svg"));
-		dark_svg = APP->window->loadSvg(asset::plugin(pluginInstance, "res/DarkMatter/TwinParadox-DM.svg"));
+		// dark_svg = APP->window->loadSvg(asset::plugin(pluginInstance, "res/DarkMatter/TwinParadox-DM.svg"));
+		dark_svg = APP->window->loadSvg(asset::plugin(pluginInstance, "res/WhiteLight/TwinParadox-WL.svg"));
 		int panelTheme = isDark(module ? (&((static_cast<TwinParadox*>(module))->panelTheme)) : NULL) ? 1 : 0;// need this here since step() not called for module browser
 		setPanel(panelTheme == 0 ? light_svg : dark_svg);		
 		

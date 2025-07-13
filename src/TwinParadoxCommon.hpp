@@ -20,7 +20,7 @@ struct TxFmInterface {// messages to expander from mother (data is in expander, 
 
 
 struct TmFxInterface {// messages to mother from expander (data is in mother, expander writes into mother)
-	float pulseWidth;// includes its CV that is local to expander only
+	//float pulseWidth;// includes its CV that is local to expander only
 	float multitimeParam;// includes its CV that is local to expander only
 };
 

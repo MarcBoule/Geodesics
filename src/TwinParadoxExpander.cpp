@@ -14,13 +14,13 @@
 struct TwinParadoxExpander : Module {
 	enum ParamIds {
 		MULTITIME_PARAM,
-		PW_PARAM,
+		//PW_PARAM,
 		NUM_PARAMS
 	};
 
 	enum InputIds {
 		MULTITIME_INPUT,
-		PWCV_INPUT,
+		//PWCV_INPUT,
 		NUM_INPUTS
 	};
 	
@@ -32,6 +32,7 @@ struct TwinParadoxExpander : Module {
 	enum LightIds {
 		KIME1_LIGHT,
 		KIME2_LIGHT,
+		ENUMS(XPAND_LIGHT, 2),// white-red
 		NUM_LIGHTS
 	};
 	
@@ -50,10 +51,10 @@ struct TwinParadoxExpander : Module {
 		leftExpander.consumerMessage = &leftMessages[1];
 		
 		configParam(MULTITIME_PARAM, -2.0f, 2.0f, 0.0f, "Multitime");
-		configParam(PW_PARAM, 0.0f, 1.0f, 0.5f, "Pulse width");
+		//configParam(PW_PARAM, 0.0f, 1.0f, 0.5f, "Pulse width");
 
 		configInput(MULTITIME_INPUT, "Multitime CV");
-		configInput(PWCV_INPUT, "Pulse width CV");
+		//configInput(PWCV_INPUT, "Pulse width CV");
 		
 		configOutput(MULTITIME_OUTPUT, "Multitime");
 		
@@ -68,10 +69,10 @@ struct TwinParadoxExpander : Module {
 			// To Mother
 			TmFxInterface *messagesToMother = static_cast<TmFxInterface*>(leftExpander.module->rightExpander.producerMessage);
 			// pulse width with CV
-			float pw = params[PW_PARAM].getValue();
-			pw += inputs[PWCV_INPUT].getVoltage() / 10.0f;
-			pw = clamp(pw, 0.0f, 1.0f);
-			messagesToMother->pulseWidth = pw;
+			// float pw = params[PW_PARAM].getValue();
+			// pw += inputs[PWCV_INPUT].getVoltage() / 10.0f;
+			// pw = clamp(pw, 0.0f, 1.0f);
+			// messagesToMother->pulseWidth = pw;
 			// multitime knob with CV
 			float knob = params[MULTITIME_PARAM].getValue();
 			knob += inputs[MULTITIME_INPUT].getVoltage() / 5.0f;
@@ -88,7 +89,13 @@ struct TwinParadoxExpander : Module {
 			lights[KIME1_LIGHT].setSmoothBrightness(messagesFromMother->k1Light, smoothDeltaTime);
 			lights[KIME2_LIGHT].setSmoothBrightness(messagesFromMother->k2Light, smoothDeltaTime);	
 			panelTheme = messagesFromMother->panelTheme;
-		}		
+			lights[XPAND_LIGHT + 0].setBrightness(1.0f);
+			lights[XPAND_LIGHT + 1].setBrightness(0.0f);
+		}	
+		else {
+			lights[XPAND_LIGHT + 0].setBrightness(0.0f);
+			lights[XPAND_LIGHT + 1].setBrightness(1.0f);
+		}
 	}// process()
 };
 
@@ -103,7 +110,8 @@ struct TwinParadoxExpanderWidget : ModuleWidget {
 
 		// Main panels from Inkscape
 		light_svg = APP->window->loadSvg(asset::plugin(pluginInstance, "res/WhiteLight/Kime-WL.svg"));
-		dark_svg = APP->window->loadSvg(asset::plugin(pluginInstance, "res/DarkMatter/TwinParadox-DM.svg"));
+		// dark_svg = APP->window->loadSvg(asset::plugin(pluginInstance, "res/DarkMatter/TwinParadox-DM.svg"));
+		dark_svg = APP->window->loadSvg(asset::plugin(pluginInstance, "res/WhiteLight/Kime-WL.svg"));
 		int panelTheme = isDark(module ? (&((static_cast<TwinParadoxExpander*>(module))->panelTheme)) : NULL) ? 1 : 0;// need this here since step() not called for module browser
 		setPanel(panelTheme == 0 ? light_svg : dark_svg);		
 		
@@ -111,29 +119,27 @@ struct TwinParadoxExpanderWidget : ModuleWidget {
 		// part of svg panel, no code required
 
 
-		static const int colX = 30;
+		static const float colX = 10.147f;
 		
-		static const int row0 = 58;// reset, run, bpm inputs
-		static const int row1 = 95;// reset and run switches, bpm knob
-		// static const int row2 = 148;// bpm display, display index lights, master clk out
-		// static const int row3 = 198;// display and mode buttons
-		static const int row4 = 227;// sub clock ratio knobs
-		// static const int row5 = 281;// sub clock outs
-		//static const int row6 = 328;// reset, run, bpm outputs
 
 		// Multitime output (Kime out)
-		addOutput(createDynamicPort<GeoPort>(VecPx(colX, row4 - 30), false, module, TwinParadoxExpander::MULTITIME_OUTPUT, module ? &module->panelTheme : NULL));
-		// Multitime knob and CV input
-		addParam(createDynamicParam<GeoKnob>(VecPx(colX, row4), module, TwinParadoxExpander::MULTITIME_PARAM, module ? &module->panelTheme : NULL));
-		addInput(createDynamicPort<GeoPort>(VecPx(colX, row4 + 28.0f), true, module, TwinParadoxExpander::MULTITIME_INPUT, module ? &module->panelTheme : NULL));
+		addOutput(createDynamicPort<GeoPort>(mm2px(Vec(colX, 38.121f)), false, module, TwinParadoxExpander::MULTITIME_OUTPUT, module ? &module->panelTheme : NULL));
 
 		// Multitime lights (2x)
-		addChild(createLightCentered<SmallLight<BlueLight>>(VecPx(colX-15, row4 +15), module, TwinParadoxExpander::KIME1_LIGHT));		
-		addChild(createLightCentered<SmallLight<YellowLight>>(VecPx(colX+15, row4 +15), module, TwinParadoxExpander::KIME2_LIGHT));
+		addChild(createLightCentered<SmallLight<BlueLight>>(mm2px(Vec(2.7055f, 39.2265f)), module, TwinParadoxExpander::KIME1_LIGHT));		
+		addChild(createLightCentered<SmallLight<YellowLight>>(mm2px(Vec(17.5845f, 39.2265f)), module, TwinParadoxExpander::KIME2_LIGHT));
+
+		// Multitime knob and CV input
+		addParam(createDynamicParam<GeoKnob>(mm2px(Vec(colX, 53.096f)), module, TwinParadoxExpander::MULTITIME_PARAM, module ? &module->panelTheme : NULL));
+		addInput(createDynamicPort<GeoPort>(mm2px(Vec(colX, 68.139f)), true, module, TwinParadoxExpander::MULTITIME_INPUT, module ? &module->panelTheme : NULL));
+
+		// Xpand LED
+		addChild(createLightCentered<SmallLight<GeoWhiteRedLight>>(mm2px(Vec(colX, 100.4325f)), module, TwinParadoxExpander::XPAND_LIGHT));		
+
 
 		// Pulse width
-		addParam(createDynamicParam<GeoKnob>(VecPx(colX, row1), module, TwinParadoxExpander::PW_PARAM, module ? &module->panelTheme : NULL));
-		addInput(createDynamicPort<GeoPort>(VecPx(colX, row0), true, module, TwinParadoxExpander::PWCV_INPUT, module ? &module->panelTheme : NULL));
+		//addParam(createDynamicParam<GeoKnob>(VecPx(colX, row1), module, TwinParadoxExpander::PW_PARAM, module ? &module->panelTheme : NULL));
+		//addInput(createDynamicPort<GeoPort>(VecPx(colX, row0), true, module, TwinParadoxExpander::PWCV_INPUT, module ? &module->panelTheme : NULL));
 		
 
 	}
