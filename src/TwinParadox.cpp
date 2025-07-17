@@ -165,7 +165,7 @@ struct TwinParadox : Module {
 		SYNCINMODE_LIGHT,
 		ENUMS(DURREF_LIGHTS, 8 * 3),// room for GeoBlueYellowWhiteLight
 		ENUMS(DURTRAV_LIGHTS, 8 * 3),// room for GeoBlueYellowWhiteLight
-		TRAVELMAN_LIGHT,
+		ENUMS(TRAVELMAN_LIGHT, 2),// room for GeoWhiteRedLight
 		TRAVELAUTO_LIGHT,
 		ENUMS(TAP_LIGHT, 2),// room for GeoWhiteRedLight
 		ENUMS(DIVMULT_LIGHTS, 2 * 2),// room for GeoVioletGreen2Light, 1st pair /*2, 2nd pair /*4
@@ -336,15 +336,15 @@ struct TwinParadox : Module {
 		rightExpander.producerMessage = &rightMessages[0];
 		rightExpander.consumerMessage = &rightMessages[1];
 
-		configParam(DURREF_PARAM, 1.0f, 8.0f, 1.0f, "Reference time");
+		configParam(DURREF_PARAM, 1.0f, 8.0f, 8.0f, "Reference time");
 		paramQuantities[DURREF_PARAM]->snapEnabled = true;
-		configParam(DURTRAV_PARAM, 1.0f, 8.0f, 1.0f, "Travel time");
+		configParam(DURTRAV_PARAM, 1.0f, 8.0f, 8.0f, "Travel time");
 		paramQuantities[DURTRAV_PARAM]->snapEnabled = true;
 		configParam<BpmParamQuantity>(BPM_PARAM, -INFINITY, INFINITY, 0.0f, "Tempo"," BPM");	
 		configButton(RESET_PARAM, "Reset");
 		configButton(RUN_PARAM, "Run");
 		configParam(TRAVPROB_PARAM, 0.0f, 1.0f, 0.0f, "Probability to travel");
-		configParam(SWAPPROB_PARAM, 0.0f, 1.0f, 0.0f, "Traveler selection probability");
+		configParam(SWAPPROB_PARAM, 0.0f, 1.0f, 0.5f, "Traveler selection probability");
 		configButton(TRAVEL_PARAM, "Travel");
 		configButton(DIVMULT_PARAM, "Div/Mult");
 		configButton(TAP_PARAM, "Tap tempo");
@@ -720,31 +720,35 @@ struct TwinParadox : Module {
 			
 			// syncInMode (values: 0, 24, 48)
 			if (syncInModeTrigger.process(params[SYNCINMODE_PARAM].getValue())) {
-				if (syncInPpqn == 0) {
-					syncInPpqn = 24;
-				}
-				else if (syncInPpqn == 24) {
-					syncInPpqn = 48;
-				}
-				else {
-					syncInPpqn = 0;
+				if (notifyCounter != 0l && notifyType == NOTIFY_SYNCIN) {
+					if (syncInPpqn == 0) {
+						syncInPpqn = 24;
+					}
+					else if (syncInPpqn == 24) {
+						syncInPpqn = 48;
+					}
+					else {
+						syncInPpqn = 0;
+					}
 				}
 				notifyCounter = (long) (3.0 * sampleRate / RefreshCounter::displayRefreshStepSkips);
 				notifyType = NOTIFY_SYNCIN;
 			}
 			// syncOutMode (values: 1, 24, 48)
 			if (syncOutModeTrigger.process(params[SYNCOUTMODE_PARAM].getValue())) {
-				if (syncOutPpqn == 1) {
-					syncOutPpqn = 24;
-				}
-				else if (syncOutPpqn == 24) {
-					syncOutPpqn = 48;
-				}
-				else if (syncOutPpqn == 48) {
-					syncOutPpqn = 0;
-				}
-				else {// if syncOutPpqn == 0
-					syncOutPpqn = 1;
+				if (notifyCounter != 0l && notifyType == NOTIFY_SYNCOUT) {
+					if (syncOutPpqn == 1) {
+						syncOutPpqn = 24;
+					}
+					else if (syncOutPpqn == 24) {
+						syncOutPpqn = 48;
+					}
+					else if (syncOutPpqn == 48) {
+						syncOutPpqn = 0;
+					}
+					else {// if syncOutPpqn == 0
+						syncOutPpqn = 1;
+					}
 				}
 				notifyCounter = (long) (3.0 * sampleRate / RefreshCounter::displayRefreshStepSkips);
 				notifyType = NOTIFY_SYNCOUT;
@@ -865,10 +869,10 @@ struct TwinParadox : Module {
 				// See if ratio knob changed (or uninitialized)
 				clk[1].reset();// force reset (thus refresh) of that sub-clock
 				clk[2].reset();// force reset (thus refresh) of that sub-clock
-				if (traveling) {
+				//if (traveling) {
 					meetPulse.trigger(0.001f);
 					meetLight = 1.0f;
-				}
+				//}
 				
 				swap = evalSwap();
 				
@@ -1015,14 +1019,14 @@ struct TwinParadox : Module {
 			resetLight = 0.0f;
 						
 			// BPM mode light (sync in mode)
-			bool warningFlashState = true;
-			if (cantRunWarning > 0l) 
-				warningFlashState = calcWarningFlash(cantRunWarning, (long) (0.7 * sampleRate / RefreshCounter::displayRefreshStepSkips));
-			float blight = ((float)syncInPpqn) / 48.0f;
-			if (syncInPpqn != 0 && !warningFlashState) {
-				blight = 0.0f;
+			float blight = (notifyCounter != 0l && notifyType == NOTIFY_SYNCIN) ? 1.0f : 0.0f;
+			if (cantRunWarning > 0l) {
+				blight = calcWarningFlash(cantRunWarning, (long) (0.7 * sampleRate / RefreshCounter::displayRefreshStepSkips)) ? 1.0f : 0.0f;
 			}
 			lights[SYNCINMODE_LIGHT].setBrightness(blight);	
+			
+			// Sync out mode light
+			lights[SYNCOUTMODE_LIGHT].setBrightness((notifyCounter != 0l && notifyType == NOTIFY_SYNCOUT) ? 1.0f : 0.0f);
 
 			// BPM Beat light
 			lights[BPMBEAT_LIGHT].setSmoothBrightness(bpmBeatLight, (float)sampleTime * (RefreshCounter::displayRefreshStepSkips >> 2));	
@@ -1032,8 +1036,6 @@ struct TwinParadox : Module {
 			lights[MEET_LIGHT].setSmoothBrightness(meetLight, (float)sampleTime * (RefreshCounter::displayRefreshStepSkips >> 2));	
 			meetLight = 0.0f;
 			
-			// Sync out mode light
-			lights[SYNCOUTMODE_LIGHT].setBrightness(syncOutPpqn == 0 ? 0.0f : 1.0f);
 			
 			// Tap light
 			if (inputs[BPM_INPUT].isConnected()) {
@@ -1322,7 +1324,7 @@ struct TwinParadoxWidget : ModuleWidget {
 
 		// Manual Travel button, light and input
 		addParam(createDynamicParam<GeoPushButton>(mm2px(Vec(6.932f, 44.468f)), module, TwinParadox::TRAVEL_PARAM, module ? &module->panelTheme : NULL));
-		addChild(createLightCentered<SmallLight<GeoRedLight>>(mm2px(Vec(7.9465f, 49.7855f)), module, TwinParadox::TRAVELMAN_LIGHT));	
+		addChild(createLightCentered<SmallLight<GeoWhiteRedLight>>(mm2px(Vec(7.9465f, 49.7855f)), module, TwinParadox::TRAVELMAN_LIGHT));	
 		addInput(createDynamicPort<GeoPort>(mm2px(Vec(9.809f, 55.965f)), true, module, TwinParadox::TRAVEL_INPUT, module ? &module->panelTheme : NULL));
 
 		// Master BPM knob
@@ -1422,7 +1424,8 @@ struct TwinParadoxWidget : ModuleWidget {
 			m->lights[TwinParadox::DIVMULT_LIGHTS + 3].setBrightness(m->divMultInt == -2 ? 1.0f : 0.0f);
 
 			// Travel lights
-			m->lights[TwinParadox::TRAVELMAN_LIGHT].setBrightness((m->traveling || m->pendingTravelReq) && m->travelingSrc == 0 ? 1.0f : 0.0f);
+			m->lights[TwinParadox::TRAVELMAN_LIGHT + 0].setBrightness((m->pendingTravelReq) && m->travelingSrc == 0 ? 1.0f : 0.0f);// white (travel armed)
+			m->lights[TwinParadox::TRAVELMAN_LIGHT + 1].setBrightness((m->traveling) && m->travelingSrc == 0 ? 1.0f : 0.0f);// red (travelling active)
 			m->lights[TwinParadox::TRAVELAUTO_LIGHT].setBrightness(m->traveling && m->travelingSrc == 1 ? 1.0f : 0.0f);
 			
 			// Separate twin traveling lights

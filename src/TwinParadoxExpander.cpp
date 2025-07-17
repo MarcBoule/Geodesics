@@ -93,6 +93,9 @@ struct TwinParadoxExpander : Module {
 			lights[XPAND_LIGHT + 1].setBrightness(0.0f);
 		}	
 		else {
+			outputs[MULTITIME_OUTPUT].setVoltage(0.0f);
+			lights[KIME1_LIGHT].setBrightness(0.0f);
+			lights[KIME2_LIGHT].setBrightness(0.0f);	
 			lights[XPAND_LIGHT + 0].setBrightness(0.0f);
 			lights[XPAND_LIGHT + 1].setBrightness(1.0f);
 		}
