@@ -1,3 +1,8 @@
+### 2.4
+
+-
+
+
 ### 2.3.3 (2024-10-19)
 
 - Fix occasional bad output values in Branes (issue #7)

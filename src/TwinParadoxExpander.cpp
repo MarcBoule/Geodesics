@@ -113,8 +113,7 @@ struct TwinParadoxExpanderWidget : ModuleWidget {
 
 		// Main panels from Inkscape
 		light_svg = APP->window->loadSvg(asset::plugin(pluginInstance, "res/WhiteLight/Kime-WL.svg"));
-		// dark_svg = APP->window->loadSvg(asset::plugin(pluginInstance, "res/DarkMatter/TwinParadox-DM.svg"));
-		dark_svg = APP->window->loadSvg(asset::plugin(pluginInstance, "res/WhiteLight/Kime-WL.svg"));
+		dark_svg = APP->window->loadSvg(asset::plugin(pluginInstance, "res/DarkMatter/Kime-DM.svg"));
 		int panelTheme = isDark(module ? (&((static_cast<TwinParadoxExpander*>(module))->panelTheme)) : NULL) ? 1 : 0;// need this here since step() not called for module browser
 		setPanel(panelTheme == 0 ? light_svg : dark_svg);		
 		

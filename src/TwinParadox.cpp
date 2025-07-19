@@ -336,7 +336,7 @@ struct TwinParadox : Module {
 		rightExpander.producerMessage = &rightMessages[0];
 		rightExpander.consumerMessage = &rightMessages[1];
 
-		configParam(DURREF_PARAM, 1.0f, 8.0f, 8.0f, "Reference time");
+		configParam(DURREF_PARAM, 1.0f, 8.0f, 4.0f, "Reference time");
 		paramQuantities[DURREF_PARAM]->snapEnabled = true;
 		configParam(DURTRAV_PARAM, 1.0f, 8.0f, 8.0f, "Travel time");
 		paramQuantities[DURTRAV_PARAM]->snapEnabled = true;
@@ -1130,7 +1130,7 @@ struct TwinParadoxWidget : ModuleWidget {
 			// fontPath = asset::system("res/fonts/Nunito-Bold.ttf");
 			textPos = Vec(24.4f, 16.4f);
 			//bgText = "888";
-			fontSize = 15;
+			fontSize = 14;
 		}
 		
 		void step() override {
@@ -1273,8 +1273,7 @@ struct TwinParadoxWidget : ModuleWidget {
 
 		// Main panels from Inkscape
 		light_svg = APP->window->loadSvg(asset::plugin(pluginInstance, "res/WhiteLight/TwinParadox-WL.svg"));
-		// dark_svg = APP->window->loadSvg(asset::plugin(pluginInstance, "res/DarkMatter/TwinParadox-DM.svg"));
-		dark_svg = APP->window->loadSvg(asset::plugin(pluginInstance, "res/WhiteLight/TwinParadox-WL.svg"));
+		dark_svg = APP->window->loadSvg(asset::plugin(pluginInstance, "res/DarkMatter/TwinParadox-DM.svg"));
 		int panelTheme = isDark(module ? (&((static_cast<TwinParadox*>(module))->panelTheme)) : NULL) ? 1 : 0;// need this here since step() not called for module browser
 		setPanel(panelTheme == 0 ? light_svg : dark_svg);		
 		

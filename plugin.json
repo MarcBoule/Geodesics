@@ -82,14 +82,16 @@
 			"name": "Twin Paradox",
 			"description": "Relativistic clock generator",
 			"manualUrl": "https://www.pyer.be/geodesics.html",
-			"tags": ["Clock generator"]
+			"tags": ["Clock generator"],
+			"hidden" : true
 		},
 		{
 			"slug": "Twin-Paradox-Expander-Kime",
 			"name": "Kime",
 			"description": "Expander for Twin-Paradox clock",
 			"manualUrl": "https://www.pyer.be/geodesics.html",
-			"tags": ["Clock generator", "Expander"]
+			"tags": ["Clock generator", "Expander"],
+			"hidden" : true
 		},
 		{
 			"slug": "Blank-PanelInfo",
