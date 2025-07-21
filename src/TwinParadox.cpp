@@ -212,6 +212,7 @@ struct TwinParadox : Module {
 	bool momentaryRunInput;// true = trigger (original rising edge only version), false = level sensitive (emulated with rising and falling detection)
 	float bpmInputScale;// -1.0f to 1.0f
 	float bpmInputOffset;// -10.0f to 10.0f
+	bool meetOnlyAtEndOfTravel;
 
 	// No need to save, with reset
 	double sampleRate;
@@ -268,6 +269,10 @@ struct TwinParadox : Module {
 	struct BpmParamQuantity : ParamQuantity {
 		std::string getDisplayValueString() override {
 			return module->inputs[BPM_INPUT].isConnected() ? "Ext." : string::f("%d",((TwinParadox*)module)->bpmManual);
+		}
+		void setDisplayValue(float displayValue) override {
+			ParamQuantity::setDisplayValue(displayValue);
+			((TwinParadox*)module)->bpmManual = clamp((int)std::round(displayValue), bpmMin, bpmMax);
 		}
 	};
 	
@@ -392,6 +397,7 @@ struct TwinParadox : Module {
 		momentaryRunInput = true;
 		bpmInputScale = 1.0f;
 		bpmInputOffset = 0.0f;
+		meetOnlyAtEndOfTravel = false;
 		resetNonJson(false);
 	}
 	void resetNonJson(bool delayed) {// delay thread sensitive parts (i.e. schedule them so that process() will do them)
@@ -485,6 +491,9 @@ struct TwinParadox : Module {
 		// bpmInputOffset
 		json_object_set_new(rootJ, "bpmInputOffset", json_real(bpmInputOffset));
 		
+		// meetOnlyAtEndOfTravel
+		json_object_set_new(rootJ, "meetOnlyAtEndOfTravel", json_boolean(meetOnlyAtEndOfTravel));
+		
 		return rootJ;
 	}
 
@@ -545,6 +554,11 @@ struct TwinParadox : Module {
 		json_t *bpmInputOffsetJ = json_object_get(rootJ, "bpmInputOffset");
 		if (bpmInputOffsetJ)
 			bpmInputOffset = json_number_value(bpmInputOffsetJ);
+
+		// meetOnlyAtEndOfTravel
+		json_t *meetOnlyAtEndOfTravelJ = json_object_get(rootJ, "meetOnlyAtEndOfTravel");
+		if (meetOnlyAtEndOfTravelJ)
+			meetOnlyAtEndOfTravel = json_is_true(meetOnlyAtEndOfTravelJ);
 
 		resetNonJson(true);
 	}
@@ -645,6 +659,13 @@ struct TwinParadox : Module {
 			resetPulse.trigger(0.001f);
 			resetTwinParadox(false);	
 		}	
+		
+		// travel button (not in refresh loop so that a travel can start at the same time as a reset)
+		if (travelTrigger.process(inputs[TRAVEL_INPUT].getVoltage() + params[TRAVEL_PARAM].getValue())) {
+			if (!pendingTravelReq) {
+				pendingTravelReq = true;
+			}
+		}
 
 		if (refresh.processInputs()) {
 			// tap tempo
@@ -692,13 +713,7 @@ struct TwinParadox : Module {
 				bpmKnob = newBpmKnob;
 			}	
 			
-			// travel button
-			if (travelTrigger.process(inputs[TRAVEL_INPUT].getVoltage() + params[TRAVEL_PARAM].getValue())) {
-				if (!pendingTravelReq) {
-					pendingTravelReq = true;
-				}
-			}
-			
+		
 			// divMult button
 			if (divMultTrigger.process(params[DIVMULT_PARAM].getValue())) {
 				// sequence should be 0, -1, -2, 1, 2
@@ -869,10 +884,10 @@ struct TwinParadox : Module {
 				// See if ratio knob changed (or uninitialized)
 				clk[1].reset();// force reset (thus refresh) of that sub-clock
 				clk[2].reset();// force reset (thus refresh) of that sub-clock
-				//if (traveling) {
+				if (traveling || !meetOnlyAtEndOfTravel) {
 					meetPulse.trigger(0.001f);
 					meetLight = 1.0f;
-				//}
+				}
 				
 				swap = evalSwap();
 				
@@ -1226,6 +1241,11 @@ struct TwinParadoxWidget : ModuleWidget {
 		menu->addChild(createBoolMenuItem("Run CV input is level sensitive", "",
 			[=]() {return !module->momentaryRunInput;},
 			[=](bool loop) {module->momentaryRunInput = !module->momentaryRunInput;}
+		));
+		
+		menu->addChild(createBoolMenuItem("Meet only at end of travel", "",
+			[=]() {return module->meetOnlyAtEndOfTravel;},
+			[=](bool loop) {module->meetOnlyAtEndOfTravel = !module->meetOnlyAtEndOfTravel;}
 		));
 		
 		/*menu->addChild(createSubmenuItem("Sync input mode", "", [=](Menu* menu) {
