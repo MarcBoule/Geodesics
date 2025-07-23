@@ -343,7 +343,7 @@ struct TwinParadox : Module {
 
 		configParam(DURREF_PARAM, 1.0f, 8.0f, 4.0f, "Reference time");
 		paramQuantities[DURREF_PARAM]->snapEnabled = true;
-		configParam(DURTRAV_PARAM, 1.0f, 8.0f, 8.0f, "Travel time");
+		configParam(DURTRAV_PARAM, 1.0f, 8.0f, 8.0f, "Traveler time");
 		paramQuantities[DURTRAV_PARAM]->snapEnabled = true;
 		configParam<BpmParamQuantity>(BPM_PARAM, -INFINITY, INFINITY, 0.0f, "Tempo"," BPM");	
 		configButton(RESET_PARAM, "Reset");
@@ -363,7 +363,7 @@ struct TwinParadox : Module {
 		configInput(TRAVPROB_INPUT, "Travel probability CV");
 		configInput(SWAPPROB_INPUT, "Traveler selection probability CV");
 		configInput(DURREF_INPUT, "Reference time CV");
-		configInput(DURTRAV_INPUT, "Travel time CV");
+		configInput(DURTRAV_INPUT, "Traveler time CV");
 
 		configOutput(TWIN1_OUTPUT, "Twin 1 clock");
 		configOutput(TWIN2_OUTPUT, "Twin 2 clock");
