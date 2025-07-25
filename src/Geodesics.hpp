@@ -32,7 +32,7 @@ extern Model *modelDarkEnergy;
 extern Model *modelTorus;
 extern Model *modelFate;
 extern Model *modelTwinParadox;
-extern Model *modelTwinParadoxExpander;
+//extern Model *modelTwinParadoxExpander;
 extern Model *modelBlankLogo;
 extern Model *modelBlankInfo;
 

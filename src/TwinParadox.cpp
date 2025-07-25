@@ -8,7 +8,8 @@
 //***********************************************************************************************
 
 
-#include "TwinParadoxCommon.hpp"
+//#include "TwinParadoxCommon.hpp"
+#include "Geodesics.hpp"
 
 
 class Clock {
@@ -180,14 +181,14 @@ struct TwinParadox : Module {
 	};
 	
 	// Expander
-	TmFxInterface rightMessages[2];// messages from expander
+	//TmFxInterface rightMessages[2];// messages from expander
 	
 	// Constants
 	static const int bpmMax = 300;
 	static const int bpmMin = 30;
 	static constexpr float masterLengthMax = 60.0f / bpmMin;// a length is a period
 	static constexpr float masterLengthMin = 60.0f / bpmMax;// a length is a period
-	static constexpr float multitimeGuard = 1e-4;// 100us
+	//static constexpr float multitimeGuard = 1e-4;// 100us
 	static const int numTapHistory = 4;
 
 	static const unsigned int ON_STOP_INT_RST_MSK = 0x1;
@@ -228,8 +229,8 @@ struct TwinParadox : Module {
 	bool pendingTravelReq;
 	bool traveling;
 	int travelingSrc;// 0 when manual trig, 1 when random. only valid when traveling==true
-	int multitimeSwitch;// -1 = ref, 1 = trav, 0 = none
-	dsp::PulseGenerator multitimeGuardPulse;
+	//int multitimeSwitch;// -1 = ref, 1 = trav, 0 = none
+	//dsp::PulseGenerator multitimeGuardPulse;
 	long notifyCounter;// 0 when nothing to notify, downward step counter otherwise
 	int notifyType; // see NotifyTypeIds enum
 	//float pulseWidth;
@@ -268,11 +269,11 @@ struct TwinParadox : Module {
 	
 	struct BpmParamQuantity : ParamQuantity {
 		std::string getDisplayValueString() override {
-			return module->inputs[BPM_INPUT].isConnected() ? "Ext." : string::f("%d",((TwinParadox*)module)->bpmManual);
+			return module->inputs[BPM_INPUT].isConnected() ? "Ext." : string::f("%d",static_cast<TwinParadox*>(module)->bpmManual);
 		}
 		void setDisplayValue(float displayValue) override {
 			ParamQuantity::setDisplayValue(displayValue);
-			((TwinParadox*)module)->bpmManual = clamp((int)std::round(displayValue), bpmMin, bpmMax);
+			static_cast<TwinParadox*>(module)->bpmManual = clamp((int)std::round(displayValue), bpmMin, bpmMax);
 		}
 	};
 	
@@ -338,8 +339,8 @@ struct TwinParadox : Module {
 	TwinParadox() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 
-		rightExpander.producerMessage = &rightMessages[0];
-		rightExpander.consumerMessage = &rightMessages[1];
+		//rightExpander.producerMessage = &rightMessages[0];
+		//rightExpander.consumerMessage = &rightMessages[1];
 
 		configParam(DURREF_PARAM, 1.0f, 8.0f, 4.0f, "Reference time");
 		paramQuantities[DURREF_PARAM]->snapEnabled = true;
@@ -449,8 +450,8 @@ struct TwinParadox : Module {
 		pendingTravelReq = false;
 		traveling = false;
 		travelingSrc = 0;
-		multitimeSwitch = 0;
-		multitimeGuardPulse.reset();
+		//multitimeSwitch = 0;
+		//multitimeGuardPulse.reset();
 		//pulseWidth= 0.5f;
 	}	
 	
@@ -593,7 +594,7 @@ struct TwinParadox : Module {
 	}
 
 	
-	void multitimeSimultaneous(float knob) {
+	/*void multitimeSimultaneous(float knob) {
 		bool p1 = random::uniform() < probMultitime(true, knob);// true = twin1
 		bool p2 = random::uniform() < probMultitime(false, knob);// false = twin2
 		if (p1 && p2) {
@@ -610,7 +611,7 @@ struct TwinParadox : Module {
 			multitimeSwitch = 0;
 			multitimeGuardPulse.trigger(multitimeGuard);
 		}
-	}
+	}*/
 	
 	
 	void onSampleRateChange() override {
@@ -619,8 +620,8 @@ struct TwinParadox : Module {
 	
 
 	void process(const ProcessArgs &args) override {
-		bool expanderPresent = (rightExpander.module && rightExpander.module->model == modelTwinParadoxExpander);
-		TmFxInterface *messagesFromExpander = static_cast<TmFxInterface*>(rightExpander.consumerMessage);// could be invalid pointer when !expanderPresent, so read it only when expanderPresent
+		//bool expanderPresent = (rightExpander.module && rightExpander.module->model == modelTwinParadoxExpander);
+		//TmFxInterface *messagesFromExpander = static_cast<TmFxInterface*>(rightExpander.consumerMessage);// could be invalid pointer when !expanderPresent, so read it only when expanderPresent
 		
 		//pulseWidth = expanderPresent ? messagesFromExpander->pulseWidth : 0.5f; 
 
@@ -662,9 +663,7 @@ struct TwinParadox : Module {
 		
 		// travel button (not in refresh loop so that a travel can start at the same time as a reset)
 		if (travelTrigger.process(inputs[TRAVEL_INPUT].getVoltage() + params[TRAVEL_PARAM].getValue())) {
-			if (!pendingTravelReq) {
-				pendingTravelReq = true;
-			}
+			pendingTravelReq = true;
 		}
 
 		if (refresh.processInputs()) {
@@ -935,8 +934,8 @@ struct TwinParadox : Module {
 		// multitime
 		int trigMt1 = multitime1Trigger.process(clk[twin1clk].isHigh() ? 10.0f : 0.0f);
 		int trigMt2 = multitime2Trigger.process(clk[twin2clk].isHigh() ? 10.0f : 0.0f);
-		float mOut = 0.0f;
-		if (expanderPresent) {
+		//float mOut = 0.0f;
+		/*if (expanderPresent) {
 			float knob = messagesFromExpander->multitimeParam;
 			if ((trigMt1 == -1 && multitimeSwitch == -1) || (trigMt2 == -1 && multitimeSwitch == 1)) {
 				multitimeGuardPulse.trigger(multitimeGuard);
@@ -1003,7 +1002,7 @@ struct TwinParadox : Module {
 			if (multitimeSwitch == 1 && running) {
 				mOut = clk[twin2clk].isHigh() ? 10.0f : 0.0f;
 			}
-		}
+		}*/
 		
 		if ((!swap && trigMt1 == 1) || (swap && trigMt2 == 1)) {
 			bpmBeatLight = 1.0f;	
@@ -1015,7 +1014,7 @@ struct TwinParadox : Module {
 			twin2OutLight = 1.0f;
 		}
 		
-		multitimeGuardPulse.process(args.sampleTime);
+		//multitimeGuardPulse.process(args.sampleTime);
 		if (running) {
 			// Step clocks and update clkOutputs[]
 			for (int i = 0; i < 3; i++) {
@@ -1082,7 +1081,7 @@ struct TwinParadox : Module {
 
 
 		// To expander
-		if (expanderPresent) {
+		/*if (expanderPresent) {
 			TxFmInterface *messageToExpander = static_cast<TxFmInterface*>(rightExpander.module->leftExpander.producerMessage);
 			messageToExpander->kimeOut = mOut;
 			messageToExpander->k1Light = k1Light;
@@ -1092,7 +1091,7 @@ struct TwinParadox : Module {
 			messageToExpander->panelTheme = panelTheme;
 
 			rightExpander.module->leftExpander.messageFlipRequested = true;
-		}// if (auxExpanderPresent)
+		}*/ // if (auxExpanderPresent)
 			
 	}// process()
 };
@@ -1146,6 +1145,7 @@ struct TwinParadoxWidget : ModuleWidget {
 			textPos = Vec(24.4f, 16.4f);
 			//bgText = "888";
 			fontSize = 14;
+			module = nullptr;
 		}
 		
 		void step() override {
@@ -1238,7 +1238,7 @@ struct TwinParadoxWidget : ModuleWidget {
 				   module->resetTwinParadox(true);}
 		));
 		
-		menu->addChild(createBoolMenuItem("Run CV input is level sensitive", "",
+		menu->addChild(createBoolMenuItem("Run CV input is gate (instead of trigger)", "",
 			[=]() {return !module->momentaryRunInput;},
 			[=](bool loop) {module->momentaryRunInput = !module->momentaryRunInput;}
 		));
@@ -1275,14 +1275,14 @@ struct TwinParadoxWidget : ModuleWidget {
 
 		//createBPMCVInputMenu(menu, &module->bpmInputScale, &module->bpmInputOffset);
 
-		menu->addChild(new MenuSeparator());
-		menu->addChild(createMenuLabel("Actions"));
+		//menu->addChild(new MenuSeparator());
+		//menu->addChild(createMenuLabel("Actions"));
 		
-		InstantiateExpanderItem *expItem = createMenuItem<InstantiateExpanderItem>("Add expander (4HP right side)", "");
+		/*InstantiateExpanderItem *expItem = createMenuItem<InstantiateExpanderItem>("Add expander (4HP right side)", "");
 		expItem->module = module;
 		expItem->model = modelTwinParadoxExpander;
 		expItem->posit = box.pos.plus(math::Vec(box.size.x,0));
-		menu->addChild(expItem);	
+		menu->addChild(expItem);*/	
 
 	}
 	
