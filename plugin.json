@@ -81,9 +81,8 @@
 			"slug": "Twin-Paradox",
 			"name": "Twin Paradox",
 			"description": "Relativistic clock generator",
-			"manualUrl": "https://www.pyer.be/geodesics.html",
-			"tags": ["Clock generator"],
-			"hidden" : true
+			"manualUrl": "https://www.pyer.be/twin-paradox.html",
+			"tags": ["Clock generator"]
 		},
 		{
 			"slug": "Blank-PanelInfo",

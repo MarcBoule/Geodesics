@@ -225,7 +225,7 @@ struct TwinParadox : Module {
 	float newMasterLength;
 	float masterLength;
 	float clkOutputs[3];
-	bool swap;// when false, twin1=ref & twin2=trav; when true, twin1=trav & twin2=ref
+	bool swap;
 	bool pendingTravelReq;
 	bool traveling;
 	int travelingSrc;// 0 when manual trig, 1 when random. only valid when traveling==true
@@ -310,7 +310,7 @@ struct TwinParadox : Module {
 	bool evalSwap() {
 		float swapValue = params[SWAPPROB_PARAM].getValue();
 		swapValue += inputs[SWAPPROB_INPUT].getVoltage() / 10.0f;
-		return (random::uniform() < swapValue); // random::uniform is [0.0, 1.0), see include/util/common.hpp
+		return (random::uniform() < 1.0f-clamp(swapValue, 0.0f, 1.0f)); // random::uniform is [0.0, 1.0), see include/util/common.hpp
 	}
 	double getDivMult() {
 		// this is inverted ratio, so that the period time can be multiplied with return value
@@ -1448,8 +1448,8 @@ struct TwinParadoxWidget : ModuleWidget {
 			m->lights[TwinParadox::TRAVELAUTO_LIGHT].setBrightness(m->traveling && m->travelingSrc == 1 ? 1.0f : 0.0f);
 			
 			// Separate twin traveling lights
-			m->lights[TwinParadox::TWIN1TRAVELING_LIGHT].setBrightness((m->traveling && !m->swap) ? 1.0f : 0.0f);
-			m->lights[TwinParadox::TWIN2TRAVELING_LIGHT].setBrightness((m->traveling && m->swap) ? 1.0f : 0.0f);
+			m->lights[TwinParadox::TWIN1TRAVELING_LIGHT].setBrightness((m->traveling && m->swap) ? 1.0f : 0.0f);
+			m->lights[TwinParadox::TWIN2TRAVELING_LIGHT].setBrightness((m->traveling && !m->swap) ? 1.0f : 0.0f);
 						
 			// Run light
 			m->lights[TwinParadox::RUN_LIGHT].setBrightness(m->running ? 1.0f : 0.0f);

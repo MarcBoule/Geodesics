@@ -1,6 +1,6 @@
-### 2.4
+### 2.4 (2025-07-28)
 
--
+- Add new clock generator module called Twin Paradox
 
 
 ### 2.3.3 (2024-10-19)
