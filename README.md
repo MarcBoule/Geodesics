@@ -135,3 +135,4 @@ For a video introduction to a previous version of this module, please see Omri C
 ![Geodesics](res/img/TwinParadox.jpg)
 
 Consider two twin composers playing the same sequence on identical modular systems. One boards a spacecraft, traveling at near-light speed, and eventually returns home. Are their pieces still in sync? [TWIN PARADOX](doc/geodesics-twin-paradox.pdf) offers an answer with two synchronized clocks experiencing different time dilations based on irrational rhythms, while always meeting together at a defined point in time. The clocks can evolve, alternate, and exchange their timelines, constantly, or just long enough to come back into sync.
+For a video introduction to this module, please see Omri Cohen's [Twin Paradox overview](https://www.youtube.com/watch?v=-VsWdEKpycE).
