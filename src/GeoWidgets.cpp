@@ -194,7 +194,8 @@ void DynamicSVGSwitch::refreshForTheme() {
 			frames[1]=framesAll[3];
 		}
         oldMode = effMode;
-		onChange(*(new event::Change()));// required because of the way SVGSwitch changes images, we only change the frames above.
+		event::Change eChange;
+		onChange(eChange);// required because of the way SVGSwitch changes images, we only change the frames above.
 		fb->dirty = true;// dirty is not sufficient when changing via frames assignments above (i.e. onChange() is required)
     }
 }
