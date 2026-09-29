@@ -347,7 +347,7 @@ struct Torus : Module {
 					int numerator = (distanceUR - ini + outi);
 					if (numerator == 0) 
 						break;
-					mixMap[outi].insert(numerator, distanceUL, mixmode, 8 + ini, false, isSecondOrder);// 2nd to last param is _inAboveOut
+					mixMap[outi].insert(numerator, distanceUR, mixmode, 8 + ini, false, isSecondOrder);// 2nd to last param is _inAboveOut
 				}
 				distanceUR = 1;
 			}			
@@ -366,7 +366,7 @@ struct Torus : Module {
 					int numerator = (distanceDL - 1 + ini - outi);
 					if (numerator == 0) 
 						break;
-					mixMap[outi].insert(numerator, distanceUL, mixmode, ini, true, isSecondOrder);// 2nd to last param is _inAboveOut
+					mixMap[outi].insert(numerator, distanceDL, mixmode, ini, true, isSecondOrder);// 2nd to last param is _inAboveOut
 				}
 				distanceDL = 1;
 			}
@@ -377,7 +377,7 @@ struct Torus : Module {
 					int numerator = (distanceDR - 1 + ini - outi);
 					if (numerator == 0) 
 						break;
-					mixMap[outi].insert(numerator, distanceUL, mixmode, 8 + ini, true, isSecondOrder);// 2nd to last param is _inAboveOut
+					mixMap[outi].insert(numerator, distanceDR, mixmode, 8 + ini, true, isSecondOrder);// 2nd to last param is _inAboveOut
 				}
 				distanceDR = 1;
 			}		
